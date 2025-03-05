@@ -1,3 +1,4 @@
+## v3.9.1 (Mar 05, 2025)
 ## v3.9.0 (Feb 18, 2025)
 
 - Support Node 22 [#2218](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/2218)
