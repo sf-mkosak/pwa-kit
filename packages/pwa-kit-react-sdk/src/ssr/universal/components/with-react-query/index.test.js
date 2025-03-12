@@ -110,7 +110,7 @@ describe('withReactQuery', function () {
         const mockQueryCache = {
             getAll: jest.fn().mockReturnValue([
                 {
-                    options: { enabled: true },
+                    options: {enabled: true},
                     meta: mockQueryMeta,
                     queryHash: 'test-hash',
                     fetch: jest.fn().mockResolvedValue({})
@@ -130,7 +130,7 @@ describe('withReactQuery', function () {
         }
 
         const Component = withReactQuery({})
-        
+
         await Component.doInitAppState({
             res,
             appJSX: <div>Test</div>
@@ -158,7 +158,7 @@ describe('withReactQuery', function () {
         const mockQueryCache = {
             getAll: jest.fn().mockReturnValue([
                 {
-                    options: { enabled: true },
+                    options: {enabled: true},
                     meta: {},
                     queryHash: 'test-hash',
                     fetch: jest.fn().mockResolvedValue({})
@@ -178,7 +178,7 @@ describe('withReactQuery', function () {
         }
 
         const Component = withReactQuery({})
-        
+
         await Component.doInitAppState({
             res,
             appJSX: <div>Test</div>
@@ -220,7 +220,7 @@ describe('withReactQuery', function () {
         }
 
         const Component = withReactQuery({})
-        
+
         await Component.doInitAppState({
             res,
             appJSX: <div>Test</div>
