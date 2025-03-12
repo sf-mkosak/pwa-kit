@@ -3,7 +3,7 @@ on:
   # For testing - to be removed
   push:
     branches:
-      - 'mrt-test-ci-deploy'
+      - 'deploy-demo-env-on-release'
   # Run this workflow when a new Github release is published
   release:
     types: [released]
@@ -11,6 +11,8 @@ on:
 jobs:
   check-latest-release:
     runs-on: ubuntu-latest
+    outputs:
+      IS_LATEST_RELEASE: ${{ steps.checkRelease.outputs.IS_LATEST_RELEASE }}
     steps:  
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,10 +21,38 @@ jobs:
         uses: ./.github/actions/check_if_latest_release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Update Github Outputs
+        id: checkRelease
+        run: |-
+          IS_LATEST_RELEASE=$(echo ${{ env.IS_LATEST_RELEASE }})
+          if [ $IS_LATEST_RELEASE != "true" ]; then
+            echo "Deploy is not for the latest release. Stopping deployment"
+          fi
+          echo "IS_LATEST_RELEASE=$IS_LATEST_RELEASE" >> "$GITHUB_OUTPUT"
 
-  deploy-bug-bounty:
+  deploy-sites:
     needs: check-latest-release
     runs-on: ubuntu-latest
+    if: needs.check-latest-release.outputs.IS_LATEST_RELEASE == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        environment:
+          - name: bug-bounty
+            project_key: retail-react-app-bug-bounty
+            target: testing
+            project: pwa-kit
+            mobify_user: MOBIFY_STG_CLIENT_USER
+            mobify_api_key: MOBIFY_STG_CLIENT_API_KEY
+            flags: --cloud-origin https://cloud-testing.mobify-staging.com -c ~/.mobify --wait
+          - name: demo-site
+            project_key: retail-react-app-demo-site
+            target: production
+            project: scaffold-pwa
+            mobify_user: MOBIFY_CLIENT_USER
+            mobify_api_key: MOBIFY_CLIENT_API_KEY
+            flags: --wait
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,19 +72,30 @@ jobs:
       - name: Generate Retail App Demo
         uses: ./.github/actions/e2e_generate_app
         with:
-          PROJECT_KEY: "retail-react-app-bug-bounty"
+          PROJECT_KEY: ${{ matrix.environment.project_key }}
 
       - name: Create MRT credentials file
         uses: "./.github/actions/create_mrt"
         with:
-          mobify_user: ${{ secrets.MOBIFY_STG_CLIENT_USER }}
-          mobify_api_key: ${{ secrets.MOBIFY_STG_CLIENT_API_KEY }}
+          mobify_user: ${{ secrets[matrix.environment.mobify_user] }}
+          mobify_api_key: ${{ secrets[matrix.environment.mobify_api_key] }}
 
-      - name: Push Bundle to MRT (Bug Bounty)
+      - name: Set bundle name
+        run: |-
+          TAG_NAME=$(echo ${{ github.event.release.tag_name }})
+          if [ "$TAG_NAME" ]; then
+            BUNDLE_NAME="tag ${{ github.event.release.tag_name }}"
+          else
+            BUNDLE_NAME="build ${{ github.run_id }} on ${{ github.ref }} (${{ github.sha }})"
+          fi
+          echo "Setting bundle name as $BUNDLE_NAME"
+          echo "BUNDLE_NAME=$BUNDLE_NAME" >> $GITHUB_ENV
+
+      - name: Push Bundle to MRT (${{matrix.environment.name}})
         uses: "./.github/actions/push_to_mrt"
         with:
-          CWD: "../generated-projects/retail-react-app-bug-bounty"
-          TARGET: testing
-          PROJECT: pwa-kit
-          MESSAGE: "tag ${{ github.event.release.tag_name }}"
-          FLAGS: --cloud-origin https://cloud-testing.mobify-staging.com -c ~/.mobify --wait
+          CWD: "../generated-projects/${{ matrix.environment.project_key }}"
+          TARGET: ${{ matrix.environment.target }}
+          PROJECT: ${{ matrix.environment.project }}
+          MESSAGE: ${{ env.BUNDLE_NAME }})
+          FLAGS: ${{ matrix.environment.flags }}
