@@ -38,13 +38,8 @@
     "tar": "^6.2.1"
   },
   "devDependencies": {
-<<<<<<< HEAD
     "@salesforce/pwa-kit-dev": "3.10.0-dev",
     "internal-lib-build": "3.10.0-dev",
-=======
-    "@salesforce/pwa-kit-dev": "3.9.2",
-    "internal-lib-build": "3.9.2",
->>>>>>> release-3.9.x
     "verdaccio": "^5.22.1"
   },
   "engines": {
