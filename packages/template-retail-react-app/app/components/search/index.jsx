@@ -200,7 +200,7 @@ const Search = (props) => {
 
         saveRecentSearch(searchText)
         clearInput()
-        navigate(searchUrlBuilder(searchText))
+        // navigate(searchUrlBuilder(searchText))
     }
 
     const closeAndNavigate = (link) => {
