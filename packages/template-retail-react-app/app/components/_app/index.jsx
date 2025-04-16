@@ -80,6 +80,7 @@ import {
 
 import Seo from '@salesforce/retail-react-app/app/components/seo'
 import {Helmet} from 'react-helmet'
+import useMiaw from '../../hooks/use-miaw'
 
 const PlaceholderComponent = () => (
     <Center p="2">
@@ -241,6 +242,10 @@ const App = (props) => {
         // location path is changed.
         onClose()
     }, [location])
+
+    // TODO: Resolve the script URL
+    useMiaw(site.id, appOrigin,"https://orgfarm-7455a909de.test1.my.pc-rnd.site.com/ESWMIAWGuidedShopperpr1743525851212/assets/js/bootstrap.min.js")
+    //useMiaw(site.id, appOrigin, "https://orgfarm-9d2e93e7de.test1.my.pc-rnd.site.com/ESWBuyerServiceAgentEm1735264803481/assets/js/bootstrap.min.js")
 
     const onLogoClick = () => {
         // Goto the home page.
