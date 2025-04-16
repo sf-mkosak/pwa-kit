@@ -81,6 +81,7 @@ import {
 import Seo from '@salesforce/retail-react-app/app/components/seo'
 import {Helmet} from 'react-helmet'
 import {getPathWithLocale} from '@salesforce/retail-react-app/app/utils/url'
+import useMiaw from '../../hooks/use-miaw'
 
 const PlaceholderComponent = () => (
     <Center p="2">
@@ -123,28 +124,7 @@ const ListMenuContentWithData = withCommerceSdkReact(
     }
 )
 
-const onClient = typeof window !== 'undefined'
-
-function initEmbeddedMessaging() {
-    try {
-        if (onClient && embeddedservice_bootstrap && embeddedservice_bootstrap?.settings) {
-            embeddedservice_bootstrap.settings.language = 'en_US'; // For example, enter 'en' or 'en-US'
-			embeddedservice_bootstrap.init(
-				'00DSB00000MJ7YH',
-				'MIAW_Guided_Shopper_production_functional38',
-				'https://orgfarm-7455a909de.test1.my.pc-rnd.site.com/ESWMIAWGuidedShopperpr1743525851212',
-				{
-					scrt2URL: 'https://orgfarm-7455a909de.test1.my.pc-rnd.salesforce-scrt.com'
-				}
-			);
-
-
-        }
-
-    } catch (err) {
-        console.error('Error loading Embedded Messaging: ', err)
-    }
-}
+const onClient = typeof window !== 'undefined';
 
 const App = (props) => {
     const {children} = props
@@ -265,6 +245,10 @@ const App = (props) => {
         // location path is changed.
         onClose()
     }, [location])
+
+    // TODO: Resolve the script URL
+    useMiaw(site.id, appOrigin,"https://orgfarm-7455a909de.test1.my.pc-rnd.site.com/ESWMIAWGuidedShopperpr1743525851212/assets/js/bootstrap.min.js")
+    //useMiaw(site.id, appOrigin, "https://orgfarm-9d2e93e7de.test1.my.pc-rnd.site.com/ESWBuyerServiceAgentEm1735264803481/assets/js/bootstrap.min.js")
 
     const onLogoClick = () => {
         // Goto the home page.
@@ -483,12 +467,6 @@ const App = (props) => {
                         async="async"
                     ></script>
                 )}
-                <script
-                    type='text/javascript'
-                    src='https://orgfarm-7455a909de.test1.my.pc-rnd.site.com/ESWMIAWGuidedShopperpr1743525851212/assets/js/bootstrap.min.js'
-                    onLoad={initEmbeddedMessaging()}
-                ></script>
-
             </StorefrontPreview>
         </Box>
     )
