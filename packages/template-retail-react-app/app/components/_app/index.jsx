@@ -19,6 +19,7 @@ import {
 } from '@salesforce/commerce-sdk-react'
 import logger from '@salesforce/retail-react-app/app/utils/logger-instance'
 import {useAppOrigin} from '@salesforce/retail-react-app/app/hooks/use-app-origin'
+import {getConfig} from '@salesforce/pwa-kit-runtime/utils/ssr-config'
 
 // Chakra
 import {
@@ -80,6 +81,7 @@ import {
 
 import Seo from '@salesforce/retail-react-app/app/components/seo'
 import {Helmet} from 'react-helmet'
+import ShopperAgent from '../shopper-agent/index'
 
 const PlaceholderComponent = () => (
     <Center p="2">
@@ -218,6 +220,7 @@ const App = (props) => {
     // customer.
     const {data: customer} = useCurrentCustomer()
     const {data: basket} = useCurrentBasket()
+    const config = getConfig()
 
     const updateBasket = useShopperBasketsMutation('updateBasket')
     const updateCustomerForBasket = useShopperBasketsMutation('updateCustomerForBasket')
@@ -306,6 +309,14 @@ const App = (props) => {
     return (
         <Box className="sf-app" {...styles.container}>
             <StorefrontPreview getToken={getTokenWhenReady}>
+                <ShopperAgent
+                    enableMiaw={config.app.commerceAgenticMiawEnabled === 'true'}
+                    orgId={config.app.salesforceOrgId}
+                    embeddedServiceDeploymentName={config.app.commerceAgenticEsdName}
+                    embeddedServiceDeploymentUrl={config.app.commerceAgenticEsdEndpoint}
+                    scrt2Url={config.app.commerceAgenticScrt2Url}
+                    commerceAgenticEsdScriptSourceUrl={config.app.commerceAgenticEsdScriptSourceUrl}
+                />
                 <Helmet>
                     {ACTIVE_DATA_ENABLED && (
                         <script

@@ -317,7 +317,7 @@ const {handler} = runtime.createHandler(options, (app) => {
                         // Connect to Einstein APIs
                         'api.cquotient.com',
                         // Connect to SCRT2 URLs
-                        '*.salesforce-scrt.com',
+                        '*.salesforce-scrt.com'
                     ],
                     'frame-src': [
                         // Allow frames from Salesforce site.com (Needed for MIAW)
