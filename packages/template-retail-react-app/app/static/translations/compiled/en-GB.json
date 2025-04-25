@@ -1509,6 +1509,12 @@
       "value": "Terms & Conditions"
     }
   ],
+  "footer.locale_selector.assistive_msg": [
+    {
+      "type": 0,
+      "value": "Select Language"
+    }
+  ],
   "footer.message.copyright": [
     {
       "type": 0,
@@ -1525,6 +1531,12 @@
     {
       "type": 0,
       "value": "Sign up to stay in the loop about the hottest deals"
+    }
+  ],
+  "footer.subscribe.email.assistive_msg": [
+    {
+      "type": 0,
+      "value": "Email address for newsletter"
     }
   ],
   "footer.subscribe.heading.first_to_know": [
@@ -2503,6 +2515,12 @@
       "value": "numOfPages"
     }
   ],
+  "pagination.field.page_number_select": [
+    {
+      "type": 0,
+      "value": "Select page number"
+    }
+  ],
   "pagination.link.next": [
     {
       "type": 0,
@@ -2585,6 +2603,12 @@
     {
       "type": 0,
       "value": "Credit Card"
+    }
+  ],
+  "payment_selection.radio_group.assistive_msg": [
+    {
+      "type": 0,
+      "value": "Payment"
     }
   ],
   "payment_selection.tooltip.secure_payment": [
@@ -2773,6 +2797,12 @@
     {
       "type": 1,
       "value": "sortOption"
+    }
+  ],
+  "product_list.sort_by.label.assistive_msg": [
+    {
+      "type": 0,
+      "value": "Sort products by"
     }
   ],
   "product_scroller.assistive_msg.scroll_left": [

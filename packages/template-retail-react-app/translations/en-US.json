@@ -621,6 +621,9 @@
   "footer.link.terms_conditions": {
     "defaultMessage": "Terms & Conditions"
   },
+  "footer.locale_selector.assistive_msg": {
+    "defaultMessage": "Select Language"
+  },
   "footer.message.copyright": {
     "defaultMessage": "Salesforce or its affiliates. All rights reserved. This is a demo store only. Orders made WILL NOT be processed."
   },
@@ -629,6 +632,9 @@
   },
   "footer.subscribe.description.sign_up": {
     "defaultMessage": "Sign up to stay in the loop about the hottest deals"
+  },
+  "footer.subscribe.email.assistive_msg": {
+    "defaultMessage": "Email address for newsletter"
   },
   "footer.subscribe.heading.first_to_know": {
     "defaultMessage": "Be the first to know"
@@ -1069,6 +1075,9 @@
   "pagination.field.num_of_pages": {
     "defaultMessage": "of {numOfPages}"
   },
+  "pagination.field.page_number_select": {
+    "defaultMessage": "Select page number"
+  },
   "pagination.link.next": {
     "defaultMessage": "Next"
   },
@@ -1115,6 +1124,9 @@
   },
   "payment_selection.heading.credit_card": {
     "defaultMessage": "Credit Card"
+  },
+  "payment_selection.radio_group.assistive_msg": {
+    "defaultMessage": "Payment"
   },
   "payment_selection.tooltip.secure_payment": {
     "defaultMessage": "This is a secure SSL encrypted payment."
@@ -1182,6 +1194,9 @@
   },
   "product_list.select.sort_by": {
     "defaultMessage": "Sort By: {sortOption}"
+  },
+  "product_list.sort_by.label.assistive_msg": {
+    "defaultMessage": "Sort products by"
   },
   "product_scroller.assistive_msg.scroll_left": {
     "defaultMessage": "Scroll products left"
