@@ -441,7 +441,7 @@ const useDataCloud = () => {
         app: {dataCloudAPI: config}
     } = getConfig()
 
-    const {appSourceId, tenantId} = (config || {})
+    const {appSourceId, tenantId} = config
 
     const dataCloud = useMemo(
         () =>
