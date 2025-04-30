@@ -4,9 +4,15 @@ inputs:
     description: Project key to specify project to generate ("retail-app-demo", "retail-app-ext" or "retail-app-no-ext")
     required: true
     type: string
+
+  TEMPLATE_VERSION:
+    description: Version of the template to use for the project
+    required: true
+    type: string
+
 runs:
   using: composite
   steps:
   - name: Generate new project based on project-key
-    run: node e2e/scripts/generate-project.js --project-key ${{ inputs.PROJECT_KEY }}
+    run: node e2e/scripts/generate-project.js --project-key ${{ inputs.PROJECT_KEY }} --templatevVersion ${{ inputs.TEMPLATE_VERSION }}
     shell: bash

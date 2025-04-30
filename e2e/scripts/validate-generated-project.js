@@ -30,26 +30,32 @@ const validateGeneratedArtifacts = async (project) => {
     })
 }
 
-const validateExtensibilityConfig = async (project) => {
+const validateExtensibilityConfig = async (project, templateVersion) => {
     const pkgPath = path.join(process.cwd(), config.GENERATED_PROJECTS_DIR, project, 'package.json')
     const pkg = require(pkgPath)
     return new Promise((resolve, reject) => {
         if (
-            pkg.hasOwnProperty('ccExtensibility') &&
-            pkg['ccExtensibility'].hasOwnProperty('extends') &&
-            pkg['ccExtensibility'].hasOwnProperty('overridesDir') &&
-            pkg['ccExtensibility'].extends === '@salesforce/retail-react-app' &&
-            pkg['ccExtensibility'].overridesDir === 'overrides'
+            !pkg.hasOwnProperty('ccExtensibility') ||
+            !pkg['ccExtensibility'].hasOwnProperty('extends') ||
+            !pkg['ccExtensibility'].hasOwnProperty('overridesDir') ||
+            !pkg['ccExtensibility'].extends === '@salesforce/retail-react-app' ||
+            !pkg['ccExtensibility'].overridesDir === 'overrides'
         ) {
-            resolve(`Successfully validated extensibility config for ${project}`)
+            reject(`Generated project ${project} is missing extensibility config in package.json`)
         }
-        reject(`Generated project ${project} is missing extensibility config in package.json`)
+
+        if (templateVersion && pkg.version !== templateVersion) {
+            reject(
+                `Generated project ${project} is using an incorrect template version. Expected ${templateVersion}, but got ${pkg.version}.`
+            )
+        }
+        resolve(`Successfully validated extensibility config for ${project}`)
     })
 }
 
 const main = async (opts) => {
     const {args} = opts
-    const [project] = args
+    const [project, templateVersion] = args
     if (opts.args.length !== 1) {
         console.log(program.helpInformation())
         process.exit(1)
@@ -58,7 +64,7 @@ const main = async (opts) => {
     try {
         console.log(await validateGeneratedArtifacts(project))
         if (project === 'retail-app-ext' || project === 'retail-app-ext') {
-            console.log(await validateExtensibilityConfig(project))
+            console.log(await validateExtensibilityConfig(project, templateVersion))
         }
     } catch (err) {
         console.error(err)
@@ -71,10 +77,12 @@ program.addArgument(
     new Argument('<project-key>', 'project key').choices([
         'retail-app-demo',
         'retail-app-ext',
-        'retail-app-no-ext'
+        'retail-app-no-ext',
+        'retail-app-private-client'
     ])
 )
 
+program.addArgument(new Argument('<template-version>', 'template version'))
 program.parse(process.argv)
 
 main(program)
