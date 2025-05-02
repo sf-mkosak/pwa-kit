@@ -94,7 +94,7 @@ export const setupMockServer = () => {
             return res(ctx.delay(0), ctx.status(200), ctx.json({}))
         }),
         // Mock Data Cloud API
-        rest.post('*.pc-rnd.c360a.salesforce.com/web/events/*', (req, res, ctx) => {
+        rest.post('*.c360a.salesforce.com/web/events/*', (req, res, ctx) => {
             return res(ctx.delay(0), ctx.status(204), ctx.json({}))
         })
     )
