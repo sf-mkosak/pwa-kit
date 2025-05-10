@@ -591,6 +591,8 @@ class Auth {
      * store the data in storage.
      */
     private handleTokenResponse(res: TokenResponse, isGuest: boolean) {
+        // Delete the SFRA auth token cookie if it exists
+        this.clearSFRAAuthToken()
         this.set('access_token', res.access_token)
         this.set('customer_id', res.customer_id)
         this.set('enc_user_id', res.enc_user_id)
