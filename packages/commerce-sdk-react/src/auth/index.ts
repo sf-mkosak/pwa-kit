@@ -21,7 +21,8 @@ import {
     onClient,
     getDefaultCookieAttributes,
     isAbsoluteUrl,
-    stringToBase64
+    stringToBase64,
+    extractCustomParameters
 } from '../utils'
 import {
     MOBIFY_PATH,
@@ -70,6 +71,15 @@ type LoginIDPUserParams = Parameters<Helpers['loginIDPUser']>[2]
 type AuthorizePasswordlessParams = Parameters<Helpers['authorizePasswordless']>[2]
 type LoginPasswordlessParams = Parameters<Helpers['getPasswordLessAccessToken']>[2]
 type LoginRegisteredUserB2CCredentials = Parameters<Helpers['loginRegisteredUserB2C']>[1]
+
+/**
+ * This is a temporary type until we can make a breaking change and modify the signature for
+ * loginRegisteredUserB2C so that it takes in a body rather than just credentials
+ *
+ */
+type LoginRegisteredUserCredentialsWithCustomParams = LoginRegisteredUserB2CCredentials & {
+    options?: {body: helpers.CustomRequestBody}
+}
 
 /**
  * The extended field is not from api response, we manually store the auth type,
@@ -581,6 +591,8 @@ class Auth {
      * store the data in storage.
      */
     private handleTokenResponse(res: TokenResponse, isGuest: boolean) {
+        // Delete the SFRA auth token cookie if it exists
+        this.clearSFRAAuthToken()
         this.set('access_token', res.access_token)
         this.set('customer_id', res.customer_id)
         this.set('enc_user_id', res.enc_user_id)
@@ -792,7 +804,7 @@ class Auth {
      * A wrapper method for commerce-sdk-isomorphic helper: loginGuestUser.
      *
      */
-    async loginGuestUser() {
+    async loginGuestUser(parameters?: helpers.CustomQueryParameters) {
         if (this.clientSecret && onClient() && this.clientSecret !== SLAS_SECRET_PLACEHOLDER) {
             this.logWarning(SLAS_SECRET_WARNING_MSG)
         }
@@ -812,7 +824,9 @@ class Auth {
             {
                 redirectURI: this.redirectURI,
                 dnt: dntPref,
-                ...(usid && {usid})
+                ...(usid && {usid}),
+                // custom parameters are sent only into the /authorize endpoint.
+                ...parameters
             }
         ] as const
         const callback = this.clientSecret
@@ -837,10 +851,9 @@ class Auth {
      *
      */
     async register(body: ShopperCustomersTypes.CustomerRegistration) {
-        const {
-            customer: {login},
-            password
-        } = body
+        const {customer, password, ...parameters} = body
+        const {login} = customer
+        const customParameters = extractCustomParameters(parameters)
 
         // login is optional field from isomorphic library
         // type CustomerRegistration
@@ -849,15 +862,23 @@ class Auth {
             throw new Error('Customer registration is missing login field.')
         }
 
+        // The registerCustomer endpoint currently does not support custom parameters
+        // so we make sure not to send any custom params here
         const res = await this.shopperCustomersClient.registerCustomer({
             headers: {
                 authorization: `Bearer ${this.get('access_token')}`
             },
-            body
+            body: {
+                customer,
+                password
+            }
         })
         await this.loginRegisteredUserB2C({
             username: login,
-            password
+            password,
+            options: {
+                body: customParameters
+            }
         })
         return res
     }
@@ -865,8 +886,14 @@ class Auth {
     /**
      * A wrapper method for commerce-sdk-isomorphic helper: loginRegisteredUserB2C.
      *
+     * Note: This uses the type LoginRegisteredUserCredentialsWithCustomParams rather than LoginRegisteredUserB2CCredentials
+     * as a workaround to allow custom parameters through because the login.mutateAsync hook will only pass through a single
+     * 'body' argument into this function.
+     *
+     * In the next major version release, we should modify this method so that it's input is a body containing credentials,
+     * similar to the input for the register function.
      */
-    async loginRegisteredUserB2C(credentials: LoginRegisteredUserB2CCredentials) {
+    async loginRegisteredUserB2C(credentials: LoginRegisteredUserCredentialsWithCustomParams) {
         if (this.clientSecret && onClient() && this.clientSecret !== SLAS_SECRET_PLACEHOLDER) {
             this.logWarning(SLAS_SECRET_WARNING_MSG)
         }
@@ -877,14 +904,16 @@ class Auth {
         const token = await helpers.loginRegisteredUserB2C(
             this.client,
             {
-                ...credentials,
+                username: credentials.username,
+                password: credentials.password,
                 clientSecret: this.clientSecret
             },
             {
                 redirectURI,
                 dnt: dntPref,
                 ...(usid && {usid})
-            }
+            },
+            credentials.options
         )
         this.handleTokenResponse(token, isGuest)
         if (onClient()) {
@@ -1066,12 +1095,14 @@ class Auth {
     async authorizeIDP(parameters: AuthorizeIDPParams) {
         const redirectURI = parameters.redirectURI || this.redirectURI
         const usid = this.get('usid')
+        const customParameters = extractCustomParameters(parameters)
         const {url, codeVerifier} = await helpers.authorizeIDP(
             this.client,
             {
                 redirectURI,
                 hint: parameters.hint,
-                ...(usid && {usid})
+                ...(usid && {usid}),
+                ...customParameters
             },
             this.isPrivate
         )

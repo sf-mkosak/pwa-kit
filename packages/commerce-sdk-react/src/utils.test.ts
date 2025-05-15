@@ -15,4 +15,20 @@ describe('Utils', () => {
         const isURL = utils.isAbsoluteUrl(url)
         expect(isURL).toBe(expected)
     })
+    test('extractCustomParameters only returns custom parameters', () => {
+        const parameters = {
+            c_param1: 'this is a custom',
+            param1: 'this is not a custom',
+            c_param2: 1,
+            param2: 2,
+            param3: false,
+            c_param3: true
+        }
+        const customParameters = utils.extractCustomParameters(parameters)
+        expect(customParameters).toEqual({
+            c_param1: 'this is a custom',
+            c_param2: 1,
+            c_param3: true
+        })
+    })
 })

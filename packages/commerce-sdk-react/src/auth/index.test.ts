@@ -7,7 +7,12 @@
 import Auth, {AuthData} from './'
 import {waitFor} from '@testing-library/react'
 import jwt from 'jsonwebtoken'
-import {helpers, ShopperCustomersTypes, ShopperLogin} from 'commerce-sdk-isomorphic'
+import {
+    helpers,
+    ShopperCustomersTypes,
+    ShopperCustomers,
+    ShopperLogin
+} from 'commerce-sdk-isomorphic'
 import * as utils from '../utils'
 import {SLAS_SECRET_PLACEHOLDER} from '../constant'
 import {ShopperLoginTypes} from 'commerce-sdk-isomorphic'
@@ -49,23 +54,23 @@ jest.mock('commerce-sdk-isomorphic', () => {
             authorizeIDP: jest.fn().mockResolvedValue(''),
             authorizePasswordless: jest.fn().mockResolvedValue(''),
             getPasswordLessAccessToken: jest.fn().mockResolvedValue('')
-        },
-        ShopperCustomers: jest.fn().mockImplementation(() => {
-            return {
-                updateCustomerPassword: () => {}
-            }
-        })
+        }
     }
 })
 
-jest.mock('../utils', () => ({
-    __esModule: true,
-    onClient: () => true,
-    getParentOrigin: jest.fn().mockResolvedValue(''),
-    isOriginTrusted: () => false,
-    getDefaultCookieAttributes: () => {},
-    isAbsoluteUrl: () => true
-}))
+jest.mock('../utils', () => {
+    const originalModule = jest.requireActual('../utils')
+
+    return {
+        ...originalModule,
+        __esModule: true,
+        onClient: () => true,
+        getParentOrigin: jest.fn().mockResolvedValue(''),
+        isOriginTrusted: () => false,
+        getDefaultCookieAttributes: () => {},
+        isAbsoluteUrl: () => true
+    }
+})
 
 /** The auth data we store has a slightly different shape than what we use. */
 type StoredAuthData = Omit<AuthData, 'refresh_token'> & {refresh_token_guest?: string}
@@ -491,6 +496,48 @@ describe('Auth', () => {
         expect(helpers.loginGuestUser).toHaveBeenCalled()
     })
 
+    test('loginGuestUser can pass along custom parameters', async () => {
+        const parameters = {c_test: 'custom parameter'}
+        const auth = new Auth(config)
+        await auth.loginGuestUser(parameters)
+        // The first argument is the SLAS config, which we don't need to verify in this case
+        // We only want to see that the custom parameters were included in the second argument
+        expect(helpers.loginGuestUser).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({c_test: 'custom parameter'})
+        )
+    })
+
+    test('register only sends custom parameters to registered login', async () => {
+        const registerCustomerSpy = jest
+            .spyOn(ShopperCustomers.prototype, 'registerCustomer')
+            .mockImplementation()
+        const auth = new Auth(config)
+        const inputToRegister = {
+            customer: baseCustomer,
+            password: 'test',
+            someOtherParameter: 'this should not be passed to login',
+            c_test: 'custom parameter'
+        }
+
+        await auth.register(inputToRegister)
+
+        // Body should only include credentials. No other parameters
+        expect(registerCustomerSpy).toHaveBeenCalledWith(
+            expect.objectContaining({body: {customer: baseCustomer, password: 'test'}})
+        )
+
+        // We don't need to verify the first and third parameters as they correspond to the SLAS client and mandatory parameters
+        // The second argument is credentials
+        // We want to see that only the custom parameters were included in the fourth argument and not any other parameters
+        expect(helpers.loginRegisteredUserB2C).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+            {body: {c_test: 'custom parameter'}}
+        )
+    })
+
     test.each([
         // When user has not selected DNT pref
         [true, undefined, {dnt: true}],
@@ -614,6 +661,28 @@ describe('Auth', () => {
         })
     })
 
+    test('loginRegisteredUserB2C can pass along custom parameters', async () => {
+        const options = {
+            body: {c_test: 'custom parameter'}
+        }
+        const credentials = {
+            username: 'test',
+            password: 'test'
+        }
+        const auth = new Auth(config)
+        await auth.loginRegisteredUserB2C({...credentials, options})
+        // We don't need to verify the first and third parameters as they correspond to the SLAS client and mandatory parameters
+        // The second argument is credentials, including the client secret
+        // The fourth argument is custom parameters
+        // We only want to see that the custom parameters were included in the fourth argument
+        expect(helpers.loginRegisteredUserB2C).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining(credentials),
+            expect.anything(),
+            options
+        )
+    })
+
     test('loginIDPUser calls isomorphic loginIDPUser', async () => {
         const auth = new Auth(config)
         await auth.loginIDPUser({redirectURI: 'redirectURI', code: 'test'})
@@ -634,10 +703,18 @@ describe('Auth', () => {
 
     test('authorizeIDP calls isomorphic authorizeIDP', async () => {
         const auth = new Auth(config)
-        await auth.authorizeIDP({redirectURI: 'redirectURI', hint: 'test'})
+        await auth.authorizeIDP({
+            redirectURI: 'redirectURI',
+            hint: 'test',
+            c_customParam: 'customParam'
+        })
         expect(helpers.authorizeIDP).toHaveBeenCalled()
         const functionArg = (helpers.authorizeIDP as jest.Mock).mock.calls[0][1]
-        expect(functionArg).toMatchObject({redirectURI: 'redirectURI', hint: 'test'})
+        expect(functionArg).toMatchObject({
+            redirectURI: 'redirectURI',
+            hint: 'test',
+            c_customParam: 'customParam'
+        })
     })
 
     test('authorizeIDP adds clientSecret to parameters when using private client', async () => {
@@ -698,6 +775,7 @@ describe('Auth', () => {
         expect(helpers.loginGuestUser).toHaveBeenCalled()
     })
     test('updateCustomerPassword calls registered login', async () => {
+        jest.spyOn(ShopperCustomers.prototype, 'updateCustomerPassword').mockImplementation()
         const auth = new Auth(config)
         await auth.updateCustomerPassword({
             customer: baseCustomer,
@@ -814,6 +892,57 @@ describe('Auth', () => {
         await waitFor(() => {
             expect(auth.getDnt()).toBeUndefined()
         })
+        getSpiedOn.mockRestore()
+        parseSlasJWTSpiedOn.mockRestore()
+    })
+
+    test('token call clears SFRA auth token cookie and sets all token from the response', async () => {
+        const getDntSpy = jest.spyOn(Auth.prototype, 'getDnt')
+        getDntSpy.mockImplementation((options?: {includeDefaults: boolean}) => {
+            if (options?.includeDefaults) {
+                return false
+            }
+            return undefined
+        })
+        const auth = new Auth(config)
+
+        // Set up initial SFRA auth token
+        // @ts-expect-error private method
+        auth.set('access_token_sfra', 'sfra_token')
+
+        // Verify the token was set correctly
+        expect(auth.get('access_token_sfra')).toBe('sfra_token')
+
+        // Mock the token response that loginGuestUser will return
+        const tokenResponse: ShopperLoginTypes.TokenResponse = {
+            access_token:
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjYy1zbGFzOjp6enJmXzAwMTo6c2NpZDpjOWM0NWJmZC0wZWQzLTRhYTIteHh4eC00MGY4ODk2MmI4MzY6OnVzaWQ6YjQ4NjUyMzMtZGU5Mi00MDM5LXh4eHgtYWEyZGZjOGMxZWE1IiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJpc2IiOiJ1aWRvOmVjb206OnVwbjpHdWVzdHx8am9obi5kb2VAZXhhbXBsZS5jb206OnVpZG46Sm9obiBEb2U6OmdjaWQ6Z3Vlc3QtMTIzNDU6OnJjaWQ6cmVnaXN0ZXJlZC02Nzg5MCIsImRudCI6InRlc3QifQ.9yKtUb22ExO-Q4VNQRAyIgTm63l3x5z45Uu1FIQa5dQ',
+            customer_id: 'customer_id_xyz',
+            enc_user_id: 'enc_user_id_xyz',
+            expires_in: 1800,
+            id_token: 'id_token_xyz',
+            refresh_token: 'refresh_token_xyz',
+            token_type: 'token_type_abc',
+            usid: 'usid_xyz',
+            idp_access_token: 'idp_access_token_xyz',
+            refresh_token_expires_in: DEFAULT_SLAS_REFRESH_TOKEN_GUEST_TTL
+        }
+
+        // Mock the helper to return token response
+        const loginGuestUserSpy = jest.spyOn(helpers, 'loginGuestUser')
+        loginGuestUserSpy.mockResolvedValueOnce(tokenResponse)
+
+        // Make the token call
+        await auth.loginGuestUser()
+
+        // Verify SFRA auth token is cleared
+        expect(auth.get('access_token_sfra')).toBeFalsy()
+
+        // Verify all token data is set correctly
+        expect(auth.get('access_token')).toBe(tokenResponse.access_token)
+
+        // Clean up the spy
+        getDntSpy.mockRestore()
     })
 })
 

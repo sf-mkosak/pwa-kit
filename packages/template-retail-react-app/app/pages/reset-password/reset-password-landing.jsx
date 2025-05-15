@@ -79,6 +79,7 @@ const ResetPasswordLanding = () => {
                         )}
                         <Stack spacing={3} pb={2}>
                             <Field {...fields.password} />
+                            <Field {...fields.confirmPassword} />
                             <PasswordRequirements value={password} />
                         </Stack>
                         <Button type="submit" isLoading={form.formState.isSubmitting}>

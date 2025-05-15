@@ -13,7 +13,8 @@ const {
     validateOrderHistory,
     validateWishlist,
     loginShopper,
-    navigateToPDPMobile
+    navigateToPDPMobile,
+    answerConsentTrackingForm
 } = require('../../scripts/pageHelpers')
 const {generateUserCredentials, getCreditCardExpiry} = require('../../scripts/utils.js')
 
@@ -142,6 +143,8 @@ test('Registered shopper can add item to wishlist', async ({page}) => {
             isMobile: true
         })
     }
+    // sometimes the consent tracking form appears again after login
+    await answerConsentTrackingForm(page)
 
     await expect(page.getByRole('heading', {name: /Account Details/i})).toBeVisible()
 

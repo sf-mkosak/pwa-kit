@@ -1,7 +1,6 @@
 const {expect} = require('@playwright/test')
 const config = require('../config')
-const {getCreditCardExpiry} = require('../scripts/utils.js')
-
+const {getCreditCardExpiry, runAccessibilityTest} = require('../scripts/utils.js')
 /**
  * Note: As a best practice, we should await the network call and assert on the network response rather than waiting for pageLoadState()
  * to avoid race conditions from lock in pageLoadState being released before network call resolves.
@@ -25,6 +24,7 @@ export const answerConsentTrackingForm = async (page, dnt = false) => {
         const answerButton = await page.locator('button:visible', {hasText: text})
         await expect(answerButton).toBeVisible()
         await answerButton.click()
+        await expect(answerButton).not.toBeVisible()
     }
 }
 
@@ -120,31 +120,36 @@ export const navigateToPDPDesktop = async ({page}) => {
 }
 
 /**
- * Navigates to the `Cotton Turtleneck Sweater` PDP (Product Detail Page) on Desktop 
+ * Navigates to the `Cotton Turtleneck Sweater` PDP (Product Detail Page) on Desktop
  * with the black variant selected.
- * 
+ *
  * @param {Object} options.page - Object that represents a tab/window in the browser provided by playwright
  */
-export const navigateToPDPDesktopSocial = async ({page, productName, productColor, productPrice}) => {
+export const navigateToPDPDesktopSocial = async ({
+    page,
+    productName,
+    productColor,
+    productPrice
+}) => {
     await page.goto(config.SOCIAL_LOGIN_RETAIL_APP_HOME)
     await answerConsentTrackingForm(page)
 
-    await page.getByRole("link", { name: "Womens" }).hover()
-    const topsNav = await page.getByRole("link", { name: "Tops", exact: true })
+    await page.getByRole('link', {name: 'Womens'}).hover()
+    const topsNav = await page.getByRole('link', {name: 'Tops', exact: true})
     await expect(topsNav).toBeVisible()
-  
+
     await topsNav.click()
 
     // PLP
-    const productTile = page.getByRole("link", {
-      name: RegExp(productName, 'i'),
+    const productTile = page.getByRole('link', {
+        name: RegExp(productName, 'i')
     })
     // selecting swatch
-    const productTileImg = productTile.locator("img")
+    const productTileImg = productTile.locator('img')
     await productTileImg.waitFor({state: 'visible'})
     await expect(productTile.getByText(RegExp(`From \\${productPrice}`, 'i'))).toBeVisible()
-  
-    await productTile.getByLabel(RegExp(productColor, 'i'), { exact: true }).hover()
+
+    await productTile.getByLabel(RegExp(productColor, 'i'), {exact: true}).hover()
     await productTile.click()
 }
 
@@ -235,7 +240,8 @@ export const registerShopper = async ({page, userCredentials, isMobile = false})
  *
  * @param {Object} options.page - Object that represents a tab/window in the browser provided by playwright
  */
-export const validateOrderHistory = async ({page}) => {
+export const validateOrderHistory = async ({page, a11y = {}}) => {
+    const {checkA11y = false, snapShotName} = a11y
     await page.goto(config.RETAIL_APP_HOME + '/account/orders')
     await answerConsentTrackingForm(page)
 
@@ -247,6 +253,9 @@ export const validateOrderHistory = async ({page}) => {
     await expect(page.getByRole('heading', {name: /Cotton Turtleneck Sweater/i})).toBeVisible()
     await expect(page.getByText(/Color: Black/i)).toBeVisible()
     await expect(page.getByText(/Size: L/i)).toBeVisible()
+    if (checkA11y) {
+        await runAccessibilityTest(page, [snapShotName, 'order-history-a11y-violations.json'])
+    }
 }
 
 /**
@@ -254,7 +263,9 @@ export const validateOrderHistory = async ({page}) => {
  *
  * @param {Object} options.page - Object that represents a tab/window in the browser provided by playwright
  */
-export const validateWishlist = async ({page}) => {
+export const validateWishlist = async ({page, a11y = {}}) => {
+    const {checkA11y = false, snapShotName} = a11y
+
     await page.goto(config.RETAIL_APP_HOME + '/account/wishlist')
     await answerConsentTrackingForm(page)
 
@@ -263,6 +274,9 @@ export const validateWishlist = async ({page}) => {
     await expect(page.getByRole('heading', {name: /Cotton Turtleneck Sweater/i})).toBeVisible()
     await expect(page.getByText(/Color: Black/i)).toBeVisible()
     await expect(page.getByText(/Size: L/i)).toBeVisible()
+    if (checkA11y) {
+        await runAccessibilityTest(page, [snapShotName, 'wishlist-violations.json'])
+    }
 }
 
 /**
@@ -304,16 +318,16 @@ export const loginShopper = async ({page, userCredentials}) => {
 
 /**
  * Attempts to log in a shopper with provided user credentials.
- * 
+ *
  * @param {Object} options.page - Object that represents a tab/window in the browser provided by playwright
  * @return {Boolean} - denotes whether or not login was successful
  */
 export const socialLoginShopper = async ({page}) => {
     try {
-        await page.goto(config.SOCIAL_LOGIN_RETAIL_APP_HOME + "/login")
+        await page.goto(config.SOCIAL_LOGIN_RETAIL_APP_HOME + '/login')
 
         await page.getByText(/Google/i).click()
-        await expect(page.getByText(/Sign in with Google/i)).toBeVisible({ timeout: 10000 })
+        await expect(page.getByText(/Sign in with Google/i)).toBeVisible({timeout: 10000})
         await page.waitForSelector('input[type="email"]')
 
         // Fill in the email input
@@ -327,11 +341,13 @@ export const socialLoginShopper = async ({page}) => {
         await page.click('#passwordNext')
         await page.waitForLoadState()
 
-        await expect(page.getByRole("heading", { name: /Account Details/i })).toBeVisible({timeout: 20000})
+        await expect(page.getByRole('heading', {name: /Account Details/i})).toBeVisible({
+            timeout: 20000
+        })
         await expect(page.getByText(/e2e.pwa.kit@gmail.com/i)).toBeVisible()
 
         // Password card should be hidden for social login user
-        await expect(page.getByRole("heading", { name: /Password/i })).toBeHidden()
+        await expect(page.getByRole('heading', {name: /Password/i})).toBeHidden()
 
         return true
     } catch {
@@ -370,13 +386,16 @@ export const searchProduct = async ({page, query, isMobile = false}) => {
  *      - email
  *      - password
  */
-export const checkoutProduct = async ({page, userCredentials}) => {
+export const checkoutProduct = async ({page, userCredentials, a11y = {checkA11y: false}}) => {
+    const {checkA11y, snapShotName} = a11y
     await page.getByRole('link', {name: 'Proceed to Checkout'}).click()
 
     await expect(page.getByRole('heading', {name: /Contact Info/i})).toBeVisible()
 
     await page.locator('input#email').fill('test@gmail.com')
-
+    if (checkA11y) {
+        await runAccessibilityTest(page, [snapShotName, 'checkout-a11y-violations-step-0.json'])
+    }
     await page.getByRole('button', {name: /Checkout as guest/i}).click()
 
     // Confirm the email input toggles to show edit button on clicking "Checkout as guest"
@@ -393,14 +412,15 @@ export const checkoutProduct = async ({page, userCredentials}) => {
     await page.locator('input#city').fill(userCredentials.address.city)
     await page.locator('select#stateCode').selectOption(userCredentials.address.state)
     await page.locator('input#postalCode').fill(userCredentials.address.zipcode)
-
+    if (checkA11y) {
+        await runAccessibilityTest(page, [snapShotName, 'checkout-a11y-violations-step-1.json'])
+    }
     await page.getByRole('button', {name: /Continue to Shipping Method/i}).click()
 
     // Confirm the shipping details form toggles to show edit button on clicking "Checkout as guest"
     const step1Card = page.locator("div[data-testid='sf-toggle-card-step-1']")
 
     await expect(step1Card.getByRole('button', {name: /Edit/i})).toBeVisible()
-
     await expect(page.getByRole('heading', {name: /Shipping & Gift Options/i})).toBeVisible()
 
     try {
@@ -410,6 +430,9 @@ export const checkoutProduct = async ({page, userCredentials}) => {
             name: /Continue to Payment/i
         })
         await expect(continueToPayment).toBeVisible({timeout: 2000})
+        if (checkA11y) {
+            await runAccessibilityTest(page, [snapShotName, 'checkout-a11y-violations-step-2.json'])
+        }
         await continueToPayment.click()
     } catch {}
 
@@ -420,7 +443,9 @@ export const checkoutProduct = async ({page, userCredentials}) => {
     await page.locator('input#holder').fill('John Doe')
     await page.locator('input#expiry').fill(creditCardExpiry)
     await page.locator('input#securityCode').fill('213')
-
+    if (checkA11y) {
+        await runAccessibilityTest(page, [snapShotName, 'checkout-a11y-violations-step-3.json'])
+    }
     await page.getByRole('button', {name: /Review Order/i}).click()
 
     page.getByRole('button', {name: /Place Order/i})
@@ -431,5 +456,160 @@ export const checkoutProduct = async ({page, userCredentials}) => {
     const orderConfirmationHeading = page.getByRole('heading', {
         name: /Thank you for your order!/i
     })
+    if (checkA11y) {
+        await runAccessibilityTest(page, [
+            snapShotName,
+            'checkout-a11y-violations-step-4-order-confirmation.json'
+        ])
+    }
     await orderConfirmationHeading.waitFor()
+}
+
+export const registeredUserHappyPath = async ({page, registeredUserCredentials, a11y = {}}) => {
+    const {checkA11y = false, snapShotName} = a11y
+    // Since we're re-using the same account, we need to check if the user is already registered.
+    // This ensures the tests are independent and not dependent on the order they are run in.
+    const isLoggedIn = await loginShopper({
+        page,
+        userCredentials: registeredUserCredentials
+    })
+
+    if (!isLoggedIn) {
+        await registerShopper({
+            page,
+            userCredentials: registeredUserCredentials
+        })
+    }
+    await page.waitForLoadState()
+    await expect(page.getByRole('heading', {name: /Account Details/i})).toBeVisible()
+
+    // Shop for items as registered user
+    await addProductToCart({page})
+
+    // cart
+    await page.getByLabel(/My cart/i).click()
+
+    await expect(page.getByRole('link', {name: /Cotton Turtleneck Sweater/i})).toBeVisible()
+
+    await page.getByRole('link', {name: 'Proceed to Checkout'}).click()
+
+    // Confirm the email input toggles to show sign out button on clicking "Checkout as guest"
+    const step0Card = page.locator("div[data-testid='sf-toggle-card-step-0']")
+
+    await expect(step0Card.getByRole('button', {name: /Sign Out/i})).toBeVisible()
+
+    if (checkA11y) {
+        await runAccessibilityTest(page, [snapShotName, 'checkout-a11y-violations-step-0.json'])
+    }
+    await expect(page.getByRole('heading', {name: /Shipping Address/i})).toBeVisible()
+
+    await page.locator('input#firstName').fill(registeredUserCredentials.firstName)
+    await page.locator('input#lastName').fill(registeredUserCredentials.lastName)
+    await page.locator('input#phone').fill(registeredUserCredentials.phone)
+    await page.locator('input#address1').fill(registeredUserCredentials.address.street)
+    await page.locator('input#city').fill(registeredUserCredentials.address.city)
+    await page.locator('select#stateCode').selectOption(registeredUserCredentials.address.state)
+    await page.locator('input#postalCode').fill(registeredUserCredentials.address.zipcode)
+
+    if (checkA11y) {
+        await runAccessibilityTest(page, [snapShotName, 'checkout-a11y-violations-step-1.json'])
+    }
+    await page.getByRole('button', {name: /Continue to Shipping Method/i}).click()
+
+    // Confirm the shipping details form toggles to show edit button on clicking "Checkout as guest"
+    const step1Card = page.locator("div[data-testid='sf-toggle-card-step-1']")
+
+    await expect(step1Card.getByRole('button', {name: /Edit/i})).toBeVisible()
+
+    await expect(page.getByRole('heading', {name: /Shipping & Gift Options/i})).toBeVisible()
+    await page.waitForLoadState()
+    if (checkA11y) {
+        await runAccessibilityTest(page, [snapShotName, 'checkout-a11y-violations-step-2.json'])
+    }
+
+    const continueToPayment = page.getByRole('button', {
+        name: /Continue to Payment/i
+    })
+
+    if (continueToPayment.isEnabled()) {
+        await continueToPayment.click()
+    }
+
+    // Confirm the shipping options form toggles to show edit button on clicking "Checkout as guest"
+    const step2Card = page.locator("div[data-testid='sf-toggle-card-step-2']")
+
+    await expect(step2Card.getByRole('button', {name: /Edit/i})).toBeVisible()
+
+    await expect(page.getByRole('heading', {name: /Payment/i})).toBeVisible()
+
+    const creditCardExpiry = getCreditCardExpiry()
+
+    await page.locator('input#number').fill('4111111111111111')
+    await page.locator('input#holder').fill('John Doe')
+    await page.locator('input#expiry').fill(creditCardExpiry)
+    await page.locator('input#securityCode').fill('213')
+    if (checkA11y) {
+        await runAccessibilityTest(page, [snapShotName, 'checkout-a11y-violations-step-3.json'])
+    }
+
+    await page.getByRole('button', {name: /Review Order/i}).click()
+
+    // Confirm the shipping options form toggles to show edit button on clicking "Checkout as guest"
+    const step3Card = page.locator("div[data-testid='sf-toggle-card-step-3']")
+
+    await expect(step3Card.getByRole('button', {name: /Edit/i})).toBeVisible()
+    page.getByRole('button', {name: /Place Order/i})
+        .first()
+        .click()
+
+    const orderConfirmationHeading = page.getByRole('heading', {
+        name: /Thank you for your order!/i
+    })
+
+    await orderConfirmationHeading.waitFor()
+
+    await expect(page.getByRole('heading', {name: /Order Summary/i})).toBeVisible()
+    await expect(page.getByText(/2 Items/i)).toBeVisible()
+    await expect(page.getByRole('link', {name: /Cotton Turtleneck Sweater/i})).toBeVisible()
+    if (checkA11y) {
+        await runAccessibilityTest(page, [
+            'registered',
+            'checkout-a11y-violations-step-4-order-confirmation.json'
+        ])
+    }
+    // order history
+    await validateOrderHistory({page, a11y})
+}
+
+export const wishlistFlow = async ({page, registeredUserCredentials, a11y = {}}) => {
+    const isLoggedIn = await loginShopper({
+        page,
+        userCredentials: registeredUserCredentials
+    })
+
+    if (!isLoggedIn) {
+        await registerShopper({
+            page,
+            userCredentials: registeredUserCredentials
+        })
+    }
+
+    // The consent form does not stick after registration
+    await answerConsentTrackingForm(page)
+    await page.waitForLoadState()
+
+    await expect(page.getByRole('heading', {name: /Account Details/i})).toBeVisible({
+        timeout: 20000
+    })
+    // Navigate to PDP
+    await navigateToPDPDesktop({page})
+
+    // add product to wishlist
+    await expect(page.getByRole('heading', {name: /Cotton Turtleneck Sweater/i})).toBeVisible()
+
+    await page.getByRole('radio', {name: 'L', exact: true}).click()
+    await page.getByRole('button', {name: /Add to Wishlist/i}).click()
+
+    // wishlist
+    await validateWishlist({page, a11y})
 }
