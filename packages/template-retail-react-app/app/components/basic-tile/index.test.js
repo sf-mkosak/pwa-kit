@@ -50,7 +50,7 @@ describe('BasicTile', () => {
         expect(imageLink).toHaveAttribute('href', '/category/womens-outfits')
     })
 
-    test('correclty applies hover styles to title', async () => {
+    test('correctly applies hover styles to title', async () => {
         const user = userEvent.setup()
         renderWithProviders(<BasicTile {...data} />)
         const title = screen.getByText('title')
