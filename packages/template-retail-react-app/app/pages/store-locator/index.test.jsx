@@ -179,7 +179,6 @@ test('Allows customer to go to store locator page and then select a new store', 
     const storeRadio = within(storeAccordionItem).getByRole('radio')
 
     await user.click(storeRadio)
-    
     expect(storeRadio).toBeChecked()
 })
 
