@@ -68,6 +68,8 @@ export type NullToOptional<T> = Omit<T, NullKeys<T>> & {
     [K in keyof T]?: NonNullable<T[K]>
 }
 
+// --- API CLIENTS --- //
+
 export type ApiClientConfigParams = {
     clientId: string
     organizationId: string
