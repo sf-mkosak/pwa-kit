@@ -8,6 +8,7 @@
 import Cookies, {CookieAttributes} from 'js-cookie'
 import {IFRAME_HOST_ALLOW_LIST} from './constant'
 import {helpers} from 'commerce-sdk-isomorphic'
+import { ParameterInjectionConfig } from './hooks/types'
 
 /** Utility to determine if you are on the browser (client) or not. */
 export const onClient = (): boolean => typeof window !== 'undefined'
@@ -160,4 +161,42 @@ export const extractCustomParameters = (
         throw new Error('Invalid input. Expecting an object as an input.')
     }
     return Object.fromEntries(Object.entries(parameters).filter(([key]) => key.startsWith('c_')))
+}
+
+export const withParameterInjection = <T extends Record<string, Function>>(
+    client: T,
+    config: ParameterInjectionConfig
+): T => {
+    const {props, transformer, onBeforeCall, onAfterCall, onError} = config
+
+    // Get parameters from provider
+    let {children, ...params} = props
+
+    return new Proxy(client, {
+        get(target, methodName: string) {
+            const originalMethod = target[methodName]
+
+            if (typeof originalMethod !== 'function') {
+                return originalMethod
+            }
+
+            return async function (options: any = {}) {
+                try {
+                    if (transformer) {
+                        options = await Promise.resolve(transformer(params, methodName, options))
+                    }
+
+                    onBeforeCall?.(methodName, params, options)
+
+                    const result = await originalMethod.call(target, options)
+
+                    onAfterCall?.(methodName, result, options)
+                    return result
+                } catch (error) {
+                    onError?.(methodName, error, options)
+                    throw error
+                }
+            }
+        }
+    })
 }

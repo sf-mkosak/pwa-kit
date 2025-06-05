@@ -20,6 +20,7 @@ import {
     ShopperStores
 } from 'commerce-sdk-isomorphic'
 import {helpers} from 'commerce-sdk-isomorphic'
+import { CommerceApiProviderProps } from '../provider'
 
 // --- GENERAL UTILITIES --- //
 
@@ -226,3 +227,25 @@ export type TMutationVariables = {
     parameters?: {[key: string]: string | number | boolean | string[] | number[]}
     headers?: {[key: string]: string}
 } | void
+
+export type ParameterFilter<T> = (params: T, methodName: string) => Partial<T>
+export type ParameterTransformer<T> = (
+    params: T,
+    methodName: string,
+    options: any
+) => any | Promise<any>
+export type BeforeCallCallback<TParams> = (
+    methodName: string,
+    params: TParams,
+    options: any
+) => void
+export type AfterCallCallback<TParams> = (methodName: string, result: any, params: TParams) => void
+export type ErrorCallback<TParams> = (methodName: string, error: any, params: TParams) => void
+
+export interface ParameterInjectionConfig<TParams = Record<string, any>> {
+    props: CommerceApiProviderProps
+    transformer?: ParameterTransformer<TParams>
+    onBeforeCall?: BeforeCallCallback<TParams>
+    onAfterCall?: AfterCallCallback<TParams>
+    onError?: ErrorCallback<TParams>
+}

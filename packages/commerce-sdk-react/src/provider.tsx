@@ -6,9 +6,21 @@
  */
 import React, {ReactElement, useEffect, useMemo} from 'react'
 import Auth from './auth'
-import {ApiClientConfigParams, ApiClients} from './hooks/types'
+import {
+    AfterCallCallback,
+    ApiClientConfigParams,
+    ApiClients,
+    BeforeCallCallback,
+    ParameterTransformer,
+    ErrorCallback
+} from './hooks/types'
 import {Logger} from './types'
-import {DWSID_COOKIE_NAME, MOBIFY_PATH, SERVER_AFFINITY_HEADER_KEY, SLAS_PRIVATE_PROXY_PATH} from './constant'
+import {
+    DWSID_COOKIE_NAME,
+    MOBIFY_PATH,
+    SERVER_AFFINITY_HEADER_KEY,
+    SLAS_PRIVATE_PROXY_PATH
+} from './constant'
 import {
     ShopperBaskets,
     ShopperContexts,
@@ -24,6 +36,7 @@ import {
     ShopperBasketsTypes,
     ShopperStores
 } from 'commerce-sdk-isomorphic'
+import {withParameterInjection} from './utils'
 
 export interface CommerceApiProviderProps extends ApiClientConfigParams {
     children: React.ReactNode
@@ -47,66 +60,6 @@ export interface CommerceApiProviderProps extends ApiClientConfigParams {
     onBeforeCall?: BeforeCallCallback<Record<string, any>>
     onAfterCall?: AfterCallCallback<Record<string, any>>
     onError?: ErrorCallback<Record<string, any>>
-}
-
-export type ParameterFilter<T> = (params: T, methodName: string) => Partial<T>
-export type ParameterTransformer<T> = (
-    params: T,
-    methodName: string,
-    options: any
-) => any | Promise<any>
-export type BeforeCallCallback<TParams> = (
-    methodName: string,
-    params: TParams,
-    options: any
-) => void
-export type AfterCallCallback<TParams> = (methodName: string, result: any, params: TParams) => void
-export type ErrorCallback<TParams> = (methodName: string, error: any, params: TParams) => void
-
-export interface ParameterInjectionConfig<TParams = Record<string, any>> {
-    props: CommerceApiProviderProps
-    transformer?: ParameterTransformer<TParams>
-    onBeforeCall?: BeforeCallCallback<TParams>
-    onAfterCall?: AfterCallCallback<TParams>
-    onError?: ErrorCallback<TParams>
-}
-
-export const withParameterInjection = <T extends Record<string, Function>>(
-    client: T,
-    config: ParameterInjectionConfig
-): T => {
-    const {props, transformer, onBeforeCall, onAfterCall, onError} = config
-
-    // Get parameters from provider
-    let {children, ...params} = props
-
-    return new Proxy(client, {
-        get(target, methodName: string) {
-            const originalMethod = target[methodName]
-
-            if (typeof originalMethod !== 'function') {
-                return originalMethod
-            }
-
-            return async function (options: any = {}) {
-                try {
-                    if (transformer) {
-                        options = await Promise.resolve(transformer(params, methodName, options))
-                    }
-
-                    onBeforeCall?.(methodName, params, options)
-
-                    const result = await originalMethod.call(target, options)
-
-                    onAfterCall?.(methodName, result, options)
-                    return result
-                } catch (error) {
-                    onError?.(methodName, error, options)
-                    throw error
-                }
-            }
-        }
-    })
 }
 
 /**
