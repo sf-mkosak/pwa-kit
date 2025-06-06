@@ -6,11 +6,7 @@
  */
 import React, {ReactElement, useEffect, useMemo} from 'react'
 import Auth from './auth'
-import {
-    ApiClientConfigParams,
-    ApiClients,
-    SDKClientTransformer,
-} from './hooks/types'
+import {ApiClientConfigParams, ApiClients, SDKClientTransformer} from './hooks/types'
 import {Logger} from './types'
 import {
     DWSID_COOKIE_NAME,
@@ -136,7 +132,7 @@ const CommerceApiProvider = (props: CommerceApiProviderProps): ReactElement => {
         passwordlessLoginCallbackURI,
         refreshTokenRegisteredCookieTTL,
         refreshTokenGuestCookieTTL,
-        apiClients,
+        apiClients
     } = props
 
     // Set the logger based on provided configuration, or default to the console object if no logger is provided
@@ -208,7 +204,7 @@ const CommerceApiProvider = (props: CommerceApiProviderProps): ReactElement => {
             Object.entries(apiClients ?? {}).forEach(([key, apiClient]) => {
                 clients[key] = transformSDKClient(apiClient, {
                     props,
-                    transformer: _defaultTransformer,
+                    transformer: _defaultTransformer
                     // onError
                 })
             })
