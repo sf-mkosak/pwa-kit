@@ -27,6 +27,8 @@ import {
     basketWithProductBundle,
     bundleProductItemsForPDP
 } from '@salesforce/retail-react-app/app/mocks/product-bundle'
+import {FormattedMessage} from 'react-intl'
+import frMessages from '@salesforce/retail-react-app/app/static/translations/compiled/fr-FR.json'
 
 jest.setTimeout(60000)
 
@@ -488,3 +490,18 @@ describe('product bundles', () => {
         })
     })
 })
+
+test('renders "Add to Cart" button in French', async () => {
+    global.server.use(
+        rest.get('*/products/:productId', (req, res, ctx) => {
+            return res(ctx.json(masterProduct))
+        })
+    );
+
+    renderWithProviders(<MockedComponent />, { wrapperProps: { locale: {id: 'fr-FR'}, messages: frMessages } });
+
+    expect(await screen.findByTestId('product-details-page')).toBeInTheDocument();
+
+    expect(screen.getByRole('button', {name: /ajouter au panier/i})).toBeInTheDocument();
+});
+
