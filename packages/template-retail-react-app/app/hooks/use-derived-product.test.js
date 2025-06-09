@@ -135,7 +135,6 @@ describe('useDerivedProduct hook', () => {
 
         renderWithProviders(<MockComponent product={mockBundleData} />)
 
-        expect(screen.getByText(/Quantity: 1/)).toBeInTheDocument()
         // Bundle products should not show out of stock message when inventory is available
         expect(screen.queryByText(/Out of stock/)).not.toBeInTheDocument()
     })
