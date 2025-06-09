@@ -6,7 +6,20 @@
  */
 
 import React, {useState, createContext, ReactNode} from 'react'
-import {Config as StoreLocatorConfig} from '../types/config'
+
+export interface StoreLocatorConfig {
+    path?: string
+    radius?: number
+    radiusUnit?: string
+    defaultPageSize?: number
+    defaultCountry: string
+    defaultCountryCode: string
+    defaultPostalCode: string
+    supportedCountries: Array<{
+        countryCode: string
+        countryName: string
+    }>
+}
 
 type Mode = 'device' | 'input'
 interface FormValues {
