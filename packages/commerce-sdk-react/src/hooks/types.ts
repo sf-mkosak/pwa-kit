@@ -94,7 +94,7 @@ export interface ApiClients {
     shopperPromotions?: ShopperPromotions<ApiClientConfigParams>
     shopperSearch?: ShopperSearch<ApiClientConfigParams>
     shopperSeo?: ShopperSeo<ApiClientConfigParams>
-    shopperStores: ShopperStores<ApiClientConfigParams>
+    shopperStores?: ShopperStores<ApiClientConfigParams>
 }
 
 export type ApiClient = NonNullable<ApiClients[keyof ApiClients]>
