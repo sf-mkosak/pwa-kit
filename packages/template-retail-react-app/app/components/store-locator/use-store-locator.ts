@@ -8,11 +8,11 @@
 import {useContext} from 'react'
 import {useSearchStores} from '@salesforce/commerce-sdk-react'
 import {StoreLocatorContext} from './provider'
-import type {StoreLocatorState, FormValues, DeviceCoordinates} from './provider'
+import type {StoreLocatorState, StoreLocatorFormValues, StoreLocatorDeviceCoordinates} from './types'
 
 interface StoreLocatorActions {
-    setFormValues: (formValues: FormValues) => void
-    setDeviceCoordinates: (coordinates: DeviceCoordinates) => void
+    setFormValues: (formValues: StoreLocatorFormValues) => void
+    setDeviceCoordinates: (coordinates: StoreLocatorDeviceCoordinates) => void
 }
 
 type UseStoreLocatorReturn = StoreLocatorState &
@@ -73,11 +73,11 @@ export const useStoreLocator = (): UseStoreLocatorReturn => {
     // by entering a postal code and country code.
     // The device mode is when the user is searching for a store by sharing their location.
     // The mode is implicitly set by user's action.
-    const setFormValues = (formValues: FormValues) => {
+    const setFormValues = (formValues: StoreLocatorFormValues) => {
         setState((prev) => ({...prev, formValues, mode: 'input'}))
     }
 
-    const setDeviceCoordinates = (coordinates: DeviceCoordinates) => {
+    const setDeviceCoordinates = (coordinates: StoreLocatorDeviceCoordinates) => {
         setState((prev) => ({
             ...prev,
             deviceCoordinates: coordinates,

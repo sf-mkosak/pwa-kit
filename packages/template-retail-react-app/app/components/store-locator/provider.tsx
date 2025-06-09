@@ -5,49 +5,8 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import React, {useState, createContext, ReactNode} from 'react'
-
-export interface StoreLocatorConfig {
-    radius?: number
-    radiusUnit?: string
-    defaultPageSize?: number
-    defaultCountry: string
-    defaultCountryCode: string
-    defaultPostalCode: string
-    supportedCountries: Array<{
-        countryCode: string
-        countryName: string
-    }>
-}
-
-type Mode = 'device' | 'input'
-interface FormValues {
-    countryCode: string
-    postalCode: string
-}
-
-interface DeviceCoordinates {
-    latitude: number | null
-    longitude: number | null
-}
-
-interface StoreLocatorState {
-    mode: Mode
-    formValues: FormValues
-    deviceCoordinates: DeviceCoordinates
-    config: StoreLocatorConfig
-}
-
-interface StoreLocatorContextValue {
-    state: StoreLocatorState
-    setState: React.Dispatch<React.SetStateAction<StoreLocatorState>>
-}
-
-interface StoreLocatorProviderProps {
-    config: StoreLocatorConfig
-    children: ReactNode
-}
-
+import React, {useState, createContext} from 'react'
+import {StoreLocatorContextValue, StoreLocatorState, StoreLocatorProviderProps} from './types'
 export const StoreLocatorContext = createContext<StoreLocatorContextValue | null>(null)
 
 export const StoreLocatorProvider: React.FC<StoreLocatorProviderProps> = ({config, children}) => {
@@ -71,5 +30,3 @@ export const StoreLocatorProvider: React.FC<StoreLocatorProviderProps> = ({confi
 
     return <StoreLocatorContext.Provider value={value}>{children}</StoreLocatorContext.Provider>
 }
-
-export type {StoreLocatorContextValue, StoreLocatorState, Mode, FormValues, DeviceCoordinates}

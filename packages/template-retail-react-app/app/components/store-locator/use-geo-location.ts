@@ -6,12 +6,12 @@
  */
 
 import {useEffect, useState} from 'react'
-import type {DeviceCoordinates} from './provider'
+import type {StoreLocatorDeviceCoordinates} from './types'
 
 export function useGeolocation(options = {}) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<GeolocationPositionError | null>(null)
-    const [coordinates, setCoordinates] = useState<DeviceCoordinates>({
+    const [coordinates, setCoordinates] = useState<StoreLocatorDeviceCoordinates>({
         latitude: null,
         longitude: null
     })
