@@ -27,16 +27,16 @@ export const StoreLocatorList: React.FC<StoreLocatorListProps> = () => {
         if (data?.total === 0) return 'Sorry, there are no locations in this area'
 
         if (mode === 'input') {
+            const countryName =
+                config.supportedCountries.length !== 0
+                    ? config.supportedCountries.find(
+                          (o: {countryCode: string}) => o.countryCode === formValues.countryCode
+                      )?.countryName || config.defaultCountry
+                    : config.defaultCountry
+
             return `Viewing stores within ${String(config.radius)}${String(
-                String(config.radiusUnit)
-            )} of ${String(data?.data[0].postalCode)} in 
-                ${
-                    config.supportedCountries.length !== 0
-                        ? config.supportedCountries.find(
-                              (o: {countryCode: string}) => o.countryCode === formValues.countryCode
-                          )?.countryName || config.defaultCountry
-                        : config.defaultCountry
-                }`
+                config.radiusUnit
+            )} of ${String(data?.data[0].postalCode)} in ${String(countryName)}`
         }
 
         return 'Viewing stores near your location'
