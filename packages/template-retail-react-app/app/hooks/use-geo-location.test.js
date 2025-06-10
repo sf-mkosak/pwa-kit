@@ -5,7 +5,7 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import {renderHook, act} from '@testing-library/react'
-import {useGeolocation} from '@salesforce/retail-react-app/app/components/store-locator/use-geo-location'
+import {useGeolocation} from '@salesforce/retail-react-app/app/hooks/use-geo-location'
 
 describe('useGeolocation', () => {
     const mockGeolocation = {
