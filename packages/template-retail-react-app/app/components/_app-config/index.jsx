@@ -35,8 +35,8 @@ import {CommerceApiProvider} from '@salesforce/commerce-sdk-react'
 import {withReactQuery} from '@salesforce/pwa-kit-react-sdk/ssr/universal/components/with-react-query'
 import {useCorrelationId} from '@salesforce/pwa-kit-react-sdk/ssr/universal/hooks'
 import {ReactQueryDevtools} from '@tanstack/react-query-devtools'
-import {DEFAULT_DNT_STATE} from '@salesforce/retail-react-app/app/constants'
 import {
+    DEFAULT_DNT_STATE,
     STORE_LOCATOR_RADIUS,
     STORE_LOCATOR_RADIUS_UNIT,
     STORE_LOCATOR_DEFAULT_COUNTRY,
@@ -44,7 +44,7 @@ import {
     STORE_LOCATOR_DEFAULT_POSTAL_CODE,
     STORE_LOCATOR_DEFAULT_PAGE_SIZE,
     STORE_LOCATOR_SUPPORTED_COUNTRIES
-} from '@salesforce/retail-react-app/app/components/store-locator/constants'
+} from '@salesforce/retail-react-app/app/constants'
 import {StoreLocatorProvider} from '@salesforce/retail-react-app/app/components/store-locator'
 /**
  * Use the AppConfig component to inject extra arguments into the getProps

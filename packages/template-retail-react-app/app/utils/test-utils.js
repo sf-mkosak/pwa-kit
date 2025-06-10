@@ -33,7 +33,7 @@ import {
     STORE_LOCATOR_DEFAULT_POSTAL_CODE,
     STORE_LOCATOR_DEFAULT_PAGE_SIZE,
     STORE_LOCATOR_SUPPORTED_COUNTRIES
-} from '@salesforce/retail-react-app/app/components/store-locator/constants'
+} from '@salesforce/retail-react-app/app/constants'
 import jwt from 'jsonwebtoken'
 import userEvent from '@testing-library/user-event'
 // This JWT's payload is special
