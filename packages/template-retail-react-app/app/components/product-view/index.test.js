@@ -361,12 +361,10 @@ test('renders "Add to Cart" and "Add to Wishlist" buttons in French', async () =
             wrapperProps: {locale: {id: 'fr-FR'}, messages: frMessages}
         }
     )
-    // Wait for at least one product title to be rendered
+    
     const titles = await screen.findAllByText(/Black Single Pleat Athletic Fit Wool Suit/i)
     expect(titles.length).toBeGreaterThan(0)
-    // Check Add to Cart button in French
     expect(screen.getByRole('button', {name: /ajouter au panier/i})).toBeInTheDocument()
-    // Check Add to Wishlist button in French
     expect(
         screen.getByRole('button', {name: /ajouter à la liste de souhaits/i})
     ).toBeInTheDocument()
