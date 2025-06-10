@@ -6,6 +6,7 @@
  */
 
 import React from 'react'
+import PropTypes from 'prop-types'
 import {
     Modal,
     ModalBody,
@@ -47,4 +48,9 @@ export const StoreLocatorModal = ({isOpen, onClose}) => {
             </ModalContent>
         </Modal>
     )
+}
+
+StoreLocatorModal.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired
 }

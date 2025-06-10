@@ -32,13 +32,13 @@ export function useGeolocation(options = {}) {
                     setLoading(false)
                 },
                 (err) => {
-                    setError(err instanceof GeolocationPositionError ? err : null)
+                    setError(err)
                     setLoading(false)
                 },
                 options
             )
         } catch (err) {
-            setError(err instanceof GeolocationPositionError ? err : null)
+            setError(err)
             setLoading(false)
         }
     }

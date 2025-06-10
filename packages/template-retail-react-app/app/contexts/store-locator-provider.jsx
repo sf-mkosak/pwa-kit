@@ -6,6 +6,8 @@
  */
 
 import React, {useState, createContext} from 'react'
+import PropTypes from 'prop-types'
+
 export const StoreLocatorContext = createContext(null)
 
 export const StoreLocatorProvider = ({config, children}) => {
@@ -28,4 +30,12 @@ export const StoreLocatorProvider = ({config, children}) => {
     }
 
     return <StoreLocatorContext.Provider value={value}>{children}</StoreLocatorContext.Provider>
+}
+
+StoreLocatorProvider.propTypes = {
+    config: PropTypes.shape({
+        defaultCountryCode: PropTypes.string.isRequired,
+        defaultPostalCode: PropTypes.string.isRequired
+    }).isRequired,
+    children: PropTypes.node
 }
