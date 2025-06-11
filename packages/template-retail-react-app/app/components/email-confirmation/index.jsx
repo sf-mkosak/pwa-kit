@@ -70,6 +70,7 @@ const PasswordlessEmailConfirmation = ({form, submitForm, email = ''}) => {
     )
 }
 
+
 PasswordlessEmailConfirmation.propTypes = {
     form: PropTypes.object,
     submitForm: PropTypes.func,
