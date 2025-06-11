@@ -27,6 +27,7 @@ const PasswordlessEmailConfirmation = ({form, submitForm, email = ''}) => {
                     aria-live="polite"
                     aria-labelledby="email-confirmation-title"
                     aria-describedby="email-confirmation-desc email-confirmation-spam"
+                    tabIndex="-1"
                 >
                     <BrandLogo width="60px" height="auto" aria-hidden={true} />
                     <Text
