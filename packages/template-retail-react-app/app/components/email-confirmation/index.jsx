@@ -16,7 +16,6 @@ const PasswordlessEmailConfirmation = ({form, submitForm, email = ''}) => {
         <form
             onSubmit={form.handleSubmit(submitForm)}
             data-testid="sf-form-resend-passwordless-email"
-            aria-label={`Email confirmation form for ${email}`}
         >
             <Stack spacing={6}>
                 <Stack
