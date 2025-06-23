@@ -53,6 +53,9 @@ describe('OpenTelemetry Server Tracing', () => {
     let mockResource
     let mockPropagation
     let consoleWarnSpy
+    let initializeServerTracing
+    let shutdownServerTracing
+    let isServerTracingInitialized
 
     beforeEach(() => {
         // Reset all mocks
@@ -94,8 +97,16 @@ describe('OpenTelemetry Server Tracing', () => {
         mockB3Propagator.mockImplementation(() => mockB3PropagatorInstance)
     })
 
-    afterEach(() => {
+    afterEach(async () => {
         consoleWarnSpy.mockRestore()
+        
+        // Clean up any existing provider
+        if (shutdownServerTracing) {
+            await shutdownServerTracing()
+        }
+        
+        // Reset module state to ensure clean state between tests
+        jest.resetModules()
     })
 
     describe('initializeServerTracing', () => {
