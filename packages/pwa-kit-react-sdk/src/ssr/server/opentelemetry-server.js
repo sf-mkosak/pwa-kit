@@ -22,7 +22,7 @@ let provider = null
  */
 export const initializeServerTracing = () => {
     try {
-        // Initialize the tracer provider  
+        // Initialize the tracer provider
         provider = new NodeTracerProvider({
             resource: new Resource({
                 [SemanticResourceAttributes.SERVICE_NAME]: SERVICE_NAME

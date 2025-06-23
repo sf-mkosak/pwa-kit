@@ -50,7 +50,6 @@ describe('OpenTelemetry Server Tracing', () => {
     let initializeServerTracing
     let shutdownServerTracing
     let isServerTracingInitialized
-    let getServerTracingProvider
 
     beforeEach(() => {
         // Reset all mocks
@@ -66,6 +65,7 @@ describe('OpenTelemetry Server Tracing', () => {
         const {B3Propagator} = require('@opentelemetry/propagator-b3')
         const {Resource} = require('@opentelemetry/resources')
         const {propagation} = require('@opentelemetry/api')
+        const opentelemetryServer = require('./opentelemetry-server')
         /* eslint-enable @typescript-eslint/no-var-requires */
 
         mockNodeTracerProvider = NodeTracerProvider
@@ -92,11 +92,9 @@ describe('OpenTelemetry Server Tracing', () => {
         mockB3Propagator.mockImplementation(() => mockB3PropagatorInstance)
 
         // Import the functions after mocks are set up
-        const opentelemetryServer = require('./opentelemetry-server')
         initializeServerTracing = opentelemetryServer.initializeServerTracing
         shutdownServerTracing = opentelemetryServer.shutdownServerTracing
         isServerTracingInitialized = opentelemetryServer.isServerTracingInitialized
-        getServerTracingProvider = opentelemetryServer.getServerTracingProvider
     })
 
     afterEach(async () => {
