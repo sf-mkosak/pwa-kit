@@ -7,6 +7,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import {HookRecommenderTool} from './HookRecommenderTool.js'
+import {toKebabCase, toPascalCase} from './utils.js'
 
 export const getCopyrightHeader = () => {
     const year = new Date().getFullYear()
@@ -127,7 +128,9 @@ export class CreateNewComponentTool {
      * @param {string} [componentCode] - Code of the component to create. If not provided, a default skeleton will be used.
      */
     async createComponentFile(componentName, projectDir, componentCode) {
-        const componentDir = path.join(projectDir, componentName)
+        const kebabDirName = toKebabCase(componentName)
+        const pascalComponentName = toPascalCase(componentName)
+        const componentDir = path.join(projectDir, kebabDirName)
         try {
             await fs.mkdir(componentDir, {recursive: true})
             // Create component file
@@ -137,13 +140,13 @@ export class CreateNewComponentTool {
                     ? `${getCopyrightHeader()}
 import React from 'react';
 
-const ${componentName} = () => {
+const ${pascalComponentName} = () => {
   return (
-    <div>${componentName} component</div>
+    <div>${pascalComponentName} component</div>
   );
 };
 
-export default ${componentName};
+export default ${pascalComponentName};
 `
                     : componentCode
             await fs.writeFile(componentFilePath, codeToWrite, 'utf-8')
@@ -160,7 +163,9 @@ export default ${componentName};
      * @param {string} projectDir - The absolute path to the project directory where the component exists.
      */
     async createTestFile(componentName, projectDir) {
-        const componentDir = path.join(projectDir, componentName)
+        const kebabDirName = toKebabCase(componentName)
+        const pascalComponentName = toPascalCase(componentName)
+        const componentDir = path.join(projectDir, kebabDirName)
         try {
             // Create test file
             const testFilePath = path.join(componentDir, 'index.test.jsx')
@@ -168,12 +173,12 @@ export default ${componentName};
 import React from 'react'
 import {screen} from '@testing-library/react'
 import {renderWithProviders} from '@salesforce/retail-react-app/app/utils/test-utils'
-import ${componentName} from './index'
+import ${pascalComponentName} from './index'
 
-describe('${componentName}', () => {
+describe('${pascalComponentName}', () => {
     test('renders correctly', () => {
-        renderWithProviders(<${componentName} />)
-        expect(screen.getByText('${componentName} component')).toBeInTheDocument()
+        renderWithProviders(<${pascalComponentName} />)
+        expect(screen.getByText('${pascalComponentName} component')).toBeInTheDocument()
     })
 })
 `
@@ -193,7 +198,9 @@ describe('${componentName}', () => {
      * @param {object} dataModel - The data model schema (properties object).
      */
     async updateComponentToPresentational(entityType, componentName, location, dataModel, options = {}) {
-        const componentDir = path.join(location, componentName)
+        const kebabDirName = toKebabCase(componentName)
+        const pascalComponentName = toPascalCase(componentName)
+        const componentDir = path.join(location, kebabDirName)
         await fs.mkdir(componentDir, {recursive: true})
         const componentFilePath = path.join(componentDir, 'index.jsx')
         const fields = Object.keys(dataModel)
@@ -207,7 +214,7 @@ describe('${componentName}', () => {
     import PropTypes from 'prop-types';
     import { Box, Text, Image, Stack } from '@chakra-ui/react';
     
-    const ${componentName} = ({ products }) => (
+    const ${pascalComponentName} = ({ products }) => (
         <Stack spacing={4}>
             {products.map(product => (
                 <Box key={product.productId} borderWidth="1px" borderRadius="md" p={4}>
@@ -227,7 +234,7 @@ describe('${componentName}', () => {
         </Stack>
     );
     
-    ${componentName}.propTypes = {
+    ${pascalComponentName}.propTypes = {
         products: PropTypes.arrayOf(PropTypes.shape({
             productId: PropTypes.string,
             name: PropTypes.string,
@@ -237,7 +244,7 @@ describe('${componentName}', () => {
         })).isRequired
     };
     
-    export default ${componentName};
+    export default ${pascalComponentName};
     `
             } else {
                 // Single product component (with selectors, image, etc.)
@@ -277,7 +284,7 @@ const getImageForSelection = (imageGroups, selected) => {
     return null;
 };
 
-const ${componentName} = ({ product }) => {
+const ${pascalComponentName} = ({ product }) => {
     const { variationAttributes = [], variants = [], imageGroups = [] } = product;
     const [selected, setSelected] = useState(() => {
         const initial = {};
@@ -372,7 +379,7 @@ const ${componentName} = ({ product }) => {
     );
 };
 
-${componentName}.propTypes = {
+${pascalComponentName}.propTypes = {
     product: PropTypes.shape({
         name: PropTypes.string,
         assigned_categories: PropTypes.any,
@@ -383,7 +390,7 @@ ${componentName}.propTypes = {
     }).isRequired
 };
 
-export default ${componentName};
+export default ${pascalComponentName};
 `
             }
             await fs.writeFile(componentFilePath, code, 'utf-8')
