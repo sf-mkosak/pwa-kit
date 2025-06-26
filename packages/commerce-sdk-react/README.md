@@ -558,7 +558,7 @@ transformSDKClient<T>(
 
 With the introduction of the optional `apiClients` prop and support for custom SDK client injection, `commerce-sdk-react` now provides robust error handling for missing clients. If you attempt to use a query or mutation hook for a client that was not initialized or passed to the `CommerceApiProvider`, a clear error will be thrown.
 
-For example, if you call a hook like `useShopperProducts` but did not provide a `shopperProducts` client in your `apiClients` prop, you will see an error message such as:
+For example, if you call a hook like `useShopperProducts` but did not provide a `shopperProducts` client in your `apiClients` prop, you will see an error message similar to this error.
 
 ```text
 Missing required client: shopperProducts. Please initialize shopperProducts class and provide it in CommerceApiProvider's apiClients prop.
