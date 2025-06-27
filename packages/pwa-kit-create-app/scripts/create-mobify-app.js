@@ -418,10 +418,10 @@ const readStdin = async () => {
  * Currently only checks for 'general.presetOrTemplateId', but can be extended for more robust validation.
  * Throws an error if validation fails.
  *
- * @param {Object} parsedInput - The parsed answers object from stdin.
+ * @param {Object} answers - The parsed answers object from stdin.
  */
-const validateAnswers = (parsedInput) => {
-    if (!parsedInput['general.presetOrTemplateId']) {
+const validateAnswers = (answers) => {
+    if (!answers['general.presetOrTemplateId']) {
         throw new Error('Missing required field: "general.presetOrTemplateId"')
     }
 
@@ -430,25 +430,22 @@ const validateAnswers = (parsedInput) => {
 
 /**
  * Reads and parses JSON input from stdin for non-interactive CLI usage.
- * Merges the parsed input into the provided answers object.
  * Exits the process with an error message if input is invalid or missing required fields.
  *
- * @param {Object} answers - The current answers object to merge into.
  * @returns {Promise<Object>} - The merged answers object.
  */
-const getAnswersFromStdin = async (answers) => {
+const getAnswersFromStdin = async () => {
     try {
         const input = await readStdin()
         if (!input.trim()) {
             throw new Error('No input received. Please pipe valid JSON to stdin.')
         }
-
         const parsedInput = JSON.parse(input)
 
         // Do answer validation.
         validateAnswers(parsedInput)
 
-        return merge(answers, expandObject(parsedInput))
+        return expandObject(parsedInput)
     } catch (err) {
         if (err instanceof SyntaxError) {
             console.error('Invalid JSON format in stdin input')
@@ -515,7 +512,7 @@ const main = async (opts) => {
 
     // If there is no preset provided via the CLI, check for stdio input or prompt the user
     if (stdio) {
-        answers = await getAnswersFromStdin(answers)
+        answers = await getAnswersFromStdin()
     } else {
         answers = await prompt(
             INITIAL_QUESTIONS,
