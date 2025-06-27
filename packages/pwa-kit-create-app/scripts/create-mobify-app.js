@@ -414,6 +414,52 @@ const readStdin = async () => {
     })
 }
 
+/**
+ * Validates the parsed answers object for required fields and structure.
+ * Currently only checks for 'general.presetOrTemplateId', but can be extended for more robust validation.
+ * Throws an error if validation fails.
+ *
+ * @param {Object} parsedInput - The parsed answers object from stdin.
+ */
+const validateAnswers = (parsedInput) => {
+    if (!parsedInput['general.presetOrTemplateId']) {
+        throw new Error('Missing required field: "general.presetOrTemplateId"')
+    }
+
+    // Future enhancement: Add validation for template specific answers.
+}
+
+/**
+ * Reads and parses JSON input from stdin for non-interactive CLI usage.
+ * Merges the parsed input into the provided answers object.
+ * Exits the process with an error message if input is invalid or missing required fields.
+ *
+ * @param {Object} answers - The current answers object to merge into.
+ * @returns {Promise<Object>} - The merged answers object.
+ */
+const getAnswersFromStdin = async (answers) => {
+    try {
+        const input = await readStdin()
+        if (!input.trim()) {
+            throw new Error('No input received. Please pipe valid JSON to stdin.')
+        }
+
+        const parsedInput = JSON.parse(input)
+
+        // Do answer validation.
+        validateAnswers(parsedInput)
+
+        return merge(answers, expandObject(parsedInput))
+    } catch (err) {
+        if (err instanceof SyntaxError) {
+            console.error('Invalid JSON format in stdin input')
+        } else {
+            console.error('Failed to process stdin input:', err.message)
+        }
+        process.exit(1)
+    }
+}
+
 const main = async (opts) => {
     if (!isUsingCompatibleNode) {
         console.log('')
@@ -451,13 +497,7 @@ const main = async (opts) => {
 
     // If there is no preset provided via the CLI, check for stdio input or prompt the user
     if (stdio) {
-        try {
-            const input = await readStdin()
-            answers = merge(answers, expandObject(JSON.parse(input)))
-        } catch (err) {
-            console.error('Failed to read from stdin:', err.message)
-            process.exit(1)
-        }
+        answers = await getAnswersFromStdin(answers)
     } else {
         answers = await prompt(
             INITIAL_QUESTIONS,

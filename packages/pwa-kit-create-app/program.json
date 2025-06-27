@@ -675,6 +675,10 @@
             {
                 "name": "--stdio",
                 "description": "Accept project generation answers from stdin as JSON"
+            }, 
+            {
+                "name": "--displayProgram",
+                "description": "Display the program.json file"
             }
         ],
         "examples": [
