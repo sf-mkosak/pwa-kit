@@ -331,7 +331,6 @@ const runGenerator = (context, {outputDir, templateVersion, verbose}) => {
     }
 
     // Extract the source
-    console.log('Extracting base template from package or npm: ', tarPath)
     tar.x({
         file: tarPath,
         cwd: tmp,
