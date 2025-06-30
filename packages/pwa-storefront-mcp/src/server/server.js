@@ -13,9 +13,9 @@ import {CreateNewComponentTool} from '../utils/create-new-component-tool.js'
 import {HookRecommenderTool} from '../utils/hook-recommender-tool.js'
 import {createRequire} from 'module'
 const require = createRequire(import.meta.url)
-const productDocument = require('../data/ProductDocument.json')
-const categoryDocument = require('../data/CategoryDocument.json')
-const documentList = require('../data/DocumentList.json')
+import productDocument from '../data/ProductDocument.json'
+import categoryDocument from '../data/CategoryDocument.json'
+import documentList from '../data/DocumentList.json'
 import {TestWithPlaywrightTool} from '../utils/run-site-test-tool.js'
 
 class PwaStorefrontMCPServerHighLevel {
@@ -86,10 +86,10 @@ class PwaStorefrontMCPServerHighLevel {
                 }
             }
         )
-        
+
         this.server.tool(
             'run_site_test',
-            'Run site performance or accessibility test for a given site URL (e.g. https://www.adidas.com/us)',
+            'Run site performance or accessibility test for a given site URL (e.g. https://pwa-kit.mobify-storefront.com)',
             {
                 testType: z.enum(['performance', 'accessibility']).describe('Type of test to run'),
                 siteUrl: z.string().optional().describe('Site URL to test (optional)')
