@@ -14,11 +14,10 @@ import {
     DeveloperGuidelinesTool
 } from '../utils/index.js'
 import {HookRecommenderTool} from '../utils/hook-recommender-tool.js'
-import {createRequire} from 'module'
-const require = createRequire(import.meta.url)
-const productDocument = require('../data/ProductDocument.json')
-const categoryDocument = require('../data/CategoryDocument.json')
-const documentList = require('../data/DocumentList.json')
+import productDocument from '../data/ProductDocument.json' with { type: 'json' }
+import categoryDocument from '../data/CategoryDocument.json' with { type: 'json' }
+import documentList from '../data/DocumentList.json' with { type: 'json' }
+import {TestWithPlaywrightTool} from '../utils/run-site-test-tool.js'
 
 class PwaStorefrontMCPServerHighLevel {
     constructor() {
@@ -37,6 +36,7 @@ class PwaStorefrontMCPServerHighLevel {
 
         this.hookRecommenderTool = new HookRecommenderTool()
         this.CreateNewComponentTool = new CreateNewComponentTool()
+        this.testWithPlaywrightTool = new TestWithPlaywrightTool()
         this.setupTools()
 
         // 1. Add in-memory session management
@@ -94,6 +94,16 @@ class PwaStorefrontMCPServerHighLevel {
                     }
                 }
             }
+        )
+
+        this.server.tool(
+            'run_site_test',
+            'Run site performance or accessibility test for a given site URL (e.g. https://pwa-kit.mobify-storefront.com)',
+            {
+                testType: z.enum(['performance', 'accessibility']).describe('Type of test to run'),
+                siteUrl: z.string().optional().describe('Site URL to test (optional)')
+            },
+            ({testType, siteUrl}) => this.testWithPlaywrightTool.run(testType, siteUrl)
         )
 
         this.server.tool(
