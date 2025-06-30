@@ -11,9 +11,9 @@ import {z} from 'zod'
 import {DeveloperGuidelinesTool} from '../utils/pwa-developer-guideline-tool.js'
 import {CreateNewComponentTool} from '../utils/create-new-component-tool.js'
 import {HookRecommenderTool} from '../utils/hook-recommender-tool.js'
-import productDocument from '../data/ProductDocument.json'
-import categoryDocument from '../data/CategoryDocument.json'
-import documentList from '../data/DocumentList.json'
+import productDocument from '../data/ProductDocument.json' with { type: 'json' }
+import categoryDocument from '../data/CategoryDocument.json' with { type: 'json' }
+import documentList from '../data/DocumentList.json' with { type: 'json' }
 import {TestWithPlaywrightTool} from '../utils/run-site-test-tool.js'
 
 class PwaStorefrontMCPServerHighLevel {
