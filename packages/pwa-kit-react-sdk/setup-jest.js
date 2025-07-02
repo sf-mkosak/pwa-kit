@@ -40,4 +40,4 @@ jest.mock('@salesforce/pwa-kit-runtime/utils/ssr-config', () => {
 // The global performance object is available in production
 // environments for both the server and the client.
 // It's just the jest environment that this is not available
-global.performance = performance
+// global.performance = performance
