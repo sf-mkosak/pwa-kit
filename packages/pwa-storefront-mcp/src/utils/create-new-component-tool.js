@@ -47,10 +47,7 @@ class CreateNewComponentTool {
 
         // Use the provided absolute path directly if available
         const location = this.componentData.location
-        const componentMessage = await this.createComponentFile(
-            this.componentData.name,
-            location
-        )
+        const componentMessage = await this.createComponentFile(this.componentData.name, location)
         messages.push(componentMessage)
 
         // Handle entity type information
