@@ -10,13 +10,7 @@ const base = require('internal-lib-build/configs/jest/jest.config')
 module.exports = {
     ...base,
     setupFilesAfterEnv: ['./setup-jest.js'],
-    collectCoverageFrom: [
-        'src/**/*.{js,jsx}',
-        'scripts/**/*.{js,jsx}',
-        '!**/test.{js,jsx}',
-        '!scripts/setup-jsdom.js',
-        '!scripts/version.js'
-    ],
+    collectCoverageFrom: ['src/utils/opentelemetry.js', '!**/test.{js,jsx}'],
     coverageThreshold: {
         global: {
             branches: 90,

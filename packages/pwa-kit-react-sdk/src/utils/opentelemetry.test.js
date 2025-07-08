@@ -109,6 +109,13 @@ describe('OpenTelemetry Utilities', () => {
         opentelemetryUtils = require('./opentelemetry')
     })
 
+    describe('getServiceName', () => {
+        test('should return the service name from config', () => {
+            const serviceName = opentelemetryUtils.getServiceName()
+            expect(serviceName).toBe('pwa-kit-react-sdk')
+        })
+    })
+
     describe('createSpan', () => {
         test('should create a span successfully', () => {
             const result = opentelemetryUtils.createSpan('test-span', {
@@ -502,6 +509,25 @@ describe('OpenTelemetry Utilities', () => {
                 additionalProperties: {
                     metricName: 'test-metric',
                     error: 'Metric logging failed',
+                    stack: expect.any(String)
+                }
+            })
+        })
+
+        test('should handle errors when span creation fails in logPerformanceMetric', () => {
+            // Mock getSpan to return a span, but startSpan to throw
+            mockTrace.getSpan.mockReturnValue(mockSpan)
+            mockTracer.startSpan.mockImplementationOnce(() => {
+                throw new Error('Span creation failed in metric')
+            })
+
+            opentelemetryUtils.logPerformanceMetric('test-metric', 150)
+
+            expect(mockLogger.error).toHaveBeenCalledWith('Error logging performance metric', {
+                namespace: 'opentelemetry',
+                additionalProperties: {
+                    metricName: 'test-metric',
+                    error: 'Span creation failed in metric',
                     stack: expect.any(String)
                 }
             })
