@@ -16,7 +16,7 @@ function logSpanData(span, event = 'start', res = null) {
     const startTime = span.startTime
     const endTime = event === 'start' ? startTime : span.endTime
     const duration = event === 'start' ? 0 : hrTimeToMilliseconds(span.duration)
-
+    console.log('(JEREMY) logSpanData. StartTime: ', startTime)
     // Create the span data object that matches the expected format
     const spanData = {
         traceId: spanContext.traceId,
