@@ -137,7 +137,7 @@ export const createChildSpan = (name, attributes = {}) => {
                     ? performance_detail
                     : JSON.stringify(performance_detail)
         }
-
+        console.log('(JEREMY) createChildSpan. spanAttributes: ', spanAttributes)
         const span = tracer.startSpan(
             name,
             {
@@ -145,7 +145,7 @@ export const createChildSpan = (name, attributes = {}) => {
             },
             parentSpan ? ctx : undefined
         )
-        console.log('(JEREMY) createChildSpan. FLAG F')
+        console.log('(JEREMY) createChildSpan. FLAG F. span: ', span)
         logSpanData(span, 'start')
         console.log('(JEREMY) createChildSpan. FLAG G')
         return span
