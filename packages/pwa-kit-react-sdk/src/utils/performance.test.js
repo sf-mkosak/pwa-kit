@@ -1,5 +1,8 @@
-/**
- * @jest-environment node
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
 // Mock OpenTelemetry functions BEFORE any imports
@@ -25,7 +28,6 @@ jest.mock('./opentelemetry', () => ({
  */
 // The @jest-environment comment block *MUST* be the first line of the file for the tests to pass.
 // That conflicts with the monorepo header rule, so we must disable the rule!
-/* eslint-disable header/header */
 
 import PerformanceTimer from './performance'
 
