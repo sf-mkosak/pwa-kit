@@ -20,5 +20,5 @@ runs:
       # root and *also* on the PWA package. This section is run on both.
 
       # Always run fast unit tests - CI is flaky, so let's try three times!
-      npm run test || npm run test || npm run test
+      npm run test
     shell: bash

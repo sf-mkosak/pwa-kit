@@ -45,7 +45,7 @@ describe('PerformanceTimer', () => {
         expect(timer.spans.has('test')).toBe(true)
     })
 
-    test('marks can be added for both types', () => {
+    test('spans can be added for both types', () => {
         const timer = new PerformanceTimer({enabled: true})
         timer.mark('test', 'start')
         timer.mark('test', 'end')
