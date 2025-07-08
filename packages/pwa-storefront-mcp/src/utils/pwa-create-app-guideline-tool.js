@@ -6,7 +6,7 @@
  */
 import os from 'os'
 import path from 'path'
-import { exec } from 'child_process'
+import {exec} from 'child_process'
 import fs from 'fs/promises'
 
 // Project dependencies
@@ -86,7 +86,6 @@ export async function runNpxCommand() {
     })
 }
 
-
 export default {
     name: 'create_app_guidelines',
     description: `This tool is used to provide the agent with the instructions on how to use the @salesforce/pwa-kit-create-app CLI tool to create a new PWA Kit projects. Do not attempt to create a project without using this tool first.`,
@@ -97,7 +96,6 @@ export default {
         // Run the display program and get the output.
         try {
             programOutput = await runNpxCommand()
-          
         } catch (err) {
             console.error('Failed to run display program:', err)
         }
@@ -113,7 +111,16 @@ export default {
             content: [
                 {
                     type: 'text',
-                    text: JSON.stringify({ guidelines: guidelinesText, cli, schemas, data }, null, 2)
+                    text: JSON.stringify(
+                        {
+                            guidelines: guidelinesText,
+                            cli,
+                            schemas,
+                            data
+                        },
+                        null,
+                        2
+                    )
                 }
             ]
         }
