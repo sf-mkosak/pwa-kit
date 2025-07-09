@@ -9,9 +9,17 @@ import {trace, context, SpanStatusCode} from '@opentelemetry/api'
 import {hrTimeToMilliseconds, hrTimeToTimeStamp} from '@opentelemetry/core'
 import logger from './logger-instance'
 
-const SERVICE_NAME = 'pwa-kit-react-sdk'
+const DEFAULT_SERVICE_NAME = 'pwa-kit-react-sdk'
 
-function logSpanData(span, event = 'start', res = null) {
+export const OTEL_CONFIG = {
+    serviceName: process.env.OTEL_SERVICE_NAME || DEFAULT_SERVICE_NAME,
+    enabled: process.env.OTEL_SDK_ENABLED === 'true',
+    b3TracingEnabled: process.env.OTEL_B3_TRACING_ENABLED === 'true'
+}
+
+export const getServiceName = () => OTEL_CONFIG.serviceName
+
+const logSpanData = (span, event = 'start', res = null) => {
     const spanContext = span.spanContext()
     const startTime = span.startTime
     const endTime = event === 'start' ? startTime : span.endTime
@@ -26,7 +34,7 @@ function logSpanData(span, event = 'start', res = null) {
         timestamp: hrTimeToTimeStamp(startTime),
         duration: duration,
         attributes: {
-            'service.name': SERVICE_NAME,
+            'service.name': getServiceName(),
             ...span.attributes,
             event: event // Add event type to distinguish start/end
         },
@@ -35,7 +43,7 @@ function logSpanData(span, event = 'start', res = null) {
         links: [],
         start_time: startTime,
         end_time: endTime,
-        forwardTrace: process.env.DISABLE_B3_TRACING !== 'true'
+        forwardTrace: OTEL_CONFIG.b3TracingEnabled
     }
 
     // Inject B3 headers into response if available
@@ -66,10 +74,7 @@ function logSpanData(span, event = 'start', res = null) {
  */
 export const createSpan = (name, options = {}) => {
     try {
-        const tracer = trace.getTracer(SERVICE_NAME)
-        // Get the current context and active span
-        const ctx = context.active()
-        // Note: currentSpan is not used in this implementation
+        const tracer = trace.getTracer(getServiceName())
 
         // Create a new span with the current context
         const span = tracer.startSpan(
@@ -78,15 +83,15 @@ export const createSpan = (name, options = {}) => {
                 ...options,
                 attributes: {
                     ...options.attributes,
-                    'service.name': SERVICE_NAME
+                    'service.name': getServiceName()
                 }
             },
-            ctx
+            context.active()
         )
 
         // Set the new span as active
         logSpanData(span, 'start')
-        return trace.setSpan(ctx, span)
+        return trace.setSpan(context.active(), span)
     } catch (error) {
         logger.error('Failed to create span', {
             namespace: 'opentelemetry',
@@ -107,7 +112,7 @@ export const createSpan = (name, options = {}) => {
  */
 export const createChildSpan = (name, attributes = {}) => {
     try {
-        const tracer = trace.getTracer(SERVICE_NAME)
+        const tracer = trace.getTracer(getServiceName())
         const ctx = context.active()
         const parentSpan = trace.getSpan(ctx)
 
@@ -119,7 +124,7 @@ export const createChildSpan = (name, attributes = {}) => {
         const {performance_mark, performance_detail, ...otherAttributes} = attributes
 
         const spanAttributes = {
-            'service.name': SERVICE_NAME,
+            'service.name': getServiceName(),
             ...otherAttributes
         }
 
@@ -165,9 +170,6 @@ export const endSpan = (span) => {
     }
 
     try {
-        const ctx = context.active()
-        // Note: parentSpan is not used in this implementation
-
         span.end()
 
         // Log completion data
@@ -191,11 +193,11 @@ export const endSpan = (span) => {
  * @returns {Promise<any>} The result of the function
  */
 export const tracePerformance = async (name, fn, res = null) => {
-    const tracer = trace.getTracer(SERVICE_NAME)
+    const tracer = trace.getTracer(getServiceName())
     // Create the root span
     const rootSpan = tracer.startSpan(name, {
         attributes: {
-            'service.name': SERVICE_NAME
+            'service.name': getServiceName()
         }
     })
 
@@ -243,7 +245,7 @@ export const tracePerformance = async (name, fn, res = null) => {
  */
 export const logPerformanceMetric = (name, duration, attributes = {}) => {
     try {
-        const tracer = trace.getTracer(SERVICE_NAME)
+        const tracer = trace.getTracer(getServiceName())
         const ctx = context.active()
         const parentSpan = trace.getSpan(ctx)
 
@@ -260,7 +262,7 @@ export const logPerformanceMetric = (name, duration, attributes = {}) => {
 
         // Build metric attributes
         const metricAttributes = {
-            'service.name': SERVICE_NAME,
+            'service.name': getServiceName(),
             'metric.duration': duration,
             ...otherAttributes
         }

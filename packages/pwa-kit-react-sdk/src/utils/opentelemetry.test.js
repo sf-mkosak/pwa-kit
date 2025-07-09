@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: BSD-3-Clause
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-/*
- * Copyright (c) 2025, Salesforce, Inc.
- * All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause
- * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
- */
 
 // Mock OpenTelemetry dependencies
 jest.mock('@opentelemetry/api', () => ({
@@ -107,6 +101,13 @@ describe('OpenTelemetry Utilities', () => {
 
         // Import the module after mocks are set up
         opentelemetryUtils = require('./opentelemetry')
+    })
+
+    describe('getServiceName', () => {
+        test('should return the service name from config', () => {
+            const serviceName = opentelemetryUtils.getServiceName()
+            expect(serviceName).toBe('pwa-kit-react-sdk')
+        })
     })
 
     describe('createSpan', () => {
@@ -502,6 +503,25 @@ describe('OpenTelemetry Utilities', () => {
                 additionalProperties: {
                     metricName: 'test-metric',
                     error: 'Metric logging failed',
+                    stack: expect.any(String)
+                }
+            })
+        })
+
+        test('should handle errors when span creation fails in logPerformanceMetric', () => {
+            // Mock getSpan to return a span, but startSpan to throw
+            mockTrace.getSpan.mockReturnValue(mockSpan)
+            mockTracer.startSpan.mockImplementationOnce(() => {
+                throw new Error('Span creation failed in metric')
+            })
+
+            opentelemetryUtils.logPerformanceMetric('test-metric', 150)
+
+            expect(mockLogger.error).toHaveBeenCalledWith('Error logging performance metric', {
+                namespace: 'opentelemetry',
+                additionalProperties: {
+                    metricName: 'test-metric',
+                    error: 'Span creation failed in metric',
                     stack: expect.any(String)
                 }
             })
