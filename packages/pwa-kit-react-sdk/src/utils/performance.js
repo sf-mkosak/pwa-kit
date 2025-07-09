@@ -36,6 +36,8 @@ export default class PerformanceTimer {
         this.enabled = options.enabled || false
         this.metrics = []
         this.spans = new Map()
+        this.spanTimeouts = new Map()
+        this.maxSpanDuration = options.maxSpanDuration || 30000 // 30 seconds default
     }
 
     /**
@@ -94,23 +96,21 @@ export default class PerformanceTimer {
             return
         }
 
+        if (type !== this.MARKER_TYPES.START && type !== this.MARKER_TYPES.END) {
+            logger.warn('Invalid mark type', {type, name, namespace: 'PerformanceTimer.mark'})
+            return
+        }
+
         try {
             // Format detail as a string if it's an object
             const formattedDetail = typeof detail === 'object' ? JSON.stringify(detail) : detail
 
-            const mark = {
-                name: `${name}.${type}`,
-                entryType: 'mark',
-                startTime: performance.now(),
+            global.performance.mark(`${name}.${type}`, {
                 detail: formattedDetail
-            }
-
-            performance.mark(mark.name, {
-                detail: mark.detail
             })
 
             // Only create spans for 'start' events and store them for later use
-            if (type === 'start') {
+            if (type === this.MARKER_TYPES.START) {
                 if (!this.spans.has(name)) {
                     const span = createChildSpan(name, {
                         performance_mark: name,
@@ -119,14 +119,20 @@ export default class PerformanceTimer {
                     })
                     if (span) {
                         this.spans.set(name, span)
+
+                        // Set up automatic cleanup for orphaned spans
+                        const timeoutId = setTimeout(() => {
+                            this._cleanupOrphanedSpan(name, 'timeout')
+                        }, this.maxSpanDuration)
+                        this.spanTimeouts.set(name, timeoutId)
                     }
                 }
-            } else if (type === 'end') {
-                const startMark = `${name}.start`
-                const endMark = `${name}.end`
+            } else if (type === this.MARKER_TYPES.END) {
+                const startMark = `${name}.${this.MARKER_TYPES.START}`
+                const endMark = `${name}.${this.MARKER_TYPES.END}`
 
                 try {
-                    const measure = performance.measure(name, startMark, endMark)
+                    const measure = global.performance.measure(name, startMark, endMark)
 
                     // Add the metric to the metrics array for Server-Timing header
                     this.metrics.push({
@@ -135,17 +141,24 @@ export default class PerformanceTimer {
                         detail: formattedDetail
                     })
 
-                    // End the corresponding span if it exists
+                    // End the corresponding span if it exists and clear timeout
                     const span = this.spans.get(name)
                     if (span) {
                         endSpan(span)
                         this.spans.delete(name)
+
+                        // Clear the timeout since span completed normally
+                        const timeoutId = this.spanTimeouts.get(name)
+                        if (timeoutId) {
+                            clearTimeout(timeoutId)
+                            this.spanTimeouts.delete(name)
+                        }
                     }
 
                     // Clear the marks
-                    performance.clearMarks(startMark)
-                    performance.clearMarks(endMark)
-                    performance.clearMeasures(name)
+                    global.performance.clearMarks(startMark)
+                    global.performance.clearMarks(endMark)
+                    global.performance.clearMeasures(name)
                 } catch (error) {
                     logger.warn('Failed to measure performance mark', {
                         name,
@@ -157,13 +170,74 @@ export default class PerformanceTimer {
                 }
             }
         } catch (error) {
-            logger.error('Error creating performance mark', {
+            if (error.name === 'SyntaxError') {
+                logger.warn('Invalid performance mark name', {name, error: error.message})
+            } else {
+                logger.error('Error creating performance mark', {
+                    name,
+                    type,
+                    error: error.message,
+                    stack: error.stack,
+                    namespace: 'PerformanceTimer.mark'
+                })
+            }
+        }
+    }
+
+    /**
+     * Helper method to clean up a specific orphaned span
+     * @private
+     */
+    _cleanupOrphanedSpan(name, reason = 'manual') {
+        const span = this.spans.get(name)
+        if (span) {
+            logger.warn('Cleaning up orphaned span', {
                 name,
-                type,
-                error: error.message,
-                stack: error.stack,
-                namespace: 'PerformanceTimer.mark'
+                error: 'Deleting orphaned span (reason: ' + reason + ' cleanup)',
+                namespace: 'PerformanceTimer._cleanupOrphanedSpan'
             })
+            endSpan(span)
+            this.spans.delete(name)
+        }
+
+        // Clear the timeout
+        const timeoutId = this.spanTimeouts.get(name)
+        if (timeoutId) {
+            clearTimeout(timeoutId)
+            this.spanTimeouts.delete(name)
+        }
+    }
+
+    /**
+     * Clean up all orphaned spans and clear all timeouts
+     * Call this when the timer is no longer needed or when you want to force cleanup
+     */
+    cleanup() {
+        // Clean up any orphaned spans
+        this.spans.forEach((span, name) => {
+            this._cleanupOrphanedSpan(name, 'manual_cleanup')
+        })
+
+        // Clear any remaining timeouts
+        this.spanTimeouts.forEach((timeoutId) => {
+            clearTimeout(timeoutId)
+        })
+        this.spanTimeouts.clear()
+
+        // Clear metrics as well
+        this.metrics = []
+    }
+
+    /**
+     * Get information about current spans (useful for debugging)
+     * @returns {Object} Information about active spans and timeouts
+     */
+    getSpanInfo() {
+        return {
+            activeSpans: Array.from(this.spans.keys()),
+            activeTimeouts: this.spanTimeouts.size,
+            spanCount: this.spans.size,
+            metricCount: this.metrics.length
         }
     }
 }
