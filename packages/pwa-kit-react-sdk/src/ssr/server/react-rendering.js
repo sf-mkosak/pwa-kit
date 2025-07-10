@@ -238,6 +238,7 @@ export const render = async (req, res, next) => {
 
     res.__performanceTimer.mark(PERFORMANCE_MARKS.renderToString, 'end')
     res.__performanceTimer.mark(PERFORMANCE_MARKS.total, 'end')
+    res.__performanceTimer.log()
 
     if (includeServerTimingHeader) {
         res.setHeader('Server-Timing', res.__performanceTimer.buildServerTimingHeader())
@@ -248,7 +249,6 @@ export const render = async (req, res, next) => {
         res.set('Cache-Control', NO_CACHE)
     }
 
-    res.__performanceTimer.log()
     res.__performanceTimer.cleanup()
 
     if (redirectUrl) {

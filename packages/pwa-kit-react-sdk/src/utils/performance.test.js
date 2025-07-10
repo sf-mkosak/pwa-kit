@@ -5,7 +5,6 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-// Mock OpenTelemetry functions BEFORE any imports
 jest.mock('./opentelemetry', () => ({
     createChildSpan: jest.fn((name, attributes) => ({
         spanContext: () => ({
@@ -19,15 +18,6 @@ jest.mock('./opentelemetry', () => ({
     endSpan: jest.fn(),
     logPerformanceMetric: jest.fn()
 }))
-
-/*
- * Copyright (c) 2024, Salesforce, Inc.
- * All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause
- * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
- */
-// The @jest-environment comment block *MUST* be the first line of the file for the tests to pass.
-// That conflicts with the monorepo header rule, so we must disable the rule!
 
 import PerformanceTimer from './performance'
 
@@ -109,16 +99,6 @@ describe('PerformanceTimer', () => {
         expect(header).toMatch(/test1;dur=\d+\.\d+/)
         expect(header).toMatch(/test2;dur=\d+\.\d+/)
         expect(header).toContain(', ')
-    })
-
-    test('log method clears metrics after logging', () => {
-        const timer = new PerformanceTimer({enabled: true})
-        timer.mark('test', 'start')
-        timer.mark('test', 'end')
-
-        expect(timer.metrics).toHaveLength(1)
-        timer.log()
-        expect(timer.metrics).toHaveLength(0)
     })
 
     test('handles end mark without start mark gracefully', () => {
@@ -205,5 +185,171 @@ describe('PerformanceTimer', () => {
 
         expect(timer.metrics).toHaveLength(1)
         expect(timer.metrics[0].detail).toBe('end detail')
+    })
+
+    describe('cleanup functionality', () => {
+        test('cleanup clears all spans', () => {
+            const timer = new PerformanceTimer({enabled: true})
+            timer.mark('test1', 'start')
+            timer.mark('test2', 'start')
+            timer.mark('test3', 'start')
+
+            expect(timer.spans.size).toBe(3)
+
+            timer.cleanup()
+
+            expect(timer.spans.size).toBe(0)
+        })
+
+        test('cleanup clears all timeouts', () => {
+            const timer = new PerformanceTimer({enabled: true})
+            timer.mark('test1', 'start')
+            timer.mark('test2', 'start')
+
+            expect(timer.spanTimeouts.size).toBe(2)
+
+            timer.cleanup()
+
+            expect(timer.spanTimeouts.size).toBe(0)
+        })
+
+        test('cleanup clears all metrics', () => {
+            const timer = new PerformanceTimer({enabled: true})
+            timer.mark('test1', 'start')
+            timer.mark('test1', 'end')
+            timer.mark('test2', 'start')
+            timer.mark('test2', 'end')
+
+            expect(timer.metrics).toHaveLength(2)
+
+            timer.cleanup()
+
+            expect(timer.metrics).toHaveLength(0)
+        })
+
+        test('cleanup works when there are no spans/timeouts/metrics', () => {
+            const timer = new PerformanceTimer({enabled: true})
+
+            expect(() => {
+                timer.cleanup()
+            }).not.toThrow()
+
+            expect(timer.spans.size).toBe(0)
+            expect(timer.spanTimeouts.size).toBe(0)
+            expect(timer.metrics).toHaveLength(0)
+        })
+
+        test('cleanup works when timer is disabled', () => {
+            const timer = new PerformanceTimer({enabled: false})
+            timer.mark('test', 'start') // This won't create anything since disabled
+
+            expect(() => {
+                timer.cleanup()
+            }).not.toThrow()
+
+            expect(timer.spans.size).toBe(0)
+            expect(timer.spanTimeouts.size).toBe(0)
+            expect(timer.metrics).toHaveLength(0)
+        })
+    })
+
+    describe('timeout and orphaned span handling', () => {
+        beforeEach(() => {
+            jest.useFakeTimers()
+        })
+
+        afterEach(() => {
+            jest.useRealTimers()
+        })
+
+        test('orphaned spans are cleaned up after maxSpanDuration', () => {
+            const timer = new PerformanceTimer({enabled: true, maxSpanDuration: 1000})
+            const cleanupSpy = jest.spyOn(timer, '_cleanupOrphanedSpan')
+
+            timer.mark('test', 'start')
+
+            expect(timer.spans.size).toBe(1)
+            expect(timer.spanTimeouts.size).toBe(1)
+
+            // Fast forward time to trigger timeout
+            jest.advanceTimersByTime(1001)
+
+            expect(cleanupSpy).toHaveBeenCalledWith('test', 'timeout')
+            expect(timer.spans.size).toBe(0)
+            expect(timer.spanTimeouts.size).toBe(0)
+        })
+
+        test('timeouts are cleared when spans end normally', () => {
+            const timer = new PerformanceTimer({enabled: true, maxSpanDuration: 1000})
+            const cleanupSpy = jest.spyOn(timer, '_cleanupOrphanedSpan')
+
+            timer.mark('test', 'start')
+            timer.mark('test', 'end')
+
+            expect(timer.spans.size).toBe(0)
+            expect(timer.spanTimeouts.size).toBe(0)
+
+            // Fast forward time - should not trigger cleanup since span ended normally
+            jest.advanceTimersByTime(1001)
+
+            expect(cleanupSpy).not.toHaveBeenCalled()
+        })
+
+        test('multiple spans can have independent timeouts', () => {
+            const timer = new PerformanceTimer({enabled: true, maxSpanDuration: 1000})
+            const cleanupSpy = jest.spyOn(timer, '_cleanupOrphanedSpan')
+
+            timer.mark('test1', 'start')
+            timer.mark('test2', 'start')
+            timer.mark('test3', 'start')
+
+            expect(timer.spans.size).toBe(3)
+            expect(timer.spanTimeouts.size).toBe(3)
+
+            // End one span normally
+            timer.mark('test2', 'end')
+            expect(timer.spans.size).toBe(2)
+            expect(timer.spanTimeouts.size).toBe(2)
+
+            // Trigger timeouts for remaining spans
+            jest.advanceTimersByTime(1001)
+
+            expect(cleanupSpy).toHaveBeenCalledTimes(2)
+            expect(cleanupSpy).toHaveBeenCalledWith('test1', 'timeout')
+            expect(cleanupSpy).toHaveBeenCalledWith('test3', 'timeout')
+            expect(timer.spans.size).toBe(0)
+            expect(timer.spanTimeouts.size).toBe(0)
+        })
+
+        test('cleanup clears all timeouts to prevent them from firing', () => {
+            const timer = new PerformanceTimer({enabled: true, maxSpanDuration: 1000})
+            const cleanupSpy = jest.spyOn(timer, '_cleanupOrphanedSpan')
+
+            timer.mark('test1', 'start')
+            timer.mark('test2', 'start')
+
+            // Cleanup before timeouts fire
+            timer.cleanup()
+
+            // Fast forward time - timeouts should not fire since they were cleared
+            jest.advanceTimersByTime(1001)
+
+            // _cleanupOrphanedSpan should only be called from cleanup, not from timeouts
+            expect(cleanupSpy).toHaveBeenCalledTimes(2)
+            expect(cleanupSpy).toHaveBeenCalledWith('test1', 'manual_cleanup')
+            expect(cleanupSpy).toHaveBeenCalledWith('test2', 'manual_cleanup')
+        })
+    })
+
+    test('log can be called multiple times', () => {
+        const timer = new PerformanceTimer({enabled: true})
+        timer.mark('test', 'start')
+        timer.mark('test', 'end')
+
+        expect(() => {
+            timer.log()
+            timer.log()
+            timer.log()
+        }).not.toThrow()
     })
 })

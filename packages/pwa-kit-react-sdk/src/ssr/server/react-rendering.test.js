@@ -739,6 +739,50 @@ describe('The Node SSR Environment', () => {
                     'max-age=0, nocache, nostore, must-revalidate'
                 )
             }
+        },
+        {
+            description: `Performance timer cleanup is called during rendering`,
+            req: {url: '/pwa/', query: {__server_timing: '1'}},
+            mocks: () => {
+                // Mock PerformanceTimer to spy on cleanup
+                const PerformanceTimer = jest.requireActual('../../utils/performance').default
+                const originalCleanup = PerformanceTimer.prototype.cleanup
+                const cleanupSpy = jest.fn(originalCleanup)
+                PerformanceTimer.prototype.cleanup = cleanupSpy
+
+                // Store the spy for assertions
+                global.performanceCleanupSpy = cleanupSpy
+            },
+            assertions: (res) => {
+                expect(res.statusCode).toBe(200)
+                expect(global.performanceCleanupSpy).toHaveBeenCalled()
+                expect(global.performanceCleanupSpy).toHaveBeenCalledTimes(1)
+
+                // Clean up global
+                delete global.performanceCleanupSpy
+            }
+        },
+        {
+            description: `Performance timer cleanup is called even when rendering throws an error`,
+            req: {url: '/unknown-error/'}, // This URL causes an error
+            mocks: () => {
+                // Mock PerformanceTimer to spy on cleanup
+                const PerformanceTimer = jest.requireActual('../../utils/performance').default
+                const originalCleanup = PerformanceTimer.prototype.cleanup
+                const cleanupSpy = jest.fn(originalCleanup)
+                PerformanceTimer.prototype.cleanup = cleanupSpy
+
+                // Store the spy for assertions
+                global.performanceCleanupSpyError = cleanupSpy
+            },
+            assertions: (res) => {
+                expect(res.statusCode).toBe(500)
+                expect(global.performanceCleanupSpyError).toHaveBeenCalled()
+                expect(global.performanceCleanupSpyError).toHaveBeenCalledTimes(1)
+
+                // Clean up global
+                delete global.performanceCleanupSpyError
+            }
         }
     ]
 
