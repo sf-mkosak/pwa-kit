@@ -71,9 +71,6 @@ export default class PerformanceTimer {
                 'performance.detail': metric.detail || ''
             })
         })
-
-        // Clear the metrics after logging
-        this.metrics = []
     }
 
     /**
@@ -105,7 +102,7 @@ export default class PerformanceTimer {
             // Format detail as a string if it's an object
             const formattedDetail = typeof detail === 'object' ? JSON.stringify(detail) : detail
 
-            global.performance.mark(`${name}.${type}`, {
+            performance.mark(`${name}.${type}`, {
                 detail: formattedDetail
             })
 
@@ -132,7 +129,7 @@ export default class PerformanceTimer {
                 const endMark = `${name}.${this.MARKER_TYPES.END}`
 
                 try {
-                    const measure = global.performance.measure(name, startMark, endMark)
+                    const measure = performance.measure(name, startMark, endMark)
 
                     // Add the metric to the metrics array for Server-Timing header
                     this.metrics.push({
@@ -156,9 +153,9 @@ export default class PerformanceTimer {
                     }
 
                     // Clear the marks
-                    global.performance.clearMarks(startMark)
-                    global.performance.clearMarks(endMark)
-                    global.performance.clearMeasures(name)
+                    performance.clearMarks(startMark)
+                    performance.clearMarks(endMark)
+                    performance.clearMeasures(name)
                 } catch (error) {
                     logger.warn('Failed to measure performance mark', {
                         name,

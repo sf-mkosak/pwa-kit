@@ -222,6 +222,11 @@ export const render = async (req, res, next) => {
         // Here, we use Express's convention to invoke error middleware.
         // Note, we don't have an error handling middleware yet! This is calling the
         // default error handling middleware provided by Express
+        
+        if (res.__performanceTimer) {
+            res.__performanceTimer.cleanup()
+        }
+        
         return next(e)
     }
 
@@ -233,8 +238,7 @@ export const render = async (req, res, next) => {
 
     res.__performanceTimer.mark(PERFORMANCE_MARKS.renderToString, 'end')
     res.__performanceTimer.mark(PERFORMANCE_MARKS.total, 'end')
-    res.__performanceTimer.log()
-
+    
     if (includeServerTimingHeader) {
         res.setHeader('Server-Timing', res.__performanceTimer.buildServerTimingHeader())
 
@@ -243,6 +247,9 @@ export const render = async (req, res, next) => {
         // cache headers set by individual page components
         res.set('Cache-Control', NO_CACHE)
     }
+    
+    res.__performanceTimer.log()
+    res.__performanceTimer.cleanup()
 
     if (redirectUrl) {
         res.redirect(routerContext.status || 302, redirectUrl)
