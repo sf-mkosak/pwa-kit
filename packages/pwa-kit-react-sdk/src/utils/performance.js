@@ -224,17 +224,4 @@ export default class PerformanceTimer {
         // Clear metrics as well
         this.metrics = []
     }
-
-    /**
-     * Get information about current spans (useful for debugging)
-     * @returns {Object} Information about active spans and timeouts
-     */
-    getSpanInfo() {
-        return {
-            activeSpans: Array.from(this.spans.keys()),
-            activeTimeouts: this.spanTimeouts.size,
-            spanCount: this.spans.size,
-            metricCount: this.metrics.length
-        }
-    }
 }

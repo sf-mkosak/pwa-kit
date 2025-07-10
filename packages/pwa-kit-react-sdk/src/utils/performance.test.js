@@ -238,19 +238,6 @@ describe('PerformanceTimer', () => {
             expect(timer.spanTimeouts.size).toBe(0)
             expect(timer.metrics).toHaveLength(0)
         })
-
-        test('cleanup works when timer is disabled', () => {
-            const timer = new PerformanceTimer({enabled: false})
-            timer.mark('test', 'start') // This won't create anything since disabled
-
-            expect(() => {
-                timer.cleanup()
-            }).not.toThrow()
-
-            expect(timer.spans.size).toBe(0)
-            expect(timer.spanTimeouts.size).toBe(0)
-            expect(timer.metrics).toHaveLength(0)
-        })
     })
 
     describe('timeout and orphaned span handling', () => {
@@ -341,15 +328,181 @@ describe('PerformanceTimer', () => {
         })
     })
 
-    test('log can be called multiple times', () => {
-        const timer = new PerformanceTimer({enabled: true})
-        timer.mark('test', 'start')
-        timer.mark('test', 'end')
+    describe('error handling and edge cases', () => {
+        test('handles performance.measure errors gracefully', () => {
+            const timer = new PerformanceTimer({enabled: true})
 
-        expect(() => {
-            timer.log()
-            timer.log()
-            timer.log()
-        }).not.toThrow()
+            // Mock performance.measure to throw an error
+            const originalMeasure = performance.measure
+            performance.measure = jest.fn().mockImplementation(() => {
+                throw new Error('Measure failed')
+            })
+
+            timer.mark('test', 'start')
+
+            expect(() => {
+                timer.mark('test', 'end')
+            }).not.toThrow()
+
+            expect(timer.metrics).toHaveLength(0)
+            // The span is still there because cleanup only happens on successful measure
+            expect(timer.spans.size).toBe(1)
+
+            // Restore original method
+            performance.measure = originalMeasure
+        })
+
+        test('handles SyntaxError in performance.mark gracefully', () => {
+            const timer = new PerformanceTimer({enabled: true})
+
+            // Mock performance.mark to throw a SyntaxError
+            const originalMark = performance.mark
+            performance.mark = jest.fn().mockImplementation(() => {
+                const error = new Error('Invalid mark name')
+                error.name = 'SyntaxError'
+                throw error
+            })
+
+            expect(() => {
+                timer.mark('test', 'start')
+            }).not.toThrow()
+
+            expect(timer.spans.size).toBe(0)
+
+            // Restore original method
+            performance.mark = originalMark
+        })
+
+        test('handles generic errors in performance.mark gracefully', () => {
+            const timer = new PerformanceTimer({enabled: true})
+
+            // Mock performance.mark to throw a generic error
+            const originalMark = performance.mark
+            performance.mark = jest.fn().mockImplementation(() => {
+                throw new Error('Generic error')
+            })
+
+            expect(() => {
+                timer.mark('test', 'start')
+            }).not.toThrow()
+
+            expect(timer.spans.size).toBe(0)
+
+            // Restore original method
+            performance.mark = originalMark
+        })
+
+        test('handles invalid mark types', () => {
+            const timer = new PerformanceTimer({enabled: true})
+
+            timer.mark('test', 'invalid-type')
+            timer.mark('test', 'middle')
+            timer.mark('test', 'pause')
+
+            expect(timer.spans.size).toBe(0)
+            expect(timer.metrics).toHaveLength(0)
+        })
+
+        test('_cleanupOrphanedSpan handles spans without timeouts', () => {
+            const timer = new PerformanceTimer({enabled: true})
+            timer.mark('test', 'start')
+
+            // Manually remove timeout to simulate edge case
+            timer.spanTimeouts.delete('test')
+
+            expect(() => {
+                timer._cleanupOrphanedSpan('test', 'manual')
+            }).not.toThrow()
+
+            expect(timer.spans.size).toBe(0)
+        })
+
+        test('_cleanupOrphanedSpan handles non-existent spans', () => {
+            const timer = new PerformanceTimer({enabled: true})
+
+            expect(() => {
+                timer._cleanupOrphanedSpan('nonexistent', 'manual')
+            }).not.toThrow()
+        })
+
+        test('handles createChildSpan returning null', () => {
+            const timer = new PerformanceTimer({enabled: true})
+
+            // Mock createChildSpan to return null
+            const {createChildSpan} = jest.requireMock('./opentelemetry')
+            createChildSpan.mockReturnValueOnce(null)
+
+            timer.mark('test', 'start')
+
+            expect(timer.spans.size).toBe(0)
+            expect(timer.spanTimeouts.size).toBe(0)
+        })
+
+        test('handles performance.clearMarks and performance.clearMeasures errors', () => {
+            const timer = new PerformanceTimer({enabled: true})
+
+            // Mock performance methods that might throw
+            const originalClearMarks = performance.clearMarks
+            const originalClearMeasures = performance.clearMeasures
+
+            performance.clearMarks = jest.fn().mockImplementation(() => {
+                throw new Error('ClearMarks failed')
+            })
+            performance.clearMeasures = jest.fn().mockImplementation(() => {
+                throw new Error('ClearMeasures failed')
+            })
+
+            timer.mark('test', 'start')
+
+            expect(() => {
+                timer.mark('test', 'end')
+            }).not.toThrow()
+
+            // Restore methods
+            performance.clearMarks = originalClearMarks
+            performance.clearMeasures = originalClearMeasures
+        })
+
+        test('handles span cleanup when performance.measure fails', () => {
+            const timer = new PerformanceTimer({enabled: true})
+
+            // Mock performance.measure to throw an error
+            const originalMeasure = performance.measure
+            performance.measure = jest.fn().mockImplementation(() => {
+                throw new Error('Measure failed')
+            })
+
+            timer.mark('test', 'start')
+            timer.mark('test', 'end') // This will fail but span remains
+
+            expect(timer.spans.size).toBe(1)
+
+            // Cleanup should remove the orphaned span
+            timer.cleanup()
+
+            expect(timer.spans.size).toBe(0)
+            expect(timer.spanTimeouts.size).toBe(0)
+
+            // Restore original method
+            performance.measure = originalMeasure
+        })
+    })
+
+    describe('constructor options', () => {
+        test('accepts custom maxSpanDuration', () => {
+            const timer = new PerformanceTimer({enabled: true, maxSpanDuration: 5000})
+            expect(timer.maxSpanDuration).toBe(5000)
+        })
+
+        test('uses default maxSpanDuration when not provided', () => {
+            const timer = new PerformanceTimer({enabled: true})
+            expect(timer.maxSpanDuration).toBe(30000)
+        })
+
+        test('handles empty options object', () => {
+            const timer = new PerformanceTimer({})
+            expect(timer.enabled).toBe(false)
+            expect(timer.maxSpanDuration).toBe(30000)
+        })
     })
 })
