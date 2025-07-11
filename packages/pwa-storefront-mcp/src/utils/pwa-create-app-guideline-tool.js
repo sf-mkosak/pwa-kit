@@ -66,18 +66,12 @@ export default {
     description: `This tool is used to provide the agent with the instructions on how to use the @salesforce/pwa-kit-create-app CLI tool to create a new PWA Kit projects. Do not attempt to create a project without using this tool first.`,
     inputSchema: EmptyJsonSchema,
     fn: async () => {
-        let programOutput = ''
-
         // Run the display program and get the output.
-        try {
-            programOutput = await runCommand(COMMAND_RUNNER, [
-                ...(COMMAND_RUNNER === 'npx' ? ['--yes'] : []),
-                CREATE_APP_COMMAND,
-                DISPLAY_PROGRAM_FLAG
-            ])
-        } catch (err) {
-            console.error('Failed to run display program:', err)
-        }
+        const programOutput = await runCommand(COMMAND_RUNNER, [
+            ...(COMMAND_RUNNER === 'npx' ? ['--yes'] : []),
+            CREATE_APP_COMMAND,
+            DISPLAY_PROGRAM_FLAG
+        ])
 
         // Parse the output and get the data, metadata, and schemas.
         const {
