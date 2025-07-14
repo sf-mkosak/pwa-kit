@@ -30,95 +30,117 @@ describe('OpenTelemetry Config', () => {
     })
 
     describe('getOTELConfig', () => {
-        test('should return default config when no environment variables are set', () => {
-            delete process.env.OTEL_SERVICE_NAME
-            delete process.env.OTEL_SDK_ENABLED
-            delete process.env.OTEL_B3_TRACING_ENABLED
+        describe('serviceName', () => {
+            test('should return service name when OTEL_SERVICE_NAME is set', () => {
+                process.env.OTEL_SERVICE_NAME = 'custom-service'
 
-            const {getOTELConfig} = mockModule()
-            const config = getOTELConfig()
+                const {getOTELConfig} = mockModule()
+                const config = getOTELConfig()
 
-            expect(config).toEqual({
-                serviceName: 'pwa-kit-react-sdk',
-                enabled: false,
-                b3TracingEnabled: false
+                expect(config.serviceName).toBe('custom-service')
+            })
+
+            test('should return default service name when OTEL_SERVICE_NAME is not set', () => {
+                delete process.env.OTEL_SERVICE_NAME
+
+                const {getOTELConfig} = mockModule()
+                const config = getOTELConfig()
+
+                expect(config.serviceName).toBe('pwa-kit-react-sdk')
+            })
+
+            test('should return default service name when OTEL_SERVICE_NAME is empty string', () => {
+                process.env.OTEL_SERVICE_NAME = ''
+
+                const {getOTELConfig} = mockModule()
+                const config = getOTELConfig()
+
+                expect(config.serviceName).toBe('pwa-kit-react-sdk')
             })
         })
 
-        test('should use environment variables when provided', () => {
-            process.env.OTEL_SERVICE_NAME = 'test-service'
-            process.env.OTEL_SDK_ENABLED = 'true'
-            process.env.OTEL_B3_TRACING_ENABLED = 'true'
+        describe('enabled', () => {
+            test('should return enabled when OTEL_SDK_ENABLED is "true"', () => {
+                process.env.OTEL_SDK_ENABLED = 'true'
 
-            const {getOTELConfig} = mockModule()
-            const config = getOTELConfig()
+                const {getOTELConfig} = mockModule()
+                const config = getOTELConfig()
 
-            expect(config).toEqual({
-                serviceName: 'test-service',
-                enabled: true,
-                b3TracingEnabled: true
+                expect(config.enabled).toBe(true)
+            })
+
+            test('should return disabled when OTEL_SDK_ENABLED is not set', () => {
+                delete process.env.OTEL_SDK_ENABLED
+
+                const {getOTELConfig} = mockModule()
+                const config = getOTELConfig()
+
+                expect(config.enabled).toBe(false)
+            })
+
+            test('should return disabled when OTEL_SDK_ENABLED is "false"', () => {
+                process.env.OTEL_SDK_ENABLED = 'false'
+
+                const {getOTELConfig} = mockModule()
+                const config = getOTELConfig()
+
+                expect(config.enabled).toBe(false)
+            })
+
+            test('should return disabled when OTEL_SDK_ENABLED is any non-"true" value', () => {
+                const nonTrueValues = ['yes', '1', 'True', 'TRUE', 'on', 'enabled', '']
+
+                nonTrueValues.forEach((value) => {
+                    process.env.OTEL_SDK_ENABLED = value
+
+                    const {getOTELConfig} = mockModule()
+                    const config = getOTELConfig()
+
+                    expect(config.enabled).toBe(false)
+                })
             })
         })
 
-        test('should handle partial environment variables', () => {
-            process.env.OTEL_SERVICE_NAME = 'custom-service'
-            process.env.OTEL_SDK_ENABLED = 'false'
-            delete process.env.OTEL_B3_TRACING_ENABLED
+        describe('b3TracingEnabled', () => {
+            test('should return enabled when OTEL_B3_TRACING_ENABLED is "true"', () => {
+                process.env.OTEL_B3_TRACING_ENABLED = 'true'
 
-            const {getOTELConfig} = mockModule()
-            const config = getOTELConfig()
+                const {getOTELConfig} = mockModule()
+                const config = getOTELConfig()
 
-            expect(config).toEqual({
-                serviceName: 'custom-service',
-                enabled: false,
-                b3TracingEnabled: false
+                expect(config.b3TracingEnabled).toBe(true)
             })
-        })
 
-        test('should treat non-"true" values as false for boolean flags', () => {
-            process.env.OTEL_SDK_ENABLED = 'false'
-            process.env.OTEL_B3_TRACING_ENABLED = 'yes'
+            test('should return disabled when OTEL_B3_TRACING_ENABLED is not set', () => {
+                delete process.env.OTEL_B3_TRACING_ENABLED
 
-            const {getOTELConfig} = mockModule()
-            const config = getOTELConfig()
+                const {getOTELConfig} = mockModule()
+                const config = getOTELConfig()
 
-            expect(config.enabled).toBe(false)
-            expect(config.b3TracingEnabled).toBe(false)
-        })
-
-        test('should handle empty string environment variables', () => {
-            process.env.OTEL_SERVICE_NAME = ''
-            process.env.OTEL_SDK_ENABLED = ''
-            process.env.OTEL_B3_TRACING_ENABLED = ''
-
-            const {getOTELConfig} = mockModule()
-            const config = getOTELConfig()
-
-            expect(config).toEqual({
-                serviceName: 'pwa-kit-react-sdk', // Falls back to default
-                enabled: false,
-                b3TracingEnabled: false
+                expect(config.b3TracingEnabled).toBe(false)
             })
-        })
-    })
 
-    describe('getServiceName', () => {
-        test('should return service name from config', () => {
-            process.env.OTEL_SERVICE_NAME = 'test-service-name'
+            test('should return disabled when OTEL_B3_TRACING_ENABLED is "false"', () => {
+                process.env.OTEL_B3_TRACING_ENABLED = 'false'
 
-            const {getServiceName} = mockModule()
-            const serviceName = getServiceName()
+                const {getOTELConfig} = mockModule()
+                const config = getOTELConfig()
 
-            expect(serviceName).toBe('test-service-name')
-        })
+                expect(config.b3TracingEnabled).toBe(false)
+            })
 
-        test('should return default service name when no env var set', () => {
-            delete process.env.OTEL_SERVICE_NAME
+            test('should return disabled when OTEL_B3_TRACING_ENABLED is any non-"true" value', () => {
+                const nonTrueValues = ['yes', '1', 'True', 'TRUE', 'on', 'enabled', '']
 
-            const {getServiceName} = mockModule()
-            const serviceName = getServiceName()
+                nonTrueValues.forEach((value) => {
+                    process.env.OTEL_B3_TRACING_ENABLED = value
 
-            expect(serviceName).toBe('pwa-kit-react-sdk')
+                    const {getOTELConfig} = mockModule()
+                    const config = getOTELConfig()
+
+                    expect(config.b3TracingEnabled).toBe(false)
+                })
+            })
         })
     })
 })
