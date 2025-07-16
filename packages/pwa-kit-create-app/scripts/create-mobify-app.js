@@ -394,7 +394,14 @@ const runGenerator = (context, {outputDir, templateVersion, verbose}) => {
     npmInstall(outputDir, {verbose})
 
     // Copy the .cursor/rules directory from installed node_modules if it exists
-    const cursorRulesFromDir = p.join(outputDir, 'node_modules', '@salesforce','retail-react-app', '.cursor', 'rules')
+    const cursorRulesFromDir = p.join(
+        outputDir,
+        'node_modules',
+        '@salesforce',
+        'retail-react-app',
+        '.cursor',
+        'rules'
+    )
     if (sh.test('-e', cursorRulesFromDir)) {
         const outputCursorRulesDir = p.join(outputDir, '.cursor', 'rules')
 
