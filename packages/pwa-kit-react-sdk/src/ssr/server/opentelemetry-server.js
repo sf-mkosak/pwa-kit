@@ -11,7 +11,7 @@ import {B3Propagator} from '@opentelemetry/propagator-b3'
 import {Resource} from '@opentelemetry/resources'
 import {propagation} from '@opentelemetry/api'
 import logger from '../../utils/logger-instance'
-import {getServiceName, OTEL_CONFIG} from '../../utils/opentelemetry'
+import {getServiceName, getOTELConfig} from '../../utils/opentelemetry-config'
 
 let provider = null
 
@@ -27,7 +27,7 @@ export const initializeServerTracing = (options = {}) => {
     const {
         serviceName = options.serviceName || getServiceName(),
         serviceVersion,
-        enabled = OTEL_CONFIG.enabled
+        enabled = getOTELConfig().enabled
     } = options
 
     // If tracing is disabled, return null without initializing

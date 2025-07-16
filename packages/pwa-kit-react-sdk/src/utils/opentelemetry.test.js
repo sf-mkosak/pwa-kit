@@ -103,13 +103,6 @@ describe('OpenTelemetry Utilities', () => {
         opentelemetryUtils = require('./opentelemetry')
     })
 
-    describe('getServiceName', () => {
-        test('should return the service name from config', () => {
-            const serviceName = opentelemetryUtils.getServiceName()
-            expect(serviceName).toBe('pwa-kit-react-sdk')
-        })
-    })
-
     describe('createSpan', () => {
         test('should create a span successfully', () => {
             const result = opentelemetryUtils.createSpan('test-span', {

@@ -8,6 +8,7 @@
 /**
  * @module progressive-web-sdk/ssr/server/react-rendering
  */
+import {initializeServerTracing, isServerTracingInitialized} from './opentelemetry-server'
 
 import path from 'path'
 import React from 'react'
@@ -122,6 +123,11 @@ export const getLocationSearch = (req, opts = {}) => {
 export const render = async (req, res, next) => {
     const includeServerTimingHeader = '__server_timing' in req.query
     const shouldTrackPerformance = includeServerTimingHeader || process.env.SERVER_TIMING
+
+    if (!isServerTracingInitialized() && shouldTrackPerformance) {
+        initializeServerTracing()
+    }
+
     res.__performanceTimer = new PerformanceTimer({enabled: shouldTrackPerformance})
     res.__performanceTimer.mark(PERFORMANCE_MARKS.total, 'start')
     const AppConfig = getAppConfig()
@@ -222,6 +228,11 @@ export const render = async (req, res, next) => {
         // Here, we use Express's convention to invoke error middleware.
         // Note, we don't have an error handling middleware yet! This is calling the
         // default error handling middleware provided by Express
+
+        if (res.__performanceTimer) {
+            res.__performanceTimer.cleanup()
+        }
+
         return next(e)
     }
 
@@ -243,6 +254,8 @@ export const render = async (req, res, next) => {
         // cache headers set by individual page components
         res.set('Cache-Control', NO_CACHE)
     }
+
+    res.__performanceTimer.cleanup()
 
     if (redirectUrl) {
         res.redirect(routerContext.status || 302, redirectUrl)

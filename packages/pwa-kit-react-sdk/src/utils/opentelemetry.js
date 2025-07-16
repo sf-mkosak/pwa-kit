@@ -8,20 +8,12 @@
 import {trace, context, SpanStatusCode} from '@opentelemetry/api'
 import {hrTimeToMilliseconds, hrTimeToTimeStamp} from '@opentelemetry/core'
 import logger from './logger-instance'
-
-const DEFAULT_SERVICE_NAME = 'pwa-kit-react-sdk'
-
-export const OTEL_CONFIG = {
-    serviceName: process.env.OTEL_SERVICE_NAME || DEFAULT_SERVICE_NAME,
-    enabled: process.env.OTEL_SDK_ENABLED === 'true',
-    b3TracingEnabled: process.env.OTEL_B3_TRACING_ENABLED === 'true'
-}
-
-export const getServiceName = () => OTEL_CONFIG.serviceName
+import {getOTELConfig, getServiceName} from './opentelemetry-config'
 
 const logSpanData = (span, event = 'start', res = null) => {
     const spanContext = span.spanContext()
     const startTime = span.startTime
+
     const endTime = event === 'start' ? startTime : span.endTime
     const duration = event === 'start' ? 0 : hrTimeToMilliseconds(span.duration)
 
@@ -44,7 +36,7 @@ const logSpanData = (span, event = 'start', res = null) => {
         links: [],
         start_time: startTime,
         end_time: endTime,
-        forwardTrace: OTEL_CONFIG.b3TracingEnabled
+        forwardTrace: getOTELConfig().b3TracingEnabled
     }
 
     // Inject B3 headers into response if available
