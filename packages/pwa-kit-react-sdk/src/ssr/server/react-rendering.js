@@ -9,6 +9,7 @@
  * @module progressive-web-sdk/ssr/server/react-rendering
  */
 import {initializeServerTracing, isServerTracingInitialized} from './opentelemetry-server'
+import {createSpan, createChildSpan, endSpan} from '../../utils/opentelemetry'
 
 import path from 'path'
 import React from 'react'
@@ -128,8 +129,19 @@ export const render = async (req, res, next) => {
         initializeServerTracing()
     }
 
+    // Create root span for the entire SSR process
+    const rootSpan = createSpan('ssr.render', {
+        attributes: {
+            'ssr.request.url': req.originalUrl,
+            'ssr.request.method': req.method,
+            'ssr.request.id': res.locals.requestId,
+            'ssr.performance.tracking': shouldTrackPerformance
+        }
+    })
+
     res.__performanceTimer = new PerformanceTimer({enabled: shouldTrackPerformance})
     res.__performanceTimer.mark(PERFORMANCE_MARKS.total, 'start')
+
     const AppConfig = getAppConfig()
     // Get the application config which should have been stored at this point.
     const config = getConfig()
@@ -149,6 +161,11 @@ export const render = async (req, res, next) => {
     }
 
     // Step 1 - Find the match.
+    const routeMatchingSpan = createChildSpan('ssr.route-matching', {
+        'ssr.routes.count': routes.length,
+        'ssr.request.path': req.path
+    })
+
     res.__performanceTimer.mark(PERFORMANCE_MARKS.routeMatching, 'start')
     let route
     let match
@@ -161,11 +178,39 @@ export const render = async (req, res, next) => {
         }
         return !!match
     })
+
+    if (routeMatchingSpan) {
+        if (route) {
+            routeMatchingSpan.setAttributes({
+                'ssr.route.matched': true,
+                'ssr.route.path': route.path,
+                'ssr.route.component': route.component.name || 'unknown'
+            })
+        } else {
+            routeMatchingSpan.setAttributes({
+                'ssr.route.matched': false
+            })
+        }
+        endSpan(routeMatchingSpan)
+    }
     res.__performanceTimer.mark(PERFORMANCE_MARKS.routeMatching, 'end')
 
     // Step 2 - Get the component
+    const componentLoadingSpan = createChildSpan('ssr.component-loading', {
+        'ssr.component.name': route?.component?.name || 'unknown',
+        'ssr.component.type': 'dynamic'
+    })
+
     res.__performanceTimer.mark(PERFORMANCE_MARKS.loadComponent, 'start')
     const component = await route.component.getComponent()
+
+    if (componentLoadingSpan) {
+        componentLoadingSpan.setAttributes({
+            'ssr.component.loaded': true,
+            'ssr.component.displayName': component.displayName || component.name || 'unknown'
+        })
+        endSpan(componentLoadingSpan)
+    }
     res.__performanceTimer.mark(PERFORMANCE_MARKS.loadComponent, 'end')
 
     // Step 3 - Init the app state
@@ -184,9 +229,19 @@ export const render = async (req, res, next) => {
     let appState, appStateError
 
     if (component === Throw404) {
+        const notFoundSpan = createChildSpan('ssr.app-state.404', {
+            'ssr.error.type': 'not_found',
+            'ssr.error.status': 404
+        })
         appState = {}
         appStateError = new errors.HTTPNotFound('Not found')
+        if (notFoundSpan) endSpan(notFoundSpan)
     } else {
+        const appStateSpan = createChildSpan('ssr.app-state.init', {
+            'ssr.component.name': component.displayName || component.name || 'unknown',
+            'ssr.route.path': route?.path || 'unknown'
+        })
+
         res.__performanceTimer.mark(PERFORMANCE_MARKS.fetchStrategies, 'start')
         const ret = await AppConfig.initAppState({
             App: WrappedApp,
@@ -203,8 +258,29 @@ export const render = async (req, res, next) => {
             __STATE_MANAGEMENT_LIBRARY: AppConfig.freeze(res.locals)
         }
         appStateError = ret.error
+
+        if (appStateSpan) {
+            appStateSpan.setAttributes({
+                'ssr.app-state.error': !!appStateError,
+                'ssr.app-state.size': JSON.stringify(appState).length
+            })
+            if (appStateError) {
+                appStateSpan.setAttributes({
+                    'ssr.error.type': appStateError.constructor.name,
+                    'ssr.error.status': appStateError.status || 500,
+                    'ssr.error.message': appStateError.message
+                })
+            }
+            endSpan(appStateSpan)
+        }
         res.__performanceTimer.mark(PERFORMANCE_MARKS.fetchStrategies, 'end')
     }
+    const renderSpan = createChildSpan('ssr.react-render', {
+        'ssr.render.type': 'react-to-string',
+        'ssr.app-state.size': JSON.stringify(appState).length,
+        'ssr.error.present': !!appStateError
+    })
+
     res.__performanceTimer.mark(PERFORMANCE_MARKS.renderToString, 'start')
     appJSX = React.cloneElement(appJSX, {error: appStateError, appState})
 
@@ -222,17 +298,32 @@ export const render = async (req, res, next) => {
             config,
             appJSX
         })
+        if (renderSpan) {
+            renderSpan.setAttributes({
+                'ssr.render.success': true,
+                'ssr.render.html.size': renderResult.html.length,
+                'ssr.render.redirect': !!renderResult.routerContext.url
+            })
+            if (renderResult.routerContext.url) {
+                renderSpan.setAttributes({
+                    'ssr.redirect.url': renderResult.routerContext.url,
+                    'ssr.redirect.status': renderResult.routerContext.status || 302
+                })
+            }
+        }
     } catch (e) {
-        // This is an unrecoverable error.
-        // (errors handled by the AppErrorBoundary are considered recoverable)
-        // Here, we use Express's convention to invoke error middleware.
-        // Note, we don't have an error handling middleware yet! This is calling the
-        // default error handling middleware provided by Express
-
+        if (renderSpan) {
+            renderSpan.setAttributes({
+                'ssr.render.success': false,
+                'ssr.error.type': e.constructor.name,
+                'ssr.error.message': e.message,
+                'ssr.error.stack': e.stack
+            })
+            endSpan(renderSpan)
+        }
         if (res.__performanceTimer) {
             res.__performanceTimer.cleanup()
         }
-
         return next(e)
     }
 
@@ -246,6 +337,23 @@ export const render = async (req, res, next) => {
     res.__performanceTimer.mark(PERFORMANCE_MARKS.total, 'end')
     res.__performanceTimer.log()
 
+    // Set final attributes on root span
+    if (rootSpan) {
+        rootSpan.setAttributes({
+            'ssr.response.status': status,
+            'ssr.response.redirect': !!redirectUrl,
+            'ssr.response.html.size': html.length,
+            'ssr.error.final': !!error
+        })
+        if (error) {
+            rootSpan.setAttributes({
+                'ssr.error.final.type': error.constructor.name,
+                'ssr.error.final.status': error.status || 500,
+                'ssr.error.final.message': error.message
+            })
+        }
+    }
+
     if (includeServerTimingHeader) {
         res.setHeader('Server-Timing', res.__performanceTimer.buildServerTimingHeader())
 
@@ -256,6 +364,8 @@ export const render = async (req, res, next) => {
     }
 
     res.__performanceTimer.cleanup()
+    if (renderSpan) endSpan(renderSpan)
+    if (rootSpan) endSpan(rootSpan)
 
     if (redirectUrl) {
         res.redirect(routerContext.status || 302, redirectUrl)
@@ -304,6 +414,12 @@ const renderApp = (args) => {
     const prettyPrint = 'mobify_pretty' in req.query || '__pretty_print' in req.query
     const indent = prettyPrint ? 8 : 0
 
+    const renderAppSpan = createChildSpan('ssr.render-app', {
+        'ssr.render.ssr-only': ssrOnly,
+        'ssr.render.pretty-print': prettyPrint,
+        'ssr.render.indent': indent
+    })
+
     let routerContext
     let appHtml
     let renderError
@@ -313,6 +429,12 @@ const renderApp = (args) => {
     try {
         routerContext = {}
         appHtml = renderToString(React.cloneElement(appJSX, {routerContext}), extractor)
+        if (renderAppSpan) {
+            renderAppSpan.setAttributes({
+                'ssr.render.success': true,
+                'ssr.render.app-html.size': appHtml.length
+            })
+        }
     } catch (e) {
         // This will catch errors thrown from the app and pass the error
         // to the AppErrorBoundary component, and renders the error page.
@@ -322,10 +444,22 @@ const renderApp = (args) => {
             React.cloneElement(appJSX, {routerContext, error: renderError}),
             extractor
         )
+        if (renderAppSpan) {
+            renderAppSpan.setAttributes({
+                'ssr.render.success': false,
+                'ssr.render.error.type': e.constructor.name,
+                'ssr.render.error.message': e.message,
+                'ssr.render.app-html.size': appHtml.length
+            })
+        }
     }
 
     // Setting type: 'application/json' stops the browser from executing the code.
     const scriptProps = ssrOnly ? {type: 'application/json'} : {}
+
+    const bundleExtractionSpan = createChildSpan('ssr.bundle-extraction', {
+        'ssr.bundle.ssr-only': ssrOnly
+    })
 
     let bundles = []
     /* istanbul ignore next */
@@ -336,7 +470,20 @@ const renderApp = (args) => {
                 ...scriptProps
             })
         )
+        if (bundleExtractionSpan) {
+            bundleExtractionSpan.setAttributes({
+                'ssr.bundle.count': bundles.length,
+                'ssr.bundle.extracted': true
+            })
+        }
+    } else {
+        if (bundleExtractionSpan) {
+            bundleExtractionSpan.setAttributes({
+                'ssr.bundle.extracted': false
+            })
+        }
     }
+    if (bundleExtractionSpan) endSpan(bundleExtractionSpan)
 
     const helmet = Helmet.renderStatic()
 
@@ -383,6 +530,12 @@ const renderApp = (args) => {
         (tag) => helmet[tag] && helmet[tag].toComponent()
     ).filter((tag) => tag)
 
+    const finalHtmlSpan = createChildSpan('ssr.final-html-generation', {
+        'ssr.html.helmet-tags': helmetHeadTags.length,
+        'ssr.html.scripts': scripts.length,
+        'ssr.html.svgs': svgs.length
+    })
+
     const html = ReactDOMServer.renderToString(
         <Document
             head={[...helmetHeadTags]}
@@ -394,7 +547,17 @@ const renderApp = (args) => {
         />
     )
 
-    return {error, html: ['<!doctype html>', html].join(''), routerContext}
+    const finalHtml = ['<!doctype html>', html].join('')
+
+    finalHtmlSpan &&
+        finalHtmlSpan.setAttributes({
+            'ssr.html.final.size': finalHtml.length,
+            'ssr.html.doctype': true
+        })
+    if (finalHtmlSpan) endSpan(finalHtmlSpan)
+    if (renderAppSpan) endSpan(renderAppSpan)
+
+    return {error, html: finalHtml, routerContext}
 }
 
 const getWindowProgressive = (req, res) => {
