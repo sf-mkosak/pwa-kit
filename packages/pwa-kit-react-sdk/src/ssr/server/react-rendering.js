@@ -126,7 +126,16 @@ export const render = async (req, res, next) => {
     const isLighthouseTest =
         req.headers['user-agent']?.includes('Lighthouse') ||
         req.headers['user-agent']?.includes('Chrome-Lighthouse') ||
-        process.env.LIGHTHOUSE_TEST === 'true'
+        req.headers['user-agent']?.includes('lighthouse') ||
+        req.headers['user-agent']?.includes('chrome-lighthouse') ||
+        process.env.LIGHTHOUSE_TEST === 'true' ||
+        process.env.LHCI === 'true' ||
+        process.env.LIGHTHOUSE_CI === 'true'
+
+    // Debug logging to see if detection is working
+    if (isLighthouseTest) {
+        console.log('Lighthouse test detected, disabling performance tracking')
+    }
 
     res.__performanceTimer = new PerformanceTimer({
         enabled: shouldTrackPerformance && !isLighthouseTest
