@@ -11,18 +11,16 @@
 // That conflicts with the monorepo header rule, so we must disable the rule!
 /* eslint-disable header/header */
 import {render, ALLOWLISTED_INLINE_SCRIPTS} from './react-rendering'
-import {randomUUID} from 'crypto'
 import {RemoteServerFactory} from '@salesforce/pwa-kit-runtime/ssr/server/build-remote-server'
-
 import request from 'supertest'
 import {parse} from 'node-html-parser'
-import path from 'path'
-import {isRemote} from '@salesforce/pwa-kit-runtime/utils/ssr-server'
-import {getLocationSearch} from './react-rendering'
-
-import {getAppConfig} from '../universal/compatibility'
 import PerformanceTimer from '../../utils/performance'
 import {initializeServerTracing, shutdownServerTracing} from './opentelemetry-server'
+import path from 'path'
+import {isRemote} from '@salesforce/pwa-kit-runtime/utils/ssr-server'
+import {getAppConfig} from '../universal/compatibility'
+import {randomUUID} from 'crypto'
+import {getLocationSearch} from './react-rendering'
 
 beforeAll(() => {
     initializeServerTracing()
