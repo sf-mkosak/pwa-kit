@@ -114,6 +114,7 @@ module.exports = {
     "retail-app-demo": [
       ".git",
       ".gitignore",
+      ".cursor",
       ".eslintignore",
       ".eslintrc.js",
       ".prettierrc.yaml",
@@ -129,6 +130,7 @@ module.exports = {
     "retail-app-ext": [
       ".git",
       ".gitignore",
+      ".cursor",
       ".eslintignore",
       ".eslintrc.js",
       ".prettierrc.yaml",
