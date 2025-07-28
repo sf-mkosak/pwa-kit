@@ -16,12 +16,60 @@ const logSpanData = (span, event = 'start', res = null) => {
     const endTime = event === 'start' ? startTime : span.endTime
     const duration = event === 'start' ? 0 : span.duration
 
+    // Enhanced debugging for timing issues
+    logger.warn('span.start_time', {
+        namespace: 'opentelemetry',
+        additionalProperties: {
+            start_time: span.startTime,
+            start_time_type: typeof span.startTime,
+            start_time_is_array: Array.isArray(span.startTime),
+            start_time_length: Array.isArray(span.startTime) ? span.startTime.length : 'N/A',
+            span_name: span.name,
+            event: event,
+            otel_enabled: getOTELConfig().enabled
+        }
+    })
+    logger.warn('start time', {
+        namespace: 'opentelemetry',
+        additionalProperties: {
+            startTime,
+            startTime_type: typeof startTime,
+            startTime_is_array: Array.isArray(startTime),
+            startTime_length: Array.isArray(startTime) ? startTime.length : 'N/A'
+        }
+    })
+    logger.warn('end time', {
+        namespace: 'opentelemetry',
+        additionalProperties: {
+            endTime,
+            endTime_type: typeof endTime,
+            endTime_is_array: Array.isArray(endTime),
+            endTime_length: Array.isArray(endTime) ? endTime.length : 'N/A'
+        }
+    })
+
     // Defensive: Only log if startTime and duration are valid
     if (
         !Array.isArray(startTime) ||
         startTime.length !== 2 ||
         (duration !== 0 && (!Array.isArray(duration) || duration.length !== 2))
     ) {
+        logger.warn(
+            'Invalid timing data detected - OpenTelemetry may not be properly initialized',
+            {
+                namespace: 'opentelemetry',
+                additionalProperties: {
+                    span_name: span.name,
+                    event: event,
+                    startTime_valid: Array.isArray(startTime) && startTime.length === 2,
+                    duration_valid:
+                        duration === 0 || (Array.isArray(duration) && duration.length === 2),
+                    otel_enabled: getOTELConfig().enabled,
+                    startTime_type: typeof startTime,
+                    startTime_value: startTime
+                }
+            }
+        )
         return
     }
 
@@ -32,7 +80,7 @@ const logSpanData = (span, event = 'start', res = null) => {
         name: span.name,
         id: spanContext.spanId,
         kind: span.kind,
-        timestamp: hrTimeToTimeStamp(startTime),
+        timestamp: startTime ? hrTimeToTimeStamp(startTime) : undefined,
         duration: duration,
         attributes: {
             'service.name': getServiceName(),
@@ -91,6 +139,7 @@ export const createSpan = (name, options = {}) => {
         )
 
         // Set the new span as active
+        logger.warn('create span/logSpanData')
         logSpanData(span, 'start')
         return trace.setSpan(context.active(), span)
     } catch (error) {
@@ -113,6 +162,20 @@ export const createSpan = (name, options = {}) => {
  */
 export const createChildSpan = (name, attributes = {}) => {
     try {
+        // Check if OpenTelemetry is properly configured
+        const otelConfig = getOTELConfig()
+        if (!otelConfig.enabled) {
+            logger.warn('OpenTelemetry is disabled - spans will not have proper timing data', {
+                namespace: 'opentelemetry',
+                additionalProperties: {
+                    span_name: name,
+                    otel_enabled: otelConfig.enabled,
+                    otel_service_name: otelConfig.serviceName,
+                    suggestion: 'Set OTEL_SDK_ENABLED=true to enable proper timing'
+                }
+            })
+        }
+
         const tracer = trace.getTracer(getServiceName())
         const ctx = context.active()
         const parentSpan = trace.getSpan(ctx)
@@ -145,7 +208,7 @@ export const createChildSpan = (name, attributes = {}) => {
             },
             parentSpan ? ctx : undefined
         )
-
+        logger.warn('create child span/logSpanData')
         logSpanData(span, 'start')
         return span
     } catch (error) {
@@ -174,6 +237,7 @@ export const endSpan = (span) => {
         span.end()
 
         // Log completion data
+        logger.warn('create end span/logSpanData')
         logSpanData(span, 'end')
     } catch (error) {
         logger.error('Error ending OpenTelemetry span', {
@@ -194,6 +258,23 @@ export const endSpan = (span) => {
  * @returns {Promise<any>} The result of the function
  */
 export const tracePerformance = async (name, fn, res = null) => {
+    // Check if OpenTelemetry is properly configured
+    const otelConfig = getOTELConfig()
+    if (!otelConfig.enabled) {
+        logger.warn(
+            'OpenTelemetry is disabled - performance tracing will not have proper timing data',
+            {
+                namespace: 'opentelemetry',
+                additionalProperties: {
+                    trace_name: name,
+                    otel_enabled: otelConfig.enabled,
+                    otel_service_name: otelConfig.serviceName,
+                    suggestion: 'Set OTEL_SDK_ENABLED=true to enable proper timing'
+                }
+            }
+        )
+    }
+
     const tracer = trace.getTracer(getServiceName())
     // Create the root span
     const rootSpan = tracer.startSpan(name, {
@@ -206,6 +287,7 @@ export const tracePerformance = async (name, fn, res = null) => {
     const ctx = trace.setSpan(context.active(), rootSpan)
 
     // Log start event
+    logger.warn('create tracePerformance /logSpanData')
     logSpanData(rootSpan, 'start', res)
 
     try {
@@ -225,6 +307,7 @@ export const tracePerformance = async (name, fn, res = null) => {
         rootSpan.end()
 
         // Log completion data
+        logger.warn('create tracePerformance /logSpanData')
         logSpanData(rootSpan, 'end', res)
 
         return result
@@ -232,6 +315,7 @@ export const tracePerformance = async (name, fn, res = null) => {
         rootSpan.end()
 
         // Log error completion
+        logger.warn('create tracePerformance /logSpanData')
         logSpanData(rootSpan, 'end', res)
 
         throw error
@@ -289,6 +373,7 @@ export const logPerformanceMetric = (name, duration, attributes = {}) => {
         span.end()
 
         // Log completion data
+        logger.warn('create logPerformanceMetric /logSpanData')
         logSpanData(span, 'end')
     } catch (error) {
         logger.error('Error logging performance metric', {
