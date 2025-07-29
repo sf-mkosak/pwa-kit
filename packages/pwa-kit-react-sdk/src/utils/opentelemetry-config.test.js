@@ -19,7 +19,8 @@ describe('OpenTelemetry Config', () => {
     beforeEach(() => {
         // Reset environment variables
         process.env = {...originalEnv}
-
+        
+        // Clear module cache to reset _cachedConfig
         jest.resetModules()
     })
 
