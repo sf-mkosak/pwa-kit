@@ -1127,6 +1127,7 @@ describe('getLocationSearch', function () {
 // Test to cover the serverRenderer function (line 562)
 describe('serverRenderer', () => {
     test('should return a function', () => {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const serverRenderer = require('./react-rendering').default
         const renderer = serverRenderer({clientStats: {}, serverStats: {}})
         expect(typeof renderer).toBe('function')
@@ -1137,23 +1138,24 @@ describe('serverRenderer', () => {
 describe('server tracing initialization', () => {
     test('should initialize server tracing when not initialized but should track performance', async () => {
         // Mock isServerTracingInitialized to return false
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const opentelemetryServer = require('./opentelemetry-server')
         jest.spyOn(opentelemetryServer, 'isServerTracingInitialized').mockReturnValue(false)
-        
+
         // Mock console.warn to capture the warning
         const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
-        
+
         const app = RemoteServerFactory._createApp(opts())
         app.get('/*', render)
-        
+
         // Make a request with server timing enabled to trigger the condition
         await request(app).get('/pwa/?__server_timing=1')
-        
+
         // Verify the warning was logged
         expect(consoleWarnSpy).toHaveBeenCalledWith(
             '[OpenTelemetry] Server tracing is not initialized but should be. Tracing will be skipped.'
         )
-        
+
         // Clean up
         consoleWarnSpy.mockRestore()
         jest.restoreAllMocks()

@@ -41,7 +41,6 @@ describe('OpenTelemetry Utilities', () => {
     let mockSpan
     let mockContext
     let mockTrace
-    let mockCore
     let mockLogger
     let opentelemetryUtils
 
@@ -93,7 +92,6 @@ describe('OpenTelemetry Utilities', () => {
             ERROR: 2
         }
 
-        mockCore = core
         mockLogger = logger
 
         // Configure span mock
@@ -698,6 +696,7 @@ describe('OpenTelemetry Utilities', () => {
     describe('OpenTelemetry disabled scenarios', () => {
         test('should warn when OpenTelemetry is disabled in createChildSpan', () => {
             // Mock getOTELConfig to return enabled: false
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
             const opentelemetryConfig = require('./opentelemetry-config')
             jest.spyOn(opentelemetryConfig, 'getOTELConfig').mockReturnValue({
                 enabled: false,
@@ -725,6 +724,7 @@ describe('OpenTelemetry Utilities', () => {
 
         test('should warn when OpenTelemetry is disabled in tracePerformance', async () => {
             // Mock getOTELConfig to return enabled: false
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
             const opentelemetryConfig = require('./opentelemetry-config')
             jest.spyOn(opentelemetryConfig, 'getOTELConfig').mockReturnValue({
                 enabled: false,
