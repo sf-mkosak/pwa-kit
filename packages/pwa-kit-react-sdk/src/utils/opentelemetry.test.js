@@ -586,4 +586,174 @@ describe('OpenTelemetry Utilities', () => {
             expect(mockSpan.end).not.toHaveBeenCalled()
         })
     })
+
+    // Test to cover the defensive check in logSpanData (lines 57-73)
+    describe('logSpanData with invalid timing data', () => {
+        test('should handle invalid startTime data', () => {
+            const invalidSpan = {
+                ...mockSpan,
+                startTime: 'invalid-time',
+                duration: [0, 100000000]
+            }
+
+            opentelemetryUtils.endSpan(invalidSpan)
+
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                'Invalid timing data detected - OpenTelemetry may not be properly initialized',
+                expect.objectContaining({
+                    namespace: 'opentelemetry',
+                    additionalProperties: expect.objectContaining({
+                        span_name: 'test-span',
+                        event: 'end',
+                        startTime_valid: false,
+                        duration_valid: true,
+                        otel_enabled: true,
+                        startTime_type: 'string',
+                        startTime_value: 'invalid-time'
+                    })
+                })
+            )
+        })
+
+        test('should handle invalid duration data', () => {
+            const invalidSpan = {
+                ...mockSpan,
+                startTime: [1234567890, 0],
+                duration: 'invalid-duration'
+            }
+
+            opentelemetryUtils.endSpan(invalidSpan)
+
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                'Invalid timing data detected - OpenTelemetry may not be properly initialized',
+                expect.objectContaining({
+                    namespace: 'opentelemetry',
+                    additionalProperties: expect.objectContaining({
+                        span_name: 'test-span',
+                        event: 'end',
+                        startTime_valid: true,
+                        duration_valid: false,
+                        otel_enabled: true,
+                        startTime_type: 'object',
+                        startTime_value: [1234567890, 0]
+                    })
+                })
+            )
+        })
+
+        test('should handle startTime with wrong array length', () => {
+            const invalidSpan = {
+                ...mockSpan,
+                startTime: [1234567890], // Only one element instead of two
+                duration: [0, 100000000]
+            }
+
+            opentelemetryUtils.endSpan(invalidSpan)
+
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                'Invalid timing data detected - OpenTelemetry may not be properly initialized',
+                expect.objectContaining({
+                    namespace: 'opentelemetry',
+                    additionalProperties: expect.objectContaining({
+                        span_name: 'test-span',
+                        event: 'end',
+                        startTime_valid: false,
+                        duration_valid: true,
+                        otel_enabled: true,
+                        startTime_type: 'object',
+                        startTime_value: [1234567890]
+                    })
+                })
+            )
+        })
+
+        test('should handle duration with wrong array length', () => {
+            const invalidSpan = {
+                ...mockSpan,
+                startTime: [1234567890, 0],
+                duration: [0] // Only one element instead of two
+            }
+
+            opentelemetryUtils.endSpan(invalidSpan)
+
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                'Invalid timing data detected - OpenTelemetry may not be properly initialized',
+                expect.objectContaining({
+                    namespace: 'opentelemetry',
+                    additionalProperties: expect.objectContaining({
+                        span_name: 'test-span',
+                        event: 'end',
+                        startTime_valid: true,
+                        duration_valid: false,
+                        otel_enabled: true,
+                        startTime_type: 'object',
+                        startTime_value: [1234567890, 0]
+                    })
+                })
+            )
+        })
+    })
+
+    // Test to cover OpenTelemetry disabled conditions (lines 168, 264)
+    describe('OpenTelemetry disabled scenarios', () => {
+        test('should warn when OpenTelemetry is disabled in createChildSpan', () => {
+            // Mock getOTELConfig to return enabled: false
+            const opentelemetryConfig = require('./opentelemetry-config')
+            jest.spyOn(opentelemetryConfig, 'getOTELConfig').mockReturnValue({
+                enabled: false,
+                serviceName: 'test-service'
+            })
+
+            const result = opentelemetryUtils.createChildSpan('child-span', {
+                test: 'value'
+            })
+
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                'OpenTelemetry is disabled - spans will not have proper timing data',
+                {
+                    namespace: 'opentelemetry',
+                    additionalProperties: {
+                        span_name: 'child-span',
+                        otel_enabled: false,
+                        otel_service_name: 'test-service',
+                        suggestion: 'Set OTEL_SDK_ENABLED=true to enable proper timing'
+                    }
+                }
+            )
+            expect(result).toBe(mockSpan)
+        })
+
+        test('should warn when OpenTelemetry is disabled in tracePerformance', async () => {
+            // Mock getOTELConfig to return enabled: false
+            const opentelemetryConfig = require('./opentelemetry-config')
+            jest.spyOn(opentelemetryConfig, 'getOTELConfig').mockReturnValue({
+                enabled: false,
+                serviceName: 'test-service'
+            })
+
+            const mockFn = jest.fn().mockResolvedValue('test-result')
+            const mockRes = {
+                setHeader: jest.fn()
+            }
+
+            // Mock context.with to execute the function
+            mockContext.with.mockImplementation((ctx, fn) => fn())
+
+            const result = await opentelemetryUtils.tracePerformance('perf-test', mockFn, mockRes)
+
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                'OpenTelemetry is disabled - performance tracing will not have proper timing data',
+                {
+                    namespace: 'opentelemetry',
+                    additionalProperties: {
+                        trace_name: 'perf-test',
+                        otel_enabled: false,
+                        otel_service_name: 'test-service',
+                        suggestion: 'Set OTEL_SDK_ENABLED=true to enable proper timing'
+                    }
+                }
+            )
+            expect(result).toBe('test-result')
+        })
+    })
 })
