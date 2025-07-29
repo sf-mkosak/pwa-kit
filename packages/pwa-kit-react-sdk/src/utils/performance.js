@@ -89,7 +89,7 @@ export default class PerformanceTimer {
      */
     mark(name, type, options = {}) {
         const {detail = ''} = options
-        if (!name || !type || !this.enabled) {
+        if (!this.enabled || !name || !type) {
             return
         }
 
@@ -120,6 +120,8 @@ export default class PerformanceTimer {
                         }, this.maxSpanDuration)
                         this.spanTimeouts.set(name, timeoutId)
                     }
+                } else {
+                    logger.warn('Span already exists', {name, namespace: 'PerformanceTimer.mark'})
                 }
             } else if (type === this.MARKER_TYPES.END) {
                 const startMark = `${name}.${this.MARKER_TYPES.START}`
@@ -185,6 +187,7 @@ export default class PerformanceTimer {
     _cleanupOrphanedSpan(name, reason = 'manual') {
         const span = this.spans.get(name)
         if (span) {
+
             // Don't log warnings in test environments to avoid GitHub check failures
             if (process.env.NODE_ENV !== 'test') {
                 logger.warn('Cleaning up orphaned span', {
@@ -194,7 +197,15 @@ export default class PerformanceTimer {
                 })
             }
             endSpan(span)
+
+            logger.warn('Cleaning up orphaned span', {
+                name,
+                error: 'Deleting orphaned span (reason: ' + reason + ' cleanup)',
+                namespace: 'PerformanceTimer._cleanupOrphanedSpan'
+            })
+
             this.spans.delete(name)
+            endSpan(span)
         }
 
         // Clear the timeout

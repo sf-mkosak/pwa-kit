@@ -5,8 +5,8 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 /* eslint-disable @typescript-eslint/no-var-requires */
-
 const base = require('internal-lib-build/configs/jest/jest.config')
+
 module.exports = {
     ...base,
     setupFilesAfterEnv: ['./setup-jest.js'],
