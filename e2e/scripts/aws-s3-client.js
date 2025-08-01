@@ -3,7 +3,8 @@ const {
     PutObjectCommand,
     GetObjectCommand,
     ListObjectsV2Command,
-    DeleteObjectCommand
+    DeleteObjectCommand,
+    HeadObjectCommand
 } = require('@aws-sdk/client-s3')
 const {STSClient, AssumeRoleCommand} = require('@aws-sdk/client-sts')
 
@@ -56,18 +57,23 @@ class SecureS3Client {
         }
     }
 
-    async upload(bucket, key, body) {
+    async upload(bucket, key, body, expectedETag = null) {
         if (this.isReadOnly) {
             throw new Error('❌ Upload not allowed - read-only access')
         }
 
         try {
-            console.log(`📤 Uploading to s3://${bucket}/${key}`)
+            console.log(
+                `📤 Uploading to s3://${bucket}/${key}${
+                    expectedETag ? ` with expected ETag: ${expectedETag}` : ''
+                }`
+            )
 
             const command = new PutObjectCommand({
                 Bucket: bucket,
                 Key: key,
-                Body: body
+                Body: body,
+                ...(expectedETag && {IfMatch: expectedETag}) // Only include IfMatch if expectedETag is provided
             })
 
             const result = await this.s3.send(command)
@@ -75,6 +81,11 @@ class SecureS3Client {
             console.log('✅ Upload successful')
             return result
         } catch (error) {
+            if (error.name === 'PreconditionFailedException') {
+                console.error(
+                    '❌ Upload failed: ETag mismatch - file was modified by another process'
+                )
+            }
             console.error('❌ Upload failed:', error)
             throw error
         }
@@ -92,7 +103,13 @@ class SecureS3Client {
             const result = await this.s3.send(command)
 
             console.log('✅ Download successful')
-            return result.Body
+            return {
+                body: result.Body,
+                etag: result.ETag,
+                lastModified: result.LastModified,
+                contentType: result.ContentType,
+                contentLength: result.ContentLength
+            }
         } catch (error) {
             console.error('❌ Download failed:', error)
             throw error
@@ -114,6 +131,25 @@ class SecureS3Client {
             return result.Contents || []
         } catch (error) {
             console.error('❌ List failed:', error)
+            throw error
+        }
+    }
+
+    async getETag(bucket, key) {
+        try {
+            console.log(`🏷️ Getting ETag for s3://${bucket}/${key}`)
+
+            const command = new HeadObjectCommand({
+                Bucket: bucket,
+                Key: key
+            })
+
+            const result = await this.s3.send(command)
+
+            console.log('✅ ETag retrieved:', result.ETag)
+            return result.ETag
+        } catch (error) {
+            console.error('❌ ETag retrieval failed:', error)
             throw error
         }
     }
