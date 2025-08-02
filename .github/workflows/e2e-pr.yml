@@ -70,6 +70,13 @@ jobs:
                   RUN_ID: ${{ github.run_id }}
                   PR_NUMBER: ${{ github.event.pull_request.number }}
 
+            - name: Echo MRT Target Outputs
+              if: ${{ env.SKIP_WORKFLOW != 'true' }}
+              run: |
+                  echo "MRT Environment ID: ${{ steps.get_mrt_target_lock.outputs.mrt_env_id }}"
+                  echo "MRT Environment URL: ${{ steps.get_mrt_target_lock.outputs.mrt_env_url }}"
+                  echo "Status: ${{ steps.get_mrt_target_lock.outputs.status }}"
+
             # Skipping the rest of the workflow for now
             - name: Skip the rest of the workflow
               run: |
