@@ -19,14 +19,6 @@ inputs:
         required: false
         default: '10000'
 
-outputs:
-    mrt_env_id:
-        description: 'The MRT environment ID that was acquired'
-    mrt_env_url:
-        description: 'The MRT environment URL'
-    status:
-        description: 'The status of the acquisition (success/error)'
-
 runs:
     using: composite
     steps:
@@ -36,4 +28,9 @@ runs:
           run: |-
               set -e
               node e2e/scripts/mrt-target-manager.js acquire --branch ${{inputs.BRANCH}} --run-id ${{inputs.RUN_ID}} --pr-number ${{inputs.PR_NUMBER}} --max-retries ${{inputs.MAX_RETRIES}} --retry-delay ${{inputs.RETRY_DELAY}}
-              echo "$GITHUB_OUTPUT"
+
+        - name: Show Github Output
+          shell: bash
+          run: |-
+              set -e
+              cat "$GITHUB_OUTPUT"
