@@ -13,7 +13,7 @@ class SecureS3Client {
         this.roleArn = options.roleArn
         this.roleSessionName = options.roleSessionName || 'LocalDev'
         this.region = options.region || 'us-east-1'
-        this.isReadOnly = options.readOnly || false
+        this.readOnly = options.readOnly || true
         this.credentials = null
     }
 
@@ -28,7 +28,7 @@ class SecureS3Client {
             credentials: this.credentials
         })
 
-        console.log(`🔐 Using ${this.isReadOnly ? 'READ-ONLY' : 'READ-WRITE'} access`)
+        console.log(`🔐 Using ${this.readOnly ? 'READ-ONLY' : 'READ-WRITE'} access`)
     }
 
     async _assumeRole() {
@@ -57,7 +57,7 @@ class SecureS3Client {
     }
 
     async upload(bucket, key, body, expectedETag = null) {
-        if (this.isReadOnly) {
+        if (this.readOnly) {
             throw new Error('❌ Upload not allowed - read-only access')
         }
 
@@ -154,7 +154,7 @@ class SecureS3Client {
     }
 
     async delete(bucket, key) {
-        if (this.isReadOnly) {
+        if (this.readOnly) {
             throw new Error('❌ Delete not allowed - read-only access')
         }
 

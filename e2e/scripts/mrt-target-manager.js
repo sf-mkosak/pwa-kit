@@ -12,15 +12,14 @@ class MRTTargetManager {
         this.runId = options.runId || null
 
         const clientOptions = {
-            readOnly: false,
-            region: options.region || 'us-east-2'
+            region: options.region || 'us-east-2',
+            readOnly: !process.env.CI
         }
 
         if (!process.env.CI) {
             clientOptions.roleArn = options.roleArn
             clientOptions.roleSessionName = options.roleSessionName || 'LocalDev'
         }
-        console.log('clientOptions', clientOptions)
         this.s3Client = new SecureS3Client(clientOptions)
     }
 
@@ -145,6 +144,9 @@ class MRTTargetManager {
      * @returns {Object} - Acquired environment details
      */
     async acquireEnvironment() {
+        if (!process.env.CI) {
+            throw new Error(`❌ Cannot acquire environment in local development - Read only access`)
+        }
         const prInfo = this.prNumber ? ` for PR #${this.prNumber}` : ` for "${this.branch}" branch`
         console.log(`🎯 Attempting to acquire environment${prInfo}`)
 
@@ -214,6 +216,9 @@ class MRTTargetManager {
      * Release an environment back to the pool
      */
     async releaseEnvironment(mrtEnvId) {
+        if (!process.env.CI) {
+            throw new Error(`❌ Cannot release environment in local development - Read only access`)
+        }
         console.log(`🔓 Releasing environment: ${mrtEnvId}`)
 
         let retryCount = 0
