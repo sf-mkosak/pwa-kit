@@ -34,3 +34,8 @@ runs:
           run: |-
               set -e
               node e2e/scripts/mrt-target-manager.js acquire --branch ${{inputs.BRANCH}} --run-id ${{inputs.RUN_ID}} --pr-number ${{inputs.PR_NUMBER}} --max-retries ${{inputs.MAX_RETRIES}} --retry-delay ${{inputs.RETRY_DELAY}}
+        - name: Echo MRT Target Outputs
+          run: |
+              echo "MRT Environment ID: ${{ steps.acquire_mrt_target.outputs.mrt_env_id }}"
+              echo "MRT Environment URL: ${{ steps.acquire_mrt_target.outputs.mrt_env_url }}"
+              echo "Status: ${{ steps.acquire_mrt_target.outputs.status }}"
