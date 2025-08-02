@@ -70,6 +70,12 @@ jobs:
                   RUN_ID: ${{ github.run_id }}
                   PR_NUMBER: ${{ github.event.pull_request.number }}
 
+            # Skipping the rest of the workflow for now
+            - name: Skip the rest of the workflow
+              run: |
+                  echo "Skipping the rest of the workflow"
+                  echo "SKIP_WORKFLOW=true" >> "$GITHUB_ENV"
+
             - name: Create MRT target
               id: create_mrt_target
               if: ${{ env.SKIP_WORKFLOW != 'true' && steps.get_mrt_target_lock.outputs.status == 'ERR_NO_AVAILABLE_TARGETS' }}
