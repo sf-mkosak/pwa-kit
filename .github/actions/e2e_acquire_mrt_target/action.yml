@@ -34,6 +34,22 @@ runs:
           run: |-
               set -e
               node e2e/scripts/mrt-target-manager.js acquire --branch ${{inputs.BRANCH}} --run-id ${{inputs.RUN_ID}} --pr-number ${{inputs.PR_NUMBER}} --max-retries ${{inputs.MAX_RETRIES}} --retry-delay ${{inputs.RETRY_DELAY}}
+        - name: Set Action Outputs
+          shell: bash
+          run: |
+              # Read the outputs that were written by the script and set them as action outputs
+              if [ -f "$GITHUB_OUTPUT" ]; then
+                  if grep -q "mrt_env_id=" "$GITHUB_OUTPUT"; then
+                      echo "mrt_env_id=$(grep "mrt_env_id=" "$GITHUB_OUTPUT" | tail -1 | cut -d'=' -f2-)" >> $GITHUB_OUTPUT
+                  fi
+                  if grep -q "mrt_env_url=" "$GITHUB_OUTPUT"; then
+                      echo "mrt_env_url=$(grep "mrt_env_url=" "$GITHUB_OUTPUT" | tail -1 | cut -d'=' -f2-)" >> $GITHUB_OUTPUT
+                  fi
+                  if grep -q "status=" "$GITHUB_OUTPUT"; then
+                      echo "status=$(grep "status=" "$GITHUB_OUTPUT" | tail -1 | cut -d'=' -f2-)" >> $GITHUB_OUTPUT
+                  fi
+              fi
+
         - name: Echo MRT Target Outputs
           shell: bash
           run: |
