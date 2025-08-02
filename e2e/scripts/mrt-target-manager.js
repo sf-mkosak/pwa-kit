@@ -139,6 +139,7 @@ class MRTTargetManager {
      * @returns {Object} - Acquired environment details
      */
     async acquireEnvironment() {
+        console.log("Read only 1", process.env.CI, !process.env.CI)
         if (!process.env.CI) {
             throw new Error(`❌ Cannot acquire environment in local development - Read only access`)
         }
