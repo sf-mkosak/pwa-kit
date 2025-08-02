@@ -36,6 +36,92 @@ class MRTTargetManager {
     }
 
     /**
+     * Download the pool file and return data with ETag
+     */
+    async downloadPoolFile() {
+        try {
+            const downloadResult = await this.s3Client.download(this.bucket, this.poolKey)
+            // Convert stream to string and parse JSON
+            const contentString = await this.streamToString(downloadResult.body)
+            const poolData = JSON.parse(contentString)
+
+            return {
+                ...downloadResult,
+                poolData
+            }
+        } catch (error) {
+            if (error.name === 'NoSuchKey') {
+                console.log('❌ Pool file not found.')
+            }
+            throw error
+        }
+    }
+
+    /**
+     * Find an available environment of the specified type
+     */
+    findAvailableEnvironment(poolData) {
+        const availableEnvs = poolData.environments.filter((env) => env.status === 'available')
+
+        if (availableEnvs.length === 0) {
+            return null
+        }
+
+        return availableEnvs[0]
+    }
+
+    /**
+     * Mark environment as in-use by current PR
+     */
+    markEnvironmentInUse(poolData, environment) {
+        const updatedPoolData = {
+            ...poolData,
+            environments: poolData.environments.map((env) => {
+                if (env.mrtEnvId === environment.mrtEnvId) {
+                    return {
+                        ...env,
+                        status: 'in-use',
+                        ...(this.prNumber && {prNumber: this.prNumber}),
+                        ...(this.gitBranch && {branch: this.gitBranch}),
+                        ...(this.actionId && {actionId: this.actionId}),
+                        acquiredAt: new Date().toISOString(),
+                        lastUsed: new Date().toISOString()
+                    }
+                }
+                return env
+            })
+        }
+
+        return updatedPoolData
+    }
+
+    /**
+     * Get current pool status
+     */
+    async getPoolStatus() {
+        try {
+            // Step 1: Download pool file and get ETag
+            const downloadResponse = await this.downloadPoolFile()
+
+            const status = {
+                total: downloadResponse.poolData.environments.length,
+                available: downloadResponse.poolData.environments.filter(
+                    (env) => env.status === 'available'
+                ).length,
+                inUse: downloadResponse.poolData.environments.filter(
+                    (env) => env.status === 'in-use'
+                ).length,
+                environments: downloadResponse.poolData.environments
+            }
+
+            return status
+        } catch (error) {
+            console.error('❌ Failed to get pool status:', error)
+            throw error
+        }
+    }
+
+    /**
      * Acquire an MRT environment with optimistic locking
      * @param {string} environmentType - Type of environment to acquire (e.g., 'staging', 'production')
      * @returns {Object} - Acquired environment details
@@ -106,66 +192,6 @@ class MRTTargetManager {
     }
 
     /**
-     * Download the pool file and return data with ETag
-     */
-    async downloadPoolFile() {
-        try {
-            const downloadResult = await this.s3Client.download(this.bucket, this.poolKey)
-            // Convert stream to string and parse JSON
-            const contentString = await this.streamToString(downloadResult.body)
-            const poolData = JSON.parse(contentString)
-
-            return {
-                ...downloadResult,
-                poolData
-            }
-        } catch (error) {
-            if (error.name === 'NoSuchKey') {
-                console.log('❌ Pool file not found.')
-            }
-            throw error
-        }
-    }
-
-    /**
-     * Find an available environment of the specified type
-     */
-    findAvailableEnvironment(poolData) {
-        const availableEnvs = poolData.environments.filter((env) => env.status === 'available')
-
-        if (availableEnvs.length === 0) {
-            return null
-        }
-
-        return availableEnvs[0]
-    }
-
-    /**
-     * Mark environment as in-use by current PR
-     */
-    markEnvironmentInUse(poolData, environment) {
-        const updatedPoolData = {
-            ...poolData,
-            environments: poolData.environments.map((env) => {
-                if (env.mrtEnvId === environment.mrtEnvId) {
-                    return {
-                        ...env,
-                        status: 'in-use',
-                        ...(this.prNumber && {prNumber: this.prNumber}),
-                        ...(this.gitBranch && {branch: this.gitBranch}),
-                        ...(this.actionId && {actionId: this.actionId}),
-                        acquiredAt: new Date().toISOString(),
-                        lastUsed: new Date().toISOString()
-                    }
-                }
-                return env
-            })
-        }
-
-        return updatedPoolData
-    }
-
-    /**
      * Release an environment back to the pool
      */
     async releaseEnvironment(environmentName) {
@@ -226,28 +252,6 @@ class MRTTargetManager {
     }
 
     /**
-     * Get current pool status
-     */
-    async getPoolStatus() {
-        try {
-            // Step 1: Download pool file and get ETag
-            const downloadResponse = await this.downloadPoolFile()
-
-            const status = {
-                total: downloadResponse.poolData.environments.length,
-                available: downloadResponse.poolData.environments.filter((env) => env.status === 'available').length,
-                inUse: downloadResponse.poolData.environments.filter((env) => env.status === 'in-use').length,
-                environments: downloadResponse.poolData.environments
-            }
-
-            return status
-        } catch (error) {
-            console.error('❌ Failed to get pool status:', error)
-            throw error
-        }
-    }
-
-    /**
      * Utility function for delays
      */
     sleep(ms) {
@@ -266,7 +270,28 @@ async function main() {
         .option('--max-retries <number>', 'Maximum retry attempts', '3')
         .option('--retry-delay <ms>', 'Delay between retries in milliseconds', '10000')
 
-    // Acquire command
+    program
+        .command('status')
+        .description('Show pool status')
+        .action(async () => {
+            const mrtTargetManager = new MRTTargetManager({
+                bucket: process.env.AWS_S3_BUCKET || 'cc-pwa-kit',
+                roleArn: process.env.AWS_ROLE_ARN,
+                region: process.env.AWS_REGION || 'us-east-2'
+            })
+
+            await mrtTargetManager.initialize()
+
+            try {
+                const status = await mrtTargetManager.getPoolStatus()
+
+                console.log('Pool status:', JSON.stringify(status, null, 2))
+            } catch (error) {
+                console.error('❌ Error:', error.message)
+                process.exit(1)
+            }
+        })
+
     program
         .command('acquire')
         .description('Acquire an MRT environment')
@@ -330,62 +355,6 @@ async function main() {
                 process.exit(1)
             }
         })
-
-    // Status command
-    program
-        .command('status')
-        .description('Show pool status')
-        .action(async () => {
-            const mrtTargetManager = new MRTTargetManager({
-                bucket: process.env.AWS_S3_BUCKET || 'cc-pwa-kit',
-                roleArn: process.env.AWS_ROLE_ARN,
-                region: process.env.AWS_REGION || 'us-east-2'
-            })
-
-            await mrtTargetManager.initialize()
-
-            try {
-                const status = await mrtTargetManager.getPoolStatus()
-
-                console.log('Pool status:', JSON.stringify(status, null, 2))
-            } catch (error) {
-                console.error('❌ Error:', error.message)
-                process.exit(1)
-            }
-        })
-
-    // List command
-    program
-        .command('list')
-        .description('List all environments')
-        .option('-s, --status <status>', 'Filter by status (available, in-use)')
-        .action(async (options) => {
-            const globalOpts = program.opts()
-
-            const mrtTargetManager = new MRTTargetManager({
-                bucket: process.env.MRT_POOL_BUCKET || 'mrt-env-pool',
-                roleArn: process.env.AWS_ROLE_ARN,
-                region: process.env.AWS_REGION || 'us-east-1',
-                prNumber: globalOpts.prNumber
-            })
-
-            await mrtTargetManager.initialize()
-
-            try {
-                const poolData = await mrtTargetManager.downloadPoolFile()
-                let environments = poolData.environments
-
-                if (options.status) {
-                    environments = environments.filter((env) => env.status === options.status)
-                }
-
-                console.log(JSON.stringify(environments, null, 2))
-            } catch (error) {
-                console.error('❌ Error:', error.message)
-                process.exit(1)
-            }
-        })
-
     await program.parseAsync()
 }
 
