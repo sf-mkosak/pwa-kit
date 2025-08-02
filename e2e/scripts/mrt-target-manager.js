@@ -10,17 +10,12 @@ class MRTTargetManager {
         this.prNumber = options.prNumber || process.env.GITHUB_PR_NUMBER || null
         this.branch = options.branch || null
         this.runId = options.runId || null
-
-        const clientOptions = {
+        this.s3Client = new SecureS3Client({
             region: options.region,
-            readOnly: !process.env.CI
-        }
-
-        if (!process.env.CI) {
-            clientOptions.roleArn = options.roleArn
-            clientOptions.roleSessionName = options.roleSessionName || 'LocalDev'
-        }
-        this.s3Client = new SecureS3Client(clientOptions)
+            readOnly: !process.env.CI,
+            roleArn: options.roleArn,
+            roleSessionName: options.roleSessionName || 'LocalDev'
+        })
     }
 
     async initialize() {
@@ -301,7 +296,8 @@ async function main() {
                 bucket: process.env.AWS_S3_BUCKET,
                 poolDataFileKey: process.env.AWS_S3_POOL_DATA_FILE_KEY,
                 roleArn: process.env.AWS_ROLE_ARN,
-                region: process.env.AWS_REGION
+                region: process.env.AWS_REGION,
+                roleSessionName: process.env.CI ? 'GithubActions E2E CI' : 'LocalDev'
             })
 
             await mrtTargetManager.initialize()
@@ -331,7 +327,8 @@ async function main() {
                 branch: globalOpts.branch,
                 runId: globalOpts.runId,
                 maxRetries: parseInt(globalOpts.maxRetries),
-                retryDelay: parseInt(globalOpts.retryDelay)
+                retryDelay: parseInt(globalOpts.retryDelay),
+                roleSessionName: process.env.CI ? 'GithubActions E2E CI' : 'LocalDev'
             })
 
             await mrtTargetManager.initialize()
@@ -368,7 +365,8 @@ async function main() {
                 roleArn: process.env.AWS_ROLE_ARN,
                 region: process.env.AWS_REGION,
                 maxRetries: parseInt(globalOpts.maxRetries),
-                retryDelay: parseInt(globalOpts.retryDelay)
+                retryDelay: parseInt(globalOpts.retryDelay),
+                roleSessionName: process.env.CI ? 'GithubActions E2E CI' : 'LocalDev'
             })
 
             await mrtTargetManager.initialize()
