@@ -143,6 +143,7 @@ export const render = async (req, res, next) => {
             res.__performanceTimer.mark(PERFORMANCE_MARKS.total, 'start')
 
             const AppConfig = getAppConfig()
+            // Get the application config which should have been stored at this point.
             const config = getConfig()
 
             AppConfig.restore(res.locals)
