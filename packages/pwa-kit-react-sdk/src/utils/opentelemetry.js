@@ -302,66 +302,7 @@ export const tracePerformance = async (name, fn, res = null) => {
  * @param {number} duration - The duration of the metric in milliseconds
  * @param {Object} attributes - Additional attributes for the metric
  */
-export const logPerformanceMetric = (name, duration, attributes = {}) => {
-    try {
-        const tracer = trace.getTracer(getServiceName())
-        const ctx = context.active()
-        const parentSpan = trace.getSpan(ctx)
 
-        if (!parentSpan) {
-            // Don't log warnings in test environments to avoid GitHub check failures
-            if (!isTestEnvironment()) {
-                logger.warn('No parent span found in context', {
-                    namespace: 'opentelemetry',
-                    additionalProperties: {metricName: name}
-                })
-            }
-            return
-        }
-
-        // Extract and normalize performance details
-        const {performance_mark, performance_detail, ...otherAttributes} = attributes
-
-        // Build metric attributes
-        const metricAttributes = {
-            'service.name': getServiceName(),
-            'metric.duration': duration,
-            ...otherAttributes
-        }
-
-        if (performance_mark) {
-            metricAttributes['performance.mark'] = performance_mark
-            metricAttributes['performance.type'] = 'end'
-            metricAttributes['performance.detail'] =
-                typeof performance_detail === 'string'
-                    ? performance_detail
-                    : JSON.stringify(performance_detail)
-        }
-
-        // Create and immediately end the metric span
-        const span = tracer.startSpan(
-            name,
-            {
-                attributes: metricAttributes
-            },
-            ctx
-        )
-
-        span.end()
-
-        // Log completion data
-        logSpanData(span, 'end')
-    } catch (error) {
-        logger.error('Error logging performance metric', {
-            namespace: 'opentelemetry',
-            additionalProperties: {
-                metricName: name,
-                error: error.message,
-                stack: error.stack
-            }
-        })
-    }
-}
 
 /**
  * Traces a performance operation

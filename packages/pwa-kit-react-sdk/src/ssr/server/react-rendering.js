@@ -22,8 +22,7 @@ import {isRemote} from '@salesforce/pwa-kit-runtime/utils/ssr-server'
 import {proxyConfigs} from '@salesforce/pwa-kit-runtime/utils/ssr-shared'
 import {getConfig} from '@salesforce/pwa-kit-runtime/utils/ssr-config'
 import {NO_CACHE} from '@salesforce/pwa-kit-runtime/ssr/server/constants'
-import {isServerTracingInitialized} from './opentelemetry-server'
-import {initializeServerTracing} from './opentelemetry-server'
+import {isServerTracingInitialized, initializeServerTracing, shutdownServerTracing} from './opentelemetry-server'
 
 import {getAssetUrl} from '../universal/utils'
 import {ServerContext, CorrelationIdProvider} from '../universal/contexts'
@@ -258,8 +257,6 @@ export const render = async (req, res, next) => {
 
             res.__performanceTimer.mark(PERFORMANCE_MARKS.total, 'end')
 
-            res.__performanceTimer.log()
-
             if (includeServerTimingHeader) {
                 res.setHeader('Server-Timing', res.__performanceTimer.buildServerTimingHeader())
                 // Override cache-control header to no caching when __server_timing is used
@@ -445,5 +442,6 @@ const serverRenderer =
     ({clientStats, serverStats}) => {
         return (req, res, next) => render(req, res, next)
     }
+
 
 export default serverRenderer

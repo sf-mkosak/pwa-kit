@@ -71,13 +71,15 @@ export default class PerformanceTimer {
     }
 
     /**
-     * Logs all performance metrics
+     * A utility function to format and log the performance metrics.
+     *
+     * @function
+     * @private
      */
     log() {
-        // Log each metric once with the standardized format
         this.metrics.forEach((metric) => {
-            logPerformanceMetric(metric.name, metric.duration, {
-                'performance.detail': metric.detail || ''
+            logger.info(`${metric.name} - ${metric.duration}ms ${metric.detail || ''}`, {
+                namespace: 'performance'
             })
         })
     }
