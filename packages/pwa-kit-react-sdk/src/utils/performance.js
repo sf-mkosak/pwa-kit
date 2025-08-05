@@ -5,16 +5,7 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import logger from './logger-instance'
-import {createChildSpan, endSpan, logPerformanceMetric} from './opentelemetry'
-
-/**
- * Checks if the current environment is a test environment
- * @returns {boolean} True if running in a test environment
- */
-const isTestEnvironment = () => {
-    // Temporarily disable test environment check to improve coverage
-    return false
-}
+import {createChildSpan, endSpan} from './opentelemetry'
 
 export const PERFORMANCE_MARKS = {
     total: 'ssr.total',
@@ -106,7 +97,7 @@ export default class PerformanceTimer {
 
         if (type !== this.MARKER_TYPES.START && type !== this.MARKER_TYPES.END) {
             // Don't log warnings in test environments to avoid GitHub check failures
-            if (!isTestEnvironment()) {
+            if (process.env.NODE_ENV !== 'test') {
                 logger.warn('Invalid mark type', {type, name, namespace: 'PerformanceTimer.mark'})
             }
             return
@@ -136,7 +127,7 @@ export default class PerformanceTimer {
                     }
                 } else {
                     // Don't log warnings in test environments to avoid GitHub check failures
-                    if (!isTestEnvironment()) {
+                    if (process.env.NODE_ENV !== 'test') {
                         logger.warn('Span already exists', {
                             name,
                             namespace: 'PerformanceTimer.mark'
@@ -177,7 +168,7 @@ export default class PerformanceTimer {
                     performance.clearMeasures(name)
                 } catch (error) {
                     // Don't log warnings in test environments to avoid GitHub check failures
-                    if (!isTestEnvironment()) {
+                    if (process.env.NODE_ENV !== 'test') {
                         logger.warn('Failed to measure performance mark', {
                             name,
                             error: error.message,
@@ -191,7 +182,7 @@ export default class PerformanceTimer {
         } catch (error) {
             if (error.name === 'SyntaxError') {
                 // Don't log warnings in test environments to avoid GitHub check failures
-                if (!isTestEnvironment()) {
+                if (process.env.NODE_ENV !== 'test') {
                     logger.warn('Invalid performance mark name', {name, error: error.message})
                 }
             } else {
@@ -214,7 +205,7 @@ export default class PerformanceTimer {
         const span = this.spans.get(name)
         if (span) {
             // Don't log warnings in test environments to avoid GitHub check failures
-            if (!isTestEnvironment()) {
+            if (process.env.NODE_ENV !== 'test') {
                 logger.warn('Cleaning up orphaned span', {
                     name,
                     error: 'Deleting orphaned span (reason: ' + reason + ' cleanup)',

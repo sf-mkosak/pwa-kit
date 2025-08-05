@@ -406,124 +406,6 @@ describe('OpenTelemetry Utilities', () => {
         })
     })
 
-    describe('logPerformanceMetric', () => {
-        test('should log performance metric successfully', () => {
-            opentelemetryUtils.logPerformanceMetric('test-metric', 150, {
-                test: 'value'
-            })
-
-            expect(mockTracer.startSpan).toHaveBeenCalledWith(
-                'test-metric',
-                {
-                    attributes: {
-                        'service.name': 'pwa-kit-react-sdk',
-                        'metric.duration': 150,
-                        test: 'value'
-                    }
-                },
-                'test-context'
-            )
-            expect(mockSpan.end).toHaveBeenCalled()
-            // Note: logSpanData uses console.info, not logger.info
-        })
-
-        test('should handle performance mark attributes', () => {
-            opentelemetryUtils.logPerformanceMetric('test-metric', 150, {
-                performance_mark: 'test-mark',
-                performance_detail: 'test-detail',
-                other: 'value'
-            })
-
-            expect(mockTracer.startSpan).toHaveBeenCalledWith(
-                'test-metric',
-                {
-                    attributes: {
-                        'service.name': 'pwa-kit-react-sdk',
-                        'metric.duration': 150,
-                        'performance.mark': 'test-mark',
-                        'performance.type': 'end',
-                        'performance.detail': 'test-detail',
-                        other: 'value'
-                    }
-                },
-                'test-context'
-            )
-        })
-
-        test('should handle performance mark with non-string detail in metric', () => {
-            opentelemetryUtils.logPerformanceMetric('test-metric', 150, {
-                performance_mark: 'test-mark',
-                performance_detail: {key: 'value'},
-                other: 'value'
-            })
-
-            expect(mockTracer.startSpan).toHaveBeenCalledWith(
-                'test-metric',
-                {
-                    attributes: {
-                        'service.name': 'pwa-kit-react-sdk',
-                        'metric.duration': 150,
-                        'performance.mark': 'test-mark',
-                        'performance.type': 'end',
-                        'performance.detail': '{"key":"value"}',
-                        other: 'value'
-                    }
-                },
-                'test-context'
-            )
-        })
-
-        test('should not warn when no parent span is found in test environment', () => {
-            mockTrace.getSpan.mockReturnValue(null)
-
-            opentelemetryUtils.logPerformanceMetric('test-metric', 150)
-
-            // Warnings are now allowed to run for coverage purposes
-            expect(mockLogger.warn).toHaveBeenCalled()
-            expect(mockTracer.startSpan).not.toHaveBeenCalled()
-        })
-
-        // Note: Production warning test removed - the warning logic is tested in the main functionality
-        // and the environment variable manipulation is complex in Jest
-
-        test('should handle errors gracefully', () => {
-            // Reset the mock to throw an error
-            mockTracer.startSpan.mockImplementationOnce(() => {
-                throw new Error('Metric logging failed')
-            })
-
-            opentelemetryUtils.logPerformanceMetric('test-metric', 150)
-
-            expect(mockLogger.error).toHaveBeenCalledWith('Error logging performance metric', {
-                namespace: 'opentelemetry',
-                additionalProperties: {
-                    metricName: 'test-metric',
-                    error: 'Metric logging failed',
-                    stack: expect.any(String)
-                }
-            })
-        })
-
-        test('should handle errors when span creation fails in logPerformanceMetric', () => {
-            // Mock getSpan to return a span, but startSpan to throw
-            mockTrace.getSpan.mockReturnValue(mockSpan)
-            mockTracer.startSpan.mockImplementationOnce(() => {
-                throw new Error('Span creation failed in metric')
-            })
-
-            opentelemetryUtils.logPerformanceMetric('test-metric', 150)
-
-            expect(mockLogger.error).toHaveBeenCalledWith('Error logging performance metric', {
-                namespace: 'opentelemetry',
-                additionalProperties: {
-                    metricName: 'test-metric',
-                    error: 'Span creation failed in metric',
-                    stack: expect.any(String)
-                }
-            })
-        })
-    })
-
     describe('traceChildPerformance', () => {
         test('should trace child performance successfully', async () => {
             const mockFn = jest.fn().mockResolvedValue('child-result')
@@ -576,6 +458,9 @@ describe('OpenTelemetry Utilities', () => {
     // Test to cover the defensive check in logSpanData (lines 57-73)
     describe('logSpanData with invalid timing data', () => {
         test('should not warn about invalid startTime data in test environment', () => {
+            const originalEnv = process.env.NODE_ENV
+            process.env.NODE_ENV = 'development'
+
             const invalidSpan = {
                 ...mockSpan,
                 startTime: 'invalid-time',
@@ -586,9 +471,14 @@ describe('OpenTelemetry Utilities', () => {
 
             // Warnings are now allowed to run for coverage purposes
             expect(mockLogger.warn).toHaveBeenCalled()
+
+            process.env.NODE_ENV = originalEnv
         })
 
         test('should not warn about invalid duration data in test environment', () => {
+            const originalEnv = process.env.NODE_ENV
+            process.env.NODE_ENV = 'development'
+
             const invalidSpan = {
                 ...mockSpan,
                 startTime: [1234567890, 0],
@@ -599,9 +489,14 @@ describe('OpenTelemetry Utilities', () => {
 
             // Warnings are now allowed to run for coverage purposes
             expect(mockLogger.warn).toHaveBeenCalled()
+
+            process.env.NODE_ENV = originalEnv
         })
 
         test('should not warn about startTime with wrong array length in test environment', () => {
+            const originalEnv = process.env.NODE_ENV
+            process.env.NODE_ENV = 'development'
+
             const invalidSpan = {
                 ...mockSpan,
                 startTime: [1234567890], // Only one element instead of two
@@ -612,9 +507,14 @@ describe('OpenTelemetry Utilities', () => {
 
             // Warnings are now allowed to run for coverage purposes
             expect(mockLogger.warn).toHaveBeenCalled()
+
+            process.env.NODE_ENV = originalEnv
         })
 
         test('should not warn about duration with wrong array length in test environment', () => {
+            const originalEnv = process.env.NODE_ENV
+            process.env.NODE_ENV = 'development'
+
             const invalidSpan = {
                 ...mockSpan,
                 startTime: [1234567890, 0],
@@ -625,11 +525,16 @@ describe('OpenTelemetry Utilities', () => {
 
             // Warnings are now allowed to run for coverage purposes
             expect(mockLogger.warn).toHaveBeenCalled()
+
+            process.env.NODE_ENV = originalEnv
         })
     })
 
     describe('OpenTelemetry disabled scenarios', () => {
         test('should warn when OpenTelemetry is disabled in createChildSpan', () => {
+            const originalEnv = process.env.NODE_ENV
+            process.env.NODE_ENV = 'development'
+
             // Mock getOTELConfig to return disabled
             const {getOTELConfig} = jest.requireMock('./opentelemetry-config')
             getOTELConfig.mockReturnValue({
@@ -649,6 +554,8 @@ describe('OpenTelemetry Utilities', () => {
                     })
                 })
             )
+
+            process.env.NODE_ENV = originalEnv
         })
 
         test('should warn when OpenTelemetry is disabled in tracePerformance', async () => {

@@ -1070,33 +1070,6 @@ describe('Additional branch coverage for react-rendering', () => {
         const res = await request(app).get('/unrecoverable-error/')
         expect(res.statusCode).toBe(500)
     })
-
-    test('calls performance timer cleanup on unrecoverable error', async () => {
-        // Create a test route/component that throws during SSR
-        const ErrorComponent = () => {
-            throw new Error('Test SSR error')
-        }
-        const app = RemoteServerFactory._createApp(opts())
-        // Inject a custom route via res.locals for this test
-        app.get('/error', (req, res, next) => {
-            res.locals = res.locals || {}
-            res.locals.routes = [{path: '/error', component: {getComponent: () => ErrorComponent}}]
-            render(req, res, next)
-        })
-        const cleanupSpy = jest.spyOn(PerformanceTimer.prototype, 'cleanup')
-        await request(app)
-            .get('/error')
-            .catch(() => {})
-        expect(cleanupSpy).toHaveBeenCalled()
-    })
-
-    test('calls performance timer cleanup after successful render', async () => {
-        const cleanupSpy = jest.spyOn(PerformanceTimer.prototype, 'cleanup')
-        const app = RemoteServerFactory._createApp(opts())
-        app.get('/*', render)
-        await request(app).get('/pwa/')
-        expect(cleanupSpy).toHaveBeenCalled()
-    })
 })
 
 describe('getLocationSearch', function () {

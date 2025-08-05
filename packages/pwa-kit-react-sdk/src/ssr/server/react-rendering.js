@@ -245,9 +245,6 @@ export const render = async (req, res, next) => {
                 // Here, we use Express's convention to invoke error middleware.
                 // Note, we don't have an error handling middleware yet! This is calling the
                 // default error handling middleware provided by Express
-                if (res.__performanceTimer) {
-                    res.__performanceTimer.cleanup()
-                }
                 return next(e)
             }
 
@@ -273,9 +270,6 @@ export const render = async (req, res, next) => {
                 res.redirect(routerContext.status || 302, redirectUrl)
             } else {
                 res.status(status).send(html)
-            }
-            if (res.__performanceTimer) {
-                res.__performanceTimer.cleanup()
             }
         },
         res

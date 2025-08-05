@@ -10,15 +10,6 @@ import {hrTimeToTimeStamp} from '@opentelemetry/core'
 import logger from './logger-instance'
 import {getOTELConfig, getServiceName} from './opentelemetry-config'
 
-/**
- * Checks if the current environment is a test environment
- * @returns {boolean} True if running in a test environment
- */
-const isTestEnvironment = () => {
-    // Temporarily disable test environment check to improve coverage
-    return false
-}
-
 const logSpanData = (span, event = 'start', res = null) => {
     const spanContext = span.spanContext()
     const startTime = span.startTime
@@ -32,7 +23,7 @@ const logSpanData = (span, event = 'start', res = null) => {
         (duration !== 0 && (!Array.isArray(duration) || duration.length !== 2))
     ) {
         // Don't log warnings in test environments to avoid GitHub check failures
-        if (!isTestEnvironment()) {
+        if (process.env.NODE_ENV !== 'test') {
             logger.warn(
                 'Invalid timing data detected - OpenTelemetry may not be properly initialized',
                 {
@@ -88,7 +79,10 @@ const logSpanData = (span, event = 'start', res = null) => {
 
     // Only log if this is an end event or if it's a start event for a new span
     if (event === 'end' || !Object.prototype.hasOwnProperty.call(span.attributes, 'event')) {
-        console.info(JSON.stringify(spanData))
+        logger.info('OpenTelemetry span data', {
+            namespace: 'opentelemetry.logSpanData',
+            additionalProperties: spanData
+        })
     }
 }
 
@@ -142,7 +136,7 @@ export const createChildSpan = (name, attributes = {}) => {
         const otelConfig = getOTELConfig()
         if (!otelConfig.enabled) {
             // Don't log warnings in test environments to avoid GitHub check failures
-            if (!isTestEnvironment()) {
+            if (process.env.NODE_ENV !== 'test') {
                 logger.warn('OpenTelemetry is disabled - spans will not have proper timing data', {
                     namespace: 'opentelemetry',
                     additionalProperties: {
