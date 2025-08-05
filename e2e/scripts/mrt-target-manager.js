@@ -1,7 +1,7 @@
 const SecureS3Client = require('./aws-s3-client')
 const {Command} = require('commander')
 const fs = require('fs-extra')
-const { MRT_TARGET_DETAILS_FILE } = require('../config')
+const {MRT_TARGET_DETAILS_FILE} = require('../config')
 
 class MRTTargetManager {
     constructor(options = {}) {
@@ -63,7 +63,9 @@ class MRTTargetManager {
      * Find an available environment of the specified type
      */
     findAvailableEnvironment(poolData) {
-        const availableEnvs = poolData.environments.filter((env) => env.ciAvailability === 'available')
+        const availableEnvs = poolData.environments.filter(
+            (env) => env.ciAvailability === 'available'
+        )
 
         if (availableEnvs.length === 0) {
             return null
@@ -220,9 +222,6 @@ async function main() {
 
     program
         .description('Acquire and manage MRT environments with optimistic locking')
-        .option('--pr-number <pr-number>', 'PR number')
-        .option('--branch <branch>', 'Branch name')
-        .option('--run-id <runId>', 'Run ID')
         .option('--max-retries <number>', 'Maximum retry attempts', '3')
         .option('--retry-delay <ms>', 'Delay between retries in milliseconds', '10000')
 
@@ -231,11 +230,11 @@ async function main() {
         .description('Show pool status')
         .action(async () => {
             /**
-             * roleArn: [ARN - Amazon Resource Name] unique identifier for the 'Role' resource 
+             * roleArn: [ARN - Amazon Resource Name] unique identifier for the 'Role' resource
              * that the currently authenticated AWS user assumes to get permissions defined by policies attached to the role.
-             * 
+             *
              * roleSessionName: Arbitrary identifier used to point out which session did certain actions originate from.
-             * Typically used in logs [AWS Cloudwatch logs] like: 
+             * Typically used in logs [AWS Cloudwatch logs] like:
              * - [GithubActions-E2E-CI] Created new resource pwa-kit-ci/demo.json in S3.
              * or
              * - [LocalDev] Downloaded resource pwa-kit-ci/demo.json from S3.
@@ -263,7 +262,10 @@ async function main() {
     program
         .command('acquire')
         .description('Acquire an MRT environment')
-        .action(async () => {
+        .option('--pr-number <prNumber>', 'PR number')
+        .option('--branch <branch>', 'Branch name')
+        .option('--run-id <runId>', 'Run ID')
+        .action(async ({prNumber, branch, runId}) => {
             const globalOpts = program.opts()
 
             const mrtTargetManager = new MRTTargetManager({
@@ -271,9 +273,9 @@ async function main() {
                 poolDataFileKey: process.env.AWS_S3_POOL_DATA_FILE_KEY,
                 roleArn: process.env.AWS_ROLE_ARN,
                 region: process.env.AWS_REGION,
-                prNumber: globalOpts.prNumber,
-                branch: globalOpts.branch,
-                runId: globalOpts.runId,
+                prNumber,
+                branch,
+                runId,
                 maxRetries: parseInt(globalOpts.maxRetries),
                 retryDelay: parseInt(globalOpts.retryDelay),
                 roleSessionName: process.env.CI ? 'GithubActions-E2E-CI' : 'LocalDev'
