@@ -16,7 +16,7 @@ class MRTTargetManager {
             region: options.region,
             readOnly: !process.env.CI,
             roleArn: process.env.CI ? options.roleArn : options.roleArn, // Don't use role ARN in CI since AWS credentials action handles it
-            roleSessionName: options.roleSessionName || 'LocalDev'
+            roleSessionName: options.roleSessionName || 'pwa-kit-bot-user-session'
         })
     }
 
@@ -235,16 +235,16 @@ async function main() {
              *
              * roleSessionName: Arbitrary identifier used to point out which session did certain actions originate from.
              * Typically used in logs [AWS Cloudwatch logs] like:
-             * - [GithubActions-E2E-CI] Created new resource pwa-kit-ci/demo.json in S3.
+             * - [github-actions-e2e-session] Created new resource pwa-kit-ci/demo.json in S3.
              * or
-             * - [LocalDev] Downloaded resource pwa-kit-ci/demo.json from S3.
+             * - [pwa-kit-bot-user-session] Downloaded resource pwa-kit-ci/demo.json from S3.
              */
             const mrtTargetManager = new MRTTargetManager({
                 bucket: process.env.AWS_S3_BUCKET,
                 poolDataFileKey: process.env.AWS_S3_POOL_DATA_FILE_KEY,
                 roleArn: process.env.AWS_ROLE_ARN,
                 region: process.env.AWS_REGION,
-                roleSessionName: process.env.CI ? 'GithubActions-E2E-CI' : 'LocalDev'
+                roleSessionName: process.env.CI ? 'github-actions-e2e-session' : 'pwa-kit-bot-user-session'
             })
 
             await mrtTargetManager.initialize()
@@ -278,7 +278,7 @@ async function main() {
                 runId,
                 maxRetries: parseInt(globalOpts.maxRetries),
                 retryDelay: parseInt(globalOpts.retryDelay),
-                roleSessionName: process.env.CI ? 'GithubActions-E2E-CI' : 'LocalDev'
+                roleSessionName: process.env.CI ? 'github-actions-e2e-session' : 'pwa-kit-bot-user-session'
             })
 
             await mrtTargetManager.initialize()
