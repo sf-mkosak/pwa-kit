@@ -7,11 +7,16 @@ const {
     HeadObjectCommand
 } = require('@aws-sdk/client-s3')
 const {STSClient, AssumeRoleCommand} = require('@aws-sdk/client-sts')
+const {
+    PWA_KIT_BOT_USER_SESSION,
+    AWS_ACCESS_READ_ONLY,
+    AWS_ACCESS_READ_WRITE
+} = require('./constants')
 
 class SecureS3Client {
     constructor(options = {}) {
         this.roleArn = options.roleArn
-        this.roleSessionName = options.roleSessionName || 'LocalDev'
+        this.roleSessionName = options.roleSessionName || PWA_KIT_BOT_USER_SESSION
         this.region = options.region || 'us-east-1'
         this.readOnly = options.readOnly
         this.credentials = null
@@ -28,7 +33,9 @@ class SecureS3Client {
             credentials: this.credentials
         })
 
-        console.log(`🔐 Using ${this.readOnly ? 'READ-ONLY' : 'READ-WRITE'} access`)
+        console.log(
+            `🔐 Using ${this.readOnly ? AWS_ACCESS_READ_ONLY : AWS_ACCESS_READ_WRITE} access`
+        )
     }
 
     async _assumeRole() {

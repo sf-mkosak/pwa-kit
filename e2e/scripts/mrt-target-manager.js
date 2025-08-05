@@ -2,6 +2,14 @@ const SecureS3Client = require('./aws-s3-client')
 const {Command} = require('commander')
 const fs = require('fs-extra')
 const {MRT_TARGET_DETAILS_FILE} = require('../config')
+const {
+    GITHUB_ACTIONS_E2E_SESSION,
+    PWA_KIT_BOT_USER_SESSION,
+    CI_AVAILABILITY_AVAILABLE,
+    CI_AVAILABILITY_IN_USE,
+    AWS_S3_ERR_NO_SUCH_KEY,
+    AWS_S3_ERR_PRECONDITION_FAILED
+} = require('./constants')
 
 class MRTTargetManager {
     constructor(options = {}) {
@@ -16,7 +24,7 @@ class MRTTargetManager {
             region: options.region,
             readOnly: !process.env.CI,
             roleArn: process.env.CI ? options.roleArn : options.roleArn, // Don't use role ARN in CI since AWS credentials action handles it
-            roleSessionName: options.roleSessionName || 'pwa-kit-bot-user-session'
+            roleSessionName: options.roleSessionName || PWA_KIT_BOT_USER_SESSION
         })
     }
 
@@ -52,7 +60,7 @@ class MRTTargetManager {
                 poolData
             }
         } catch (error) {
-            if (error.name === 'NoSuchKey') {
+            if (error.name === AWS_S3_ERR_NO_SUCH_KEY) {
                 console.log('❌ Pool file not found.')
             }
             throw error
@@ -64,7 +72,7 @@ class MRTTargetManager {
      */
     findAvailableEnvironment(poolData) {
         const availableEnvs = poolData.environments.filter(
-            (env) => env.ciAvailability === 'available'
+            (env) => env.ciAvailability === CI_AVAILABILITY_AVAILABLE
         )
 
         if (availableEnvs.length === 0) {
@@ -89,11 +97,11 @@ class MRTTargetManager {
                         ciLastUsed: new Date().toISOString()
                     }
 
-                    if (ciAvailability === 'in-use') {
+                    if (ciAvailability === CI_AVAILABILITY_IN_USE) {
                         if (this.prNumber) updatedEnv.ciPRNumber = this.prNumber
                         if (this.branch) updatedEnv.ciBranch = this.branch
                         if (this.runId) updatedEnv.ciRunId = this.runId
-                    } else if (ciAvailability === 'available') {
+                    } else if (ciAvailability === CI_AVAILABILITY_AVAILABLE) {
                         delete updatedEnv.ciPRNumber
                         delete updatedEnv.ciBranch
                         delete updatedEnv.ciRunId
@@ -120,10 +128,10 @@ class MRTTargetManager {
             const status = {
                 total: downloadResponse.poolData.environments.length,
                 available: downloadResponse.poolData.environments.filter(
-                    (env) => env.ciAvailability === 'available'
+                    (env) => env.ciAvailability === CI_AVAILABILITY_AVAILABLE
                 ).length,
                 inUse: downloadResponse.poolData.environments.filter(
-                    (env) => env.ciAvailability === 'in-use'
+                    (env) => env.ciAvailability === CI_AVAILABILITY_IN_USE
                 ).length,
                 environments: downloadResponse.poolData.environments
             }
@@ -167,7 +175,7 @@ class MRTTargetManager {
                 const updatedPoolData = this.updateMRTTargetStatus(
                     downloadResponse.poolData,
                     availableEnv,
-                    'in-use'
+                    CI_AVAILABILITY_IN_USE
                 )
 
                 // Step 4: Try to upload with ETag precondition
@@ -188,7 +196,7 @@ class MRTTargetManager {
             } catch (error) {
                 retryCount++
 
-                if (error.name === 'PreconditionFailedException') {
+                if (error.name === AWS_S3_ERR_PRECONDITION_FAILED) {
                     console.log(`⚠️ ETag mismatch on attempt ${retryCount}, retrying...`)
 
                     if (retryCount < this.maxRetries) {
@@ -244,7 +252,9 @@ async function main() {
                 poolDataFileKey: process.env.AWS_S3_POOL_DATA_FILE_KEY,
                 roleArn: process.env.AWS_ROLE_ARN,
                 region: process.env.AWS_REGION,
-                roleSessionName: process.env.CI ? 'github-actions-e2e-session' : 'pwa-kit-bot-user-session'
+                roleSessionName: process.env.CI
+                    ? GITHUB_ACTIONS_E2E_SESSION
+                    : PWA_KIT_BOT_USER_SESSION
             })
 
             await mrtTargetManager.initialize()
@@ -278,7 +288,9 @@ async function main() {
                 runId,
                 maxRetries: parseInt(globalOpts.maxRetries),
                 retryDelay: parseInt(globalOpts.retryDelay),
-                roleSessionName: process.env.CI ? 'github-actions-e2e-session' : 'pwa-kit-bot-user-session'
+                roleSessionName: process.env.CI
+                    ? GITHUB_ACTIONS_E2E_SESSION
+                    : PWA_KIT_BOT_USER_SESSION
             })
 
             await mrtTargetManager.initialize()
