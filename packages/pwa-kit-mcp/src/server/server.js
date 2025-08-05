@@ -77,8 +77,6 @@ class PwaStorefrontMCPServerHighLevel {
             CreateNewPageTool.inputSchema,
             CreateNewPageTool.handler
         )
-        // Debug: Print all registered tools (if available)
-        console.log('Registered tools:', Object.keys(this.server.tools || {}))
     }
 
     async run() {
