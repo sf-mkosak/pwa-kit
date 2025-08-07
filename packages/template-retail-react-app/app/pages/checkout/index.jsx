@@ -220,7 +220,7 @@ const CheckoutContainer = () => {
         <CheckoutProvider>
             <Helmet>
                 <script
-                    src="https://localhost/s/RefArch/dw/shop/v99_9/autocomplete/sdk.js?client_id=cd669706-3638-4dd1-a8b2-310ab900ca53"
+                    src="/mobify/proxy/ocapi/s/RefArch/dw/shop/v99_9/autocomplete/sdk.js?client_id=cd669706-3638-4dd1-a8b2-310ab900ca53"
                     id="google-maps-js"
                     type="text/javascript">
                     </script>
