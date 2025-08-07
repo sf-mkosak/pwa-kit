@@ -2,6 +2,7 @@
   "version": "3.12.0-dev",
   "packages": [
     "packages/*",
-    "e2e/scripts"
+    "e2e",
+    "e2e/*"
   ]
 }
