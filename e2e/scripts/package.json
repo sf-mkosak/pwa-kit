@@ -4,31 +4,20 @@
     "description": "E2E test scripts for PWA Kit",
     "main": "index.js",
     "scripts": {
-        "test": "jest",
-        "test:watch": "jest --watch",
-        "test:coverage": "jest --coverage",
+        "test": "pwa-kit-dev test",
+        "test:watch": "pwa-kit-dev test --watch",
+        "test:coverage": "pwa-kit-dev test --coverage",
         "lint": "eslint \"*.js\"",
         "lint:fix": "eslint \"*.js\" --fix"
     },
     "devDependencies": {
-        "jest": "^26.6.3",
+        "@actions/core": "^1.11.1",
         "@aws-sdk/client-s3": "^3.450.0",
         "@aws-sdk/client-sts": "^3.450.0",
-        "prettier": "^2.8.6",
-        "eslint": "^8.37.0",
-        "eslint-config-prettier": "8.8.0",
-        "eslint-plugin-prettier": "4.2.1",
-        "eslint-plugin-jest": "^27.2.1"
+        "@salesforce/pwa-kit-dev": "3.12.0-dev",
+        "jest": "^26.6.3"
     },
     "jest": {
-        "testEnvironment": "node",
-        "testMatch": [
-            "**/*.test.js"
-        ],
-        "collectCoverageFrom": [
-            "*.js",
-            "!*.test.js"
-        ],
-        "coverageDirectory": "coverage"
+        "setupFilesAfterEnv": ["./jest.setup.js"]
     }
 }
