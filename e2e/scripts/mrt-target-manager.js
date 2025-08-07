@@ -350,6 +350,9 @@ async function main() {
 // Export for use as module
 module.exports = MRTTargetManager
 
+// Export main function for testing
+module.exports.main = main
+
 // Run CLI if called directly
 if (require.main === module) {
     main()

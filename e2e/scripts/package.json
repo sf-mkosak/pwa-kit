@@ -1,0 +1,27 @@
+{
+  "name": "e2e-scripts",
+  "version": "1.0.0",
+  "description": "E2E test scripts for PWA Kit",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "@aws-sdk/client-s3": "^3.450.0",
+    "@aws-sdk/client-sts": "^3.450.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "*.js",
+      "!*.test.js"
+    ],
+    "coverageDirectory": "coverage"
+  }
+}

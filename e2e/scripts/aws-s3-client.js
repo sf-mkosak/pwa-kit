@@ -52,7 +52,7 @@ class SecureS3Client {
                 RoleArn: this.roleArn,
                 RoleSessionName: this.roleSessionName,
                 DurationSeconds: 3600,
-                ...(process.env.CI && {ExternalId: this.externalId})
+                ...(!process.env.CI && {ExternalId: this.externalId})
             })
 
             const data = await sts.send(command)
