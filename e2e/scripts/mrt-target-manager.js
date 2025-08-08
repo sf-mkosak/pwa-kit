@@ -256,7 +256,6 @@ class MRTTargetManager {
         let retryCount = 0
         while (retryCount < this.maxRetries) {
             try {
-                // Step 1: Download pool file and get ETag
                 const downloadResponse = await this.downloadPoolFile()
                 const poolData = downloadResponse.poolData
                 const envToRelease = poolData.environments.find((env) => env.slug === slug)
@@ -265,7 +264,6 @@ class MRTTargetManager {
                     throw new Error(`❌ Environment ${slug} not found`)
                 }
 
-                // Step 3: Mark environment as available
                 const updatedPoolData = this.updateMRTTargetStatus(
                     downloadResponse.poolData,
                     envToRelease,
@@ -276,7 +274,7 @@ class MRTTargetManager {
                     this.bucket,
                     this.poolDataFileKey,
                     JSON.stringify(updatedPoolData, null, 2),
-                    poolData.etag
+                    downloadResponse.etag
                 )
 
                 console.log(`✅ Successfully released environment: ${slug}`)

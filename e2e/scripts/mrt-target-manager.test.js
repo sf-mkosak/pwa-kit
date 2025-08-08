@@ -604,6 +604,271 @@ describe('MRTTargetManager', () => {
         })
     })
 
+    describe('releaseEnvironment', () => {
+        beforeEach(() => {
+            manager = new MRTTargetManager({
+                bucket: 'test-bucket',
+                poolDataFileKey: 'test-key'
+            })
+        })
+
+        test('should throw error when not in CI', async () => {
+            delete process.env.CI
+
+            await expect(manager.releaseEnvironment('env1')).rejects.toThrow(
+                '❌ Cannot release environment in local development - Read only access'
+            )
+        })
+
+        test('should successfully release environment on first attempt', async () => {
+            const originalCI = process.env.CI
+            process.env.CI = 'true'
+
+            const mockPoolData = {
+                environments: [
+                    {
+                        slug: 'env1',
+                        ciAvailability: CI_AVAILABILITY_IN_USE,
+                        ciRunInfo: {prNumber: '123'}
+                    }
+                ]
+            }
+
+            const mockDownloadResult = {
+                body: {
+                    [Symbol.asyncIterator]: async function* () {
+                        yield Buffer.from(JSON.stringify(mockPoolData))
+                    }
+                },
+                etag: '"test-etag"',
+                poolData: mockPoolData
+            }
+
+            mockS3Client.download.mockResolvedValue(mockDownloadResult)
+            mockS3Client.upload.mockResolvedValue({})
+
+            const result = await manager.releaseEnvironment('env1')
+
+            expect(result).toBe(true)
+            expect(console.log).toHaveBeenCalledWith('🔓 Releasing environment: env1')
+            expect(console.log).toHaveBeenCalledWith('✅ Successfully released environment: env1')
+            expect(mockS3Client.upload).toHaveBeenCalledWith(
+                'test-bucket',
+                'test-key',
+                expect.any(String),
+                '"test-etag"'
+            )
+
+            // Verify the uploaded data structure
+            const uploadCall = mockS3Client.upload.mock.calls[0]
+            const uploadedData = JSON.parse(uploadCall[2])
+            expect(uploadedData.environments[0].ciAvailability).toBe(CI_AVAILABILITY_AVAILABLE)
+
+            // Reset to original value
+            process.env.CI = originalCI
+        })
+
+        test('should throw error when environment not found', async () => {
+            const originalCI = process.env.CI
+            process.env.CI = 'true'
+
+            const mockPoolData = {
+                environments: [
+                    {
+                        slug: 'env1',
+                        ciAvailability: CI_AVAILABILITY_IN_USE
+                    }
+                ]
+            }
+
+            const mockDownloadResult = {
+                body: {
+                    [Symbol.asyncIterator]: async function* () {
+                        yield Buffer.from(JSON.stringify(mockPoolData))
+                    }
+                },
+                etag: '"test-etag"',
+                poolData: mockPoolData
+            }
+
+            mockS3Client.download.mockResolvedValue(mockDownloadResult)
+
+            await expect(manager.releaseEnvironment('env2')).rejects.toThrow(
+                '❌ Environment env2 not found'
+            )
+
+            // Reset to original value
+            process.env.CI = originalCI
+        })
+
+        test('should retry on ETag mismatch', async () => {
+            const originalCI = process.env.CI
+            process.env.CI = 'true'
+            manager.maxRetries = 2
+            manager.retryDelay = 100 // Set a short delay for testing
+
+            const mockPoolData = {
+                environments: [
+                    {
+                        slug: 'env1',
+                        ciAvailability: CI_AVAILABILITY_IN_USE
+                    }
+                ]
+            }
+
+            const mockDownloadResult = {
+                body: {
+                    [Symbol.asyncIterator]: async function* () {
+                        yield Buffer.from(JSON.stringify(mockPoolData))
+                    }
+                },
+                etag: '"test-etag"',
+                poolData: mockPoolData
+            }
+
+            mockS3Client.download.mockResolvedValue(mockDownloadResult)
+
+            // First attempt fails with ETag mismatch
+            const etagError = new Error('Precondition failed')
+            etagError.name = AWS_S3_ERR_PRECONDITION_FAILED
+            mockS3Client.upload.mockRejectedValueOnce(etagError)
+
+            // Second attempt succeeds
+            mockS3Client.upload.mockResolvedValueOnce({})
+
+            const result = await manager.releaseEnvironment('env1')
+
+            expect(result).toBe(true)
+            expect(console.log).toHaveBeenCalledWith(
+                '⚠️ ETag mismatch on release attempt 1, retrying...'
+            )
+
+            // Reset to original value
+            process.env.CI = originalCI
+        })
+
+        test('should throw error after max retries', async () => {
+            const originalCI = process.env.CI
+            process.env.CI = 'true'
+            manager.maxRetries = 2
+            manager.retryDelay = 100 // Set a short delay for testing
+
+            const mockPoolData = {
+                environments: [
+                    {
+                        slug: 'env1',
+                        ciAvailability: CI_AVAILABILITY_IN_USE
+                    }
+                ]
+            }
+
+            const mockDownloadResult = {
+                body: {
+                    [Symbol.asyncIterator]: async function* () {
+                        yield Buffer.from(JSON.stringify(mockPoolData))
+                    }
+                },
+                etag: '"test-etag"',
+                poolData: mockPoolData
+            }
+
+            mockS3Client.download.mockResolvedValue(mockDownloadResult)
+
+            const etagError = new Error('Precondition failed')
+            etagError.name = AWS_S3_ERR_PRECONDITION_FAILED
+            mockS3Client.upload.mockRejectedValue(etagError)
+
+            await expect(manager.releaseEnvironment('env1')).rejects.toThrow(
+                '❌ Failed to release environment after 2 attempts'
+            )
+
+            // Reset to original value
+            process.env.CI = originalCI
+        })
+
+        test('should throw non-retryable errors immediately', async () => {
+            const originalCI = process.env.CI
+            process.env.CI = 'true'
+
+            const mockPoolData = {
+                environments: [
+                    {
+                        slug: 'env1',
+                        ciAvailability: CI_AVAILABILITY_IN_USE
+                    }
+                ]
+            }
+
+            const mockDownloadResult = {
+                body: {
+                    [Symbol.asyncIterator]: async function* () {
+                        yield Buffer.from(JSON.stringify(mockPoolData))
+                    }
+                },
+                etag: '"test-etag"',
+                poolData: mockPoolData
+            }
+
+            mockS3Client.download.mockResolvedValue(mockDownloadResult)
+
+            const error = new Error('Upload failed')
+            mockS3Client.upload.mockRejectedValue(error)
+
+            await expect(manager.releaseEnvironment('env1')).rejects.toThrow('Upload failed')
+
+            // Reset to original value
+            process.env.CI = originalCI
+        })
+
+        test('should properly update environment status to available', async () => {
+            const originalCI = process.env.CI
+            process.env.CI = 'true'
+
+            const mockPoolData = {
+                environments: [
+                    {
+                        slug: 'env1',
+                        ciAvailability: CI_AVAILABILITY_IN_USE,
+                        ciRunInfo: {
+                            prNumber: '123',
+                            branch: 'feature/test',
+                            runId: 'run-456'
+                        }
+                    }
+                ]
+            }
+
+            const mockDownloadResult = {
+                body: {
+                    [Symbol.asyncIterator]: async function* () {
+                        yield Buffer.from(JSON.stringify(mockPoolData))
+                    }
+                },
+                etag: '"test-etag"',
+                poolData: mockPoolData
+            }
+
+            mockS3Client.download.mockResolvedValue(mockDownloadResult)
+            mockS3Client.upload.mockResolvedValue({})
+
+            await manager.releaseEnvironment('env1')
+
+            // Verify the upload was called with the correct updated data
+            const uploadCall = mockS3Client.upload.mock.calls[0]
+            const uploadedData = JSON.parse(uploadCall[2]) // The JSON string passed to upload
+
+            expect(uploadedData.environments[0]).toEqual({
+                slug: 'env1',
+                ciAvailability: CI_AVAILABILITY_AVAILABLE,
+                ciLastUsed: expect.any(String)
+            })
+            expect(uploadedData.environments[0].ciRunInfo).toBeUndefined()
+
+            // Reset to original value
+            process.env.CI = originalCI
+        })
+    })
+
     describe('CLI integration', () => {
         let mockProgram
         let mockCommand
@@ -612,6 +877,7 @@ describe('MRTTargetManager', () => {
             mockCommand = {
                 description: jest.fn().mockReturnThis(),
                 option: jest.fn().mockReturnThis(),
+                argument: jest.fn().mockReturnThis(),
                 action: jest.fn().mockReturnThis(),
                 opts: jest.fn().mockReturnValue({})
             }
@@ -642,6 +908,16 @@ describe('MRTTargetManager', () => {
 
             expect(mockProgram.command).toHaveBeenCalledWith('acquire')
             expect(mockCommand.description).toHaveBeenCalledWith('Acquire an MRT environment')
+        })
+
+        test('should set up release command', async () => {
+            // Mock the main function execution
+            const {main} = require('./mrt-target-manager')
+            await main()
+
+            expect(mockProgram.command).toHaveBeenCalledWith('release')
+            expect(mockCommand.description).toHaveBeenCalledWith('Release an MRT environment')
+            expect(mockCommand.argument).toHaveBeenCalledWith('<slug>', 'Environment Id to release')
         })
     })
 })
