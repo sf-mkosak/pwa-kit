@@ -124,9 +124,9 @@ export default class PerformanceTimer {
                     }
                 } else {
                     logger.warn('Span already exists', {
-                            name,
-                            namespace: 'PerformanceTimer.mark'
-                        })
+                        name,
+                        namespace: 'PerformanceTimer.mark'
+                    })
                 }
             } else if (type === this.MARKER_TYPES.END) {
                 const startMark = `${name}.${this.MARKER_TYPES.START}`
@@ -162,12 +162,12 @@ export default class PerformanceTimer {
                     performance.clearMeasures(name)
                 } catch (error) {
                     logger.warn('Failed to measure performance mark', {
-                            name,
-                            error: error.message,
-                            startMark,
-                            endMark,
-                            namespace: 'PerformanceTimer.mark'
-                        })
+                        name,
+                        error: error.message,
+                        startMark,
+                        endMark,
+                        namespace: 'PerformanceTimer.mark'
+                    })
                 }
             }
         } catch (error) {
@@ -193,10 +193,10 @@ export default class PerformanceTimer {
         const span = this.spans.get(name)
         if (span) {
             logger.warn('Cleaning up orphaned span', {
-                    name,
-                    error: 'Deleting orphaned span (reason: ' + reason + ' cleanup)',
-                    namespace: 'PerformanceTimer._cleanupOrphanedSpan'
-                })
+                name,
+                error: 'Deleting orphaned span (reason: ' + reason + ' cleanup)',
+                namespace: 'PerformanceTimer._cleanupOrphanedSpan'
+            })
             endSpan(span)
             this.spans.delete(name)
         }
