@@ -71,7 +71,7 @@ jobs:
                   RUN_ID: ${{ github.run_id }}
                   PR_NUMBER: ${{ github.event.pull_request.number }}
 
-            - name: Read MRT Target Details and Skip Workflow
+            - name: Read MRT Target Details
               id: mrt_target_details
               if: ${{ env.SKIP_WORKFLOW != 'true' }}
               run: |
@@ -91,6 +91,16 @@ jobs:
                   SLUG: ${{ steps.mrt_target_details.outputs.slug }}
                   MAX_RETRIES: 3
                   RETRY_DELAY: 10000
+
+            - name: Update MRT Target Proxy Configs
+              if: ${{ env.SKIP_WORKFLOW != 'true' }}
+              uses: ./.github/actions/update_mrt_target
+              with:
+                  PROJECT_SLUG: ${{ vars.MRT_STG_PWA_KIT_PROJECT_ID }}
+                  TARGET_SLUG: ${{ steps.mrt_target_details.outputs.slug }}
+                  MOBIFY_API_KEY: ${{ secrets.MOBIFY_STG_CLIENT_API_KEY }}
+                  CLOUD_ORIGIN: ${{ vars.MRT_STG_CLOUD_ORIGIN }}
+                  SSR_PROXY_CONFIGS: ${{ vars.PWA_KIT_E2E_TARGET_PROXY_CONFIGS }}
 
             # Skip the rest of the workflow for now.
             - name: Simulating Test Run

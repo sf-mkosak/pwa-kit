@@ -1,0 +1,96 @@
+name: update_mrt_target
+description: Update a target. This endpoint automatically re-deploys the current bundle if any of the SSR-related properties are changed.
+inputs:
+    PROJECT_SLUG:
+        description: 'MRT Project slug'
+        required: true
+    TARGET_SLUG:
+        description: 'MRT Target slug'
+        required: true
+    MOBIFY_API_KEY:
+        description: 'Mobify API key'
+        required: true
+    CLOUD_ORIGIN:
+        description: 'MRT Cloud origin'
+        required: false
+        default: 'https://cloud.mobify.com'
+    NAME:
+        description: 'Target name'
+        required: false
+    SSR_EXTERNAL_HOSTNAME:
+        description: 'SSR external hostname'
+        required: false
+    SSR_EXTERNAL_DOMAIN:
+        description: 'SSR external domain'
+        required: false
+    SSR_REGION:
+        description: 'SSR region'
+        required: false
+    SSR_WHITELISTED_IPS:
+        description: 'SSR whitelisted IPs'
+        required: false
+    SSR_PROXY_CONFIGS:
+        description: 'Proxy configs (JSON array)'
+        required: false
+    ALLOW_COOKIES:
+        description: 'Allow cookies (true/false)'
+        required: false
+    ENABLE_SOURCE_MAPS:
+        description: 'Enable source maps (true/false)'
+        required: false
+
+runs:
+    using: composite
+    steps:
+        - name: Update MRT Target
+          id: update_mrt_target
+          shell: bash
+          run: |-
+              set -e
+              
+              # Build arguments for the Node.js script
+              ARGS=(
+                  "--project-slug" "${{ inputs.PROJECT_SLUG }}"
+                  "--target-slug" "${{ inputs.TARGET_SLUG }}"
+                  "--mobify-api-key" "${{ inputs.MOBIFY_API_KEY }}"
+              )
+              
+              # Add optional arguments only if they have values
+              if [ -n "${{ inputs.CLOUD_ORIGIN }}" ]; then
+                  ARGS+=("--cloud-origin" "${{ inputs.CLOUD_ORIGIN }}")
+              fi
+
+              if [ -n "${{ inputs.NAME }}" ]; then
+                  ARGS+=("--name" "${{ inputs.NAME }}")
+              fi
+              
+              if [ -n "${{ inputs.SSR_EXTERNAL_HOSTNAME }}" ]; then
+                  ARGS+=("--ssr-external-hostname" "${{ inputs.SSR_EXTERNAL_HOSTNAME }}")
+              fi
+              
+              if [ -n "${{ inputs.SSR_EXTERNAL_DOMAIN }}" ]; then
+                  ARGS+=("--ssr-external-domain" "${{ inputs.SSR_EXTERNAL_DOMAIN }}")
+              fi
+              
+              if [ -n "${{ inputs.SSR_REGION }}" ]; then
+                  ARGS+=("--ssr-region" "${{ inputs.SSR_REGION }}")
+              fi
+              
+              if [ -n "${{ inputs.SSR_WHITELISTED_IPS }}" ]; then
+                  ARGS+=("--ssr-whitelisted-ips" "${{ inputs.SSR_WHITELISTED_IPS }}")
+              fi
+              
+              if [ -n "${{ inputs.SSR_PROXY_CONFIGS }}" ]; then
+                  ARGS+=("--ssr-proxy-configs" "${{ inputs.SSR_PROXY_CONFIGS }}")
+              fi
+              
+              if [ -n "${{ inputs.ALLOW_COOKIES }}" ]; then
+                  ARGS+=("--allow-cookies" "${{ inputs.ALLOW_COOKIES }}")
+              fi
+              
+              if [ -n "${{ inputs.ENABLE_SOURCE_MAPS }}" ]; then
+                  ARGS+=("--enable-source-maps" "${{ inputs.ENABLE_SOURCE_MAPS }}")
+              fi
+              
+              # Run the Node.js script
+              node e2e/scripts/update-mrt-target.js "${ARGS[@]}"
