@@ -63,7 +63,8 @@ module.exports = {
         },
         googleCloudAPI: {
             apiKey: process.env.GOOGLE_CLOUD_API_KEY
-        }
+        },
+        partialHydrationEnabled: false
     },
     externals: [],
     pageNotFoundURL: '/page-not-found',
