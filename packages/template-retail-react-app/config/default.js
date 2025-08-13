@@ -63,7 +63,8 @@ module.exports = {
         },
         oneClickCheckout: {
             enabled: false
-        }
+        },
+        partialHydrationEnabled: false
     },
     externals: [],
     pageNotFoundURL: '/page-not-found',
