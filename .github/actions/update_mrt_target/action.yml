@@ -80,16 +80,19 @@ runs:
                   ARGS+=("--ssr-whitelisted-ips" "${{ inputs.SSR_WHITELISTED_IPS }}")
               fi
               
-              if [ -n "${{ inputs.SSR_PROXY_CONFIGS }}" ]; then
-                  ARGS+=("--ssr-proxy-configs" "${{ inputs.SSR_PROXY_CONFIGS }}")
-              fi
-              
               if [ -n "${{ inputs.ALLOW_COOKIES }}" ]; then
                   ARGS+=("--allow-cookies" "${{ inputs.ALLOW_COOKIES }}")
               fi
               
               if [ -n "${{ inputs.ENABLE_SOURCE_MAPS }}" ]; then
                   ARGS+=("--enable-source-maps" "${{ inputs.ENABLE_SOURCE_MAPS }}")
+              fi
+              
+              # Handle JSON proxy configs separately to preserve quotes
+              if [ -n "${{ inputs.SSR_PROXY_CONFIGS }}" ]; then
+                  # Use environment variable to pass JSON safely
+                  export SSR_PROXY_CONFIGS_JSON="${{ inputs.SSR_PROXY_CONFIGS }}"
+                  ARGS+=("--ssr-proxy-configs-env")
               fi
               
               # Run the Node.js script
