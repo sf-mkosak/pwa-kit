@@ -93,6 +93,12 @@ jobs:
                   RETRY_DELAY: 10000
 
             # Skip the rest of the workflow for now.
+            - name: Simulating Test Run
+              if: ${{ env.SKIP_WORKFLOW != 'true' }}
+              run: |
+                  sleep 30
+
+            # Skip the rest of the workflow for now.
             - name: Skip Workflow
               if: ${{ env.SKIP_WORKFLOW != 'true' }}
               run: |
