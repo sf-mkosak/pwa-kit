@@ -288,13 +288,6 @@ export const tracePerformance = async (name, fn, res = null) => {
 }
 
 /**
- * Traces a performance metric
- * @param {string} name - The name of the metric
- * @param {number} duration - The duration of the metric in milliseconds
- * @param {Object} attributes - Additional attributes for the metric
- */
-
-/**
  * Traces a performance operation
  * @param {string} name - The name of the operation
  * @param {Function} fn - The function to trace
