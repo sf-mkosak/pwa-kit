@@ -98,7 +98,7 @@ jobs:
               with:
                   PROJECT_SLUG: ${{ vars.MRT_STG_PWA_KIT_PROJECT_ID }}
                   TARGET_SLUG: ${{ steps.mrt_target_details.outputs.slug }}
-                  MOBIFY_API_KEY: ${{ secrets.MOBIFY_STG_CLIENT_API_KEY }}
+                  MOBIFY_API_KEY: ${{ secrets.MRT_STG_PWA_KIT_CI_API_KEY }}
                   CLOUD_ORIGIN: ${{ vars.MRT_STG_CLOUD_ORIGIN }}
                   SSR_PROXY_CONFIGS: ${{ vars.PWA_KIT_E2E_TARGET_PROXY_CONFIGS }}
 
