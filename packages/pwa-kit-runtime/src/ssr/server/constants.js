@@ -26,3 +26,7 @@ export const STRICT_TRANSPORT_SECURITY = 'strict-transport-security'
 
 /**  * @deprecated Use ssr-namespace-paths.slasPrivateProxyPath instead  */
 export const SLAS_CUSTOM_PROXY_PATH = '/mobify/slas/private'
+
+// The following are values used by the SLAS private client proxy to
+// genericize errors that
+export const SLAS_USER_NOT_FOUND_ERROR = /user not found/i

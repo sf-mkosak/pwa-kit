@@ -13,7 +13,8 @@ import {
     CACHE_CONTROL,
     NO_CACHE,
     X_ENCODED_HEADERS,
-    CONTENT_SECURITY_POLICY
+    CONTENT_SECURITY_POLICY,
+    SLAS_USER_NOT_FOUND_ERROR
 } from './constants'
 import {
     catchAndLog,
@@ -51,7 +52,7 @@ import {applyProxyRequestHeaders} from '../../utils/ssr-server/configure-proxy'
 import awsServerlessExpress from 'aws-serverless-express'
 import expressLogging from 'morgan'
 import logger from '../../utils/logger-instance'
-import {createProxyMiddleware} from 'http-proxy-middleware'
+import {createProxyMiddleware, responseInterceptor} from 'http-proxy-middleware'
 
 /**
  * An Array of mime-types (Content-Type values) that are considered
@@ -723,6 +724,7 @@ export const RemoteServerFactory = {
                 target: options.slasTarget,
                 changeOrigin: true,
                 pathRewrite: {[slasPrivateProxyPath]: ''},
+                selfHandleResponse: true,
                 onProxyReq: (proxyRequest, incomingRequest, res) => {
                     applyProxyRequestHeaders({
                         proxyRequest,
@@ -760,7 +762,26 @@ export const RemoteServerFactory = {
                     if (incomingRequest.path?.match(options.applySLASPrivateClientToEndpoints)) {
                         proxyRequest.setHeader('Authorization', `Basic ${encodedSlasCredentials}`)
                     }
-                }
+                },
+                onProxyRes: responseInterceptor((responseBuffer, proxyRes, req, res) => {
+                    try {
+                        // Responses from SLAS are in expected to be in json format format
+                        let body = JSON.parse(responseBuffer.toString('utf8'))
+                        const message = body.message
+
+                        // If the message contains the string "user not found", replace it with a more generic
+                        // message that prevents user enumeration.
+                        if (SLAS_USER_NOT_FOUND_ERROR.test(message)) {
+                            body = Object.assign({}, body, {
+                                message: "Something's not right with your login. Try again"
+                            })
+                        }
+                        return Buffer.from(JSON.stringify(body), 'utf8')
+                    } catch (error) {
+                        console.error('Error in responseInterceptor:', error)
+                        return responseBuffer
+                    }
+                })
             })
         )
     },
