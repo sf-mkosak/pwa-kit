@@ -45,7 +45,7 @@ class MRTTargetUpdater {
      * @returns {Promise<Object>} - The API response
      */
     async updateTarget(payload) {
-        const url = `${this.apiBaseUrl}/api/projects/${this.projectSlug}/target/${this.targetSlug}/`
+        const url = `${this.cloudOrigin}/api/projects/${this.projectSlug}/target/${this.targetSlug}/`
         
         console.log('🎯 Updating MRT Target...')
         console.log(`URL: ${url}`)
