@@ -1275,4 +1275,50 @@ describe('SLAS private client proxy', () => {
             'It is not allowed to include /oauth2/trusted-system endpoints in `applySLASPrivateClientToEndpoints`'
         )
     }, 15000)
+
+    test('proxy returns a 200 OK masking a user not found error', async () => {
+        process.env.PWA_KIT_SLAS_CLIENT_SECRET = 'a secret'
+
+        // Create a new mock server specifically for this test so we can mock a response from SLAS
+        const testProxyApp = express()
+        const testProxyPort = 12346
+        const testProxyPath = '/mockSLASTarget'
+        const testSlasTarget = `http://localhost:${testProxyPort}${testProxyPath}`
+
+        testProxyApp.use(testProxyPath, (req, res) => {
+            if (req.url.includes('/passwordless/login')) {
+                res.status(400).json({
+                    message: 'user not found'
+                })
+            } else {
+                res.send(req.headers)
+            }
+        })
+
+        const testProxyServer = testProxyApp.listen(testProxyPort)
+
+        try {
+            const testAppConfig = {
+                ...appConfig,
+                slasTarget: testSlasTarget
+            }
+
+            const app = RemoteServerFactory._createApp(opts(testAppConfig))
+
+            return await request(app)
+                .get('/mobify/slas/private/shopper/auth/v1/passwordless/login')
+                .expect(200)
+                .then((response) => {
+                    expect(response.body).toBe('')
+                    expect(response.text).toBe('')
+                })
+        } finally {
+            // Clean up the test server
+            await new Promise((resolve) => {
+                testProxyServer.close(() => {
+                    resolve()
+                })
+            })
+        }
+    }, 15000)
 })
