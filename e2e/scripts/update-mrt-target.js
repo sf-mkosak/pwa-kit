@@ -119,7 +119,6 @@ class MRTTargetUpdater {
 
         try {
             const fetch = await import('node-fetch').then((mod) => mod.default)
-            
             const response = await fetch(url, {
                 method: 'PATCH',
                 headers: {

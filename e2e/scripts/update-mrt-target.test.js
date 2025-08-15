@@ -253,18 +253,6 @@ describe('MRTTargetUpdater', () => {
             const url = `${updater.cloudOrigin}/api/projects/${updater.projectSlug}/target/${updater.targetSlug}/`
             expect(url).toBe(expectedUrl)
         })
-
-        test('should have correct method configuration for API call', () => {
-            const expectedConfig = {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: 'Bearer test-api-key'
-                }
-            }
-
-            expect(updater.mobifyApiKey).toBe('test-api-key')
-        })
     })
 
     describe('updateEnvironmentVariables', () => {
@@ -284,18 +272,6 @@ describe('MRTTargetUpdater', () => {
             // Test URL building logic
             const url = `${updater.cloudOrigin}/api/projects/${updater.projectSlug}/target/${updater.targetSlug}/env-var/`
             expect(url).toBe(expectedUrl)
-        })
-
-        test('should have correct method configuration for env vars API call', () => {
-            const expectedConfig = {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: 'Bearer test-api-key'
-                }
-            }
-
-            expect(updater.mobifyApiKey).toBe('test-api-key')
         })
     })
 
