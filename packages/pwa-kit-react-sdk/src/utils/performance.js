@@ -62,20 +62,6 @@ export default class PerformanceTimer {
     }
 
     /**
-     * A utility function to format and log the performance metrics.
-     *
-     * @function
-     * @private
-     */
-    log() {
-        this.metrics.forEach((metric) => {
-            logger.info(`${metric.name} - ${metric.duration}ms ${metric.detail || ''}`, {
-                namespace: 'performance'
-            })
-        })
-    }
-
-    /**
      * This is a utility function to create performance marks.
      * The data will be used in console logs and the http response header `server-timing`.
      *

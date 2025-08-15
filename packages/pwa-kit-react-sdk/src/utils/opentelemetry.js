@@ -281,29 +281,3 @@ export const tracePerformance = async (name, fn, res = null) => {
         throw error
     }
 }
-
-/**
- * Traces a performance operation
- * @param {string} name - The name of the operation
- * @param {Function} fn - The function to trace
- * @returns {Promise<any>} The result of the function
- */
-export const traceChildPerformance = async (name, fn) => {
-    const span = createChildSpan(name)
-    if (!span) {
-        return fn()
-    }
-
-    try {
-        const result = await fn()
-        endSpan(span)
-        return result
-    } catch (error) {
-        span.setStatus({
-            code: SpanStatusCode.ERROR,
-            message: error.message
-        })
-        endSpan(span)
-        throw error
-    }
-}
