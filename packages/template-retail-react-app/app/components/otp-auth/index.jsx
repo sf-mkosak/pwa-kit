@@ -14,8 +14,6 @@ import {
     SimpleGrid,
     Stack,
     Text,
-    Icon,
-    Flex,
     HStack,
     Modal,
     ModalBody,
@@ -24,9 +22,15 @@ import {
     ModalHeader,
     ModalOverlay
 } from '../shared/ui'
-import {PhoneIcon} from '@chakra-ui/icons'
 
-const OtpAuth = ({isOpen, onClose, form, handleSendEmailOtp, handleOtpVerification}) => {
+const OtpAuth = ({
+    isOpen,
+    onClose,
+    form,
+    handleSendEmailOtp,
+    handleOtpVerification,
+    onCheckoutAsGuest
+}) => {
     const OTP_LENGTH = 8
     const [otpValues, setOtpValues] = useState(new Array(OTP_LENGTH).fill(''))
     const [resendTimer, setResendTimer] = useState(0)
@@ -150,6 +154,9 @@ const OtpAuth = ({isOpen, onClose, form, handleSendEmailOtp, handleOtpVerificati
     }
 
     const handleCheckoutAsGuest = () => {
+        if (onCheckoutAsGuest) {
+            onCheckoutAsGuest()
+        }
         onClose()
     }
 
@@ -175,42 +182,39 @@ const OtpAuth = ({isOpen, onClose, form, handleSendEmailOtp, handleOtpVerificati
                             />
                         </Text>
 
-                        {/* OTP Input with Phone Icon */}
-                        <Flex alignItems="center" spacing={4}>
-                            <Icon as={PhoneIcon} color="blue.500" boxSize={5} mr={4} />
-                            <SimpleGrid columns={OTP_LENGTH} spacing={3}>
-                                {otpValues.map((value, index) => (
-                                    <Input
-                                        key={index}
-                                        ref={(el) => (inputRefs.current[index] = el)}
-                                        value={value}
-                                        onChange={(e) => handleOtpChange(index, e.target.value)}
-                                        onKeyDown={(e) => handleKeyDown(index, e)}
-                                        onPaste={handlePaste}
-                                        type="text"
-                                        inputMode="numeric"
-                                        maxLength={1}
-                                        textAlign="center"
-                                        fontSize="lg"
-                                        fontWeight="bold"
-                                        size="lg"
-                                        width="48px"
-                                        height="56px"
-                                        borderRadius="md"
-                                        borderColor="gray.300"
-                                        borderWidth="2px"
-                                        disabled={isVerifying}
-                                        _focus={{
-                                            borderColor: 'blue.500',
-                                            boxShadow: '0 0 0 1px var(--chakra-colors-blue-500)'
-                                        }}
-                                        _hover={{
-                                            borderColor: 'gray.400'
-                                        }}
-                                    />
-                                ))}
-                            </SimpleGrid>
-                        </Flex>
+                        {/* OTP Input */}
+                        <SimpleGrid columns={OTP_LENGTH} spacing={3}>
+                            {otpValues.map((value, index) => (
+                                <Input
+                                    key={index}
+                                    ref={(el) => (inputRefs.current[index] = el)}
+                                    value={value}
+                                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                                    onKeyDown={(e) => handleKeyDown(index, e)}
+                                    onPaste={handlePaste}
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={1}
+                                    textAlign="center"
+                                    fontSize="lg"
+                                    fontWeight="bold"
+                                    size="lg"
+                                    width="48px"
+                                    height="56px"
+                                    borderRadius="md"
+                                    borderColor="gray.300"
+                                    borderWidth="2px"
+                                    disabled={isVerifying}
+                                    _focus={{
+                                        borderColor: 'blue.500',
+                                        boxShadow: '0 0 0 1px var(--chakra-colors-blue-500)'
+                                    }}
+                                    _hover={{
+                                        borderColor: 'gray.400'
+                                    }}
+                                />
+                            ))}
+                        </SimpleGrid>
 
                         {/* Loading indicator during verification */}
                         {isVerifying && (
@@ -233,16 +237,19 @@ const OtpAuth = ({isOpen, onClose, form, handleSendEmailOtp, handleOtpVerificati
                         <HStack spacing={4} width="100%" justifyContent="center">
                             <Button
                                 onClick={handleCheckoutAsGuest}
-                                variant="outline"
-                                colorScheme="gray"
+                                variant="solid"
                                 size="lg"
                                 minWidth="160px"
                                 isDisabled={isVerifying}
-                                borderColor="gray.300"
-                                color="gray.600"
+                                bg="gray.50"
+                                color="gray.800"
+                                fontWeight="bold"
+                                border="none"
                                 _hover={{
-                                    bg: 'gray.50',
-                                    borderColor: 'gray.400'
+                                    bg: 'gray.100'
+                                }}
+                                _active={{
+                                    bg: 'gray.200'
                                 }}
                             >
                                 <FormattedMessage
@@ -288,7 +295,8 @@ OtpAuth.propTypes = {
     onClose: PropTypes.func.isRequired,
     form: PropTypes.object.isRequired,
     handleSendEmailOtp: PropTypes.func.isRequired,
-    handleOtpVerification: PropTypes.func.isRequired
+    handleOtpVerification: PropTypes.func.isRequired,
+    onCheckoutAsGuest: PropTypes.func
 }
 
 export default OtpAuth
