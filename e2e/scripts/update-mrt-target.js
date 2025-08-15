@@ -116,10 +116,11 @@ class MRTTargetUpdater {
         console.log('🔧 Updating Environment Variables...')
         console.log(`URL: ${url}`)
         console.log(`Payload: ${JSON.stringify(envVarsPayload, null, 2)}`)
+        console.log(`Mobify API Key: ${this.mobifyApiKey}`)
 
         try {
             const fetch = await import('node-fetch').then((mod) => mod.default)
-
+            
             const response = await fetch(url, {
                 method: 'PATCH',
                 headers: {
