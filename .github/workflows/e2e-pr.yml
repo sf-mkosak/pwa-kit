@@ -106,8 +106,7 @@ jobs:
               # This will be read by e2e/scripts/update-mrt-target.js and will be set to the current acquired MRT target.
             - name: Create and populate .env file for MRT Target
               run: |-
-                  touch ${{ vars.MRT_ENV_PER_PR_E2E_BASE_FILENAME }}
-                  echo PWA_KIT_SLAS_CLIENT_SECRET="${{ secrets.ZZRF_002_SLAS_PRIVATE_CLIENT_SECRET }}" >> ${{ vars.MRT_ENV_PER_PR_E2E_BASE_FILENAME }}
+                  echo PWA_KIT_SLAS_CLIENT_SECRET="${{ secrets.ZZRF_002_SLAS_PRIVATE_CLIENT_SECRET }}" > ${{ vars.MRT_ENV_PER_PR_E2E_BASE_FILENAME }}
 
             - name: Update MRT Target Environment Variables
               uses: ./.github/actions/update_mrt_target_env_var
