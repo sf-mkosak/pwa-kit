@@ -8,6 +8,24 @@
   "account.logout_button.button.log_out": {
     "defaultMessage": "Log Out"
   },
+  "account.payments.action.refresh": {
+    "defaultMessage": "Refresh"
+  },
+  "account.payments.action.retry": {
+    "defaultMessage": "Retry"
+  },
+  "account.payments.heading.payment_methods": {
+    "defaultMessage": "Payment Methods"
+  },
+  "account.payments.message.error": {
+    "defaultMessage": "Error loading payment methods. Please try again."
+  },
+  "account.payments.message.loading": {
+    "defaultMessage": "Loading payment methods..."
+  },
+  "account.payments.message.no_payment_methods": {
+    "defaultMessage": "No saved payment methods found."
+  },
   "account_addresses.badge.default": {
     "defaultMessage": "Default"
   },
@@ -243,8 +261,17 @@
   "checkout.button.place_order": {
     "defaultMessage": "Place Order"
   },
+  "checkout.label.user_registration": {
+    "defaultMessage": "Create an account for a faster checkout"
+  },
   "checkout.message.generic_error": {
     "defaultMessage": "An unexpected error occurred during checkout."
+  },
+  "checkout.message.user_registration": {
+    "defaultMessage": "When you place your order, we create an account for you and save your payment information and other details for future purchases. During your next checkout, confirm your account using the code we'll send to you."
+  },
+  "checkout.title.user_registration": {
+    "defaultMessage": "Save for Future Use"
   },
   "checkout_confirmation.button.create_account": {
     "defaultMessage": "Create Account"
@@ -325,6 +352,15 @@
   "checkout_confirmation.message.will_email_shortly": {
     "defaultMessage": "We will send an email to <b>{email}</b> with your confirmation number and receipt shortly."
   },
+  "checkout_contact_info.action.edit": {
+    "defaultMessage": "Edit"
+  },
+  "checkout_contact_info.action.sign_out": {
+    "defaultMessage": "Sign Out"
+  },
+  "checkout_contact_info.title.contact_info": {
+    "defaultMessage": "Contact Info"
+  },
   "checkout_footer.link.privacy_policy": {
     "defaultMessage": "Privacy Policy"
   },
@@ -351,6 +387,9 @@
   },
   "checkout_payment.action.remove": {
     "defaultMessage": "Remove"
+  },
+  "checkout_payment.button.place_order": {
+    "defaultMessage": "Place Order"
   },
   "checkout_payment.button.review_order": {
     "defaultMessage": "Review Order"
@@ -445,6 +484,9 @@
   "contact_info.button.checkout_as_guest": {
     "defaultMessage": "Checkout as Guest"
   },
+  "contact_info.button.continue_to_shipping_address": {
+    "defaultMessage": "Continue to Shipping Address"
+  },
   "contact_info.button.login": {
     "defaultMessage": "Log In"
   },
@@ -527,6 +569,9 @@
   },
   "drawer_menu.button.order_history": {
     "defaultMessage": "Order History"
+  },
+  "drawer_menu.button.payment_methods": {
+    "defaultMessage": "Payment Methods"
   },
   "drawer_menu.header.assistive_msg.title": {
     "defaultMessage": "Menu Drawer"
@@ -674,6 +719,9 @@
   },
   "global.account.link.order_history": {
     "defaultMessage": "Order History"
+  },
+  "global.account.link.payment_methods": {
+    "defaultMessage": "Payment Methods"
   },
   "global.account.link.wishlist": {
     "defaultMessage": "Wishlist"
@@ -1080,6 +1128,27 @@
   },
   "order_summary.label.tax": {
     "defaultMessage": "Tax"
+  },
+  "otp.button.checkout_as_guest": {
+    "defaultMessage": "Checkout as a guest"
+  },
+  "otp.button.resend_code": {
+    "defaultMessage": "Resend code"
+  },
+  "otp.button.resend_timer": {
+    "defaultMessage": "Resend code in {timer}s"
+  },
+  "otp.error.invalid_code": {
+    "defaultMessage": "Invalid or expired code. Please try again."
+  },
+  "otp.message.enter_code_for_account": {
+    "defaultMessage": "To use your account information enter the code sent to your email."
+  },
+  "otp.message.verifying": {
+    "defaultMessage": "Verifying code..."
+  },
+  "otp.title.confirm_its_you": {
+    "defaultMessage": "Confirm it's you"
   },
   "page_not_found.action.go_back": {
     "defaultMessage": "Back to previous page"

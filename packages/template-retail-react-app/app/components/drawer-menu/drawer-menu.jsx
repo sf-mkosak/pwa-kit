@@ -60,6 +60,7 @@ import useNavigation from '@salesforce/retail-react-app/app/hooks/use-navigation
 import useMultiSite from '@salesforce/retail-react-app/app/hooks/use-multi-site'
 
 import {STORE_LOCATOR_IS_ENABLED} from '@salesforce/retail-react-app/app/constants'
+import {getConfig} from '@salesforce/pwa-kit-runtime/utils/ssr-config'
 // The FONT_SIZES and FONT_WEIGHTS constants are used to control the styling for
 // the accordion buttons as their current depth. In the below definition we assign
 // values for depths 0 - 3, any depth deeper than that will use the default styling.
@@ -112,6 +113,8 @@ const DrawerMenu = ({
 
     const supportedLocaleIds = l10n?.supportedLocales.map((locale) => locale.id)
     const showLocaleSelector = supportedLocaleIds?.length > 1
+    const {oneClickCheckout = {}} = getConfig().app || {}
+    const isOneClickCheckoutEnabled = oneClickCheckout.enabled
 
     useEffect(() => {
         setAriaBusy('false')
@@ -254,7 +257,20 @@ const DrawerMenu = ({
                                                                 id: 'drawer_menu.button.addresses',
                                                                 defaultMessage: 'Addresses'
                                                             })
-                                                        }
+                                                        },
+                                                        ...(isOneClickCheckoutEnabled
+                                                            ? [
+                                                                  {
+                                                                      id: 'payments',
+                                                                      path: '/payments',
+                                                                      name: intl.formatMessage({
+                                                                          id: 'drawer_menu.button.payment_methods',
+                                                                          defaultMessage:
+                                                                              'Payment Methods'
+                                                                      })
+                                                                  }
+                                                              ]
+                                                            : [])
                                                     ]
                                                 }
                                             ]
