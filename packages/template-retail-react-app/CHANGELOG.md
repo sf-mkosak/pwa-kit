@@ -6,7 +6,7 @@
 
 - [Bugfix] Pin `@chakra-ui/react` version to 2.7.0 to avoid breaking changes from 2.10.9 [#2658](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/2658)
 
-- Introduce optional prop `hybridAuthEnabled` to control Hybrid Auth specific behaviors in commerce-sdk-react [#2658](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/2658)
+- Introduce optional prop `hybridAuthEnabled` to control Hybrid Auth specific behaviors in commerce-sdk-react [#3151](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3151)
 
 ## v7.0.0 (July 22, 2025)
 
