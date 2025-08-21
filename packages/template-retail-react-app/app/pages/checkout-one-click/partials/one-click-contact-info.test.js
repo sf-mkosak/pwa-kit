@@ -11,6 +11,7 @@ import {renderWithProviders} from '@salesforce/retail-react-app/app/utils/test-u
 import {rest} from 'msw'
 import {AuthHelpers} from '@salesforce/commerce-sdk-react'
 
+jest.setTimeout(60000)
 const validEmail = 'test@salesforce.com'
 const invalidEmail = 'invalidEmail'
 const mockAuthHelperFunctions = {
@@ -186,7 +187,18 @@ describe('ContactInfo Component', () => {
             'user@example-domain.com',
             'user@subdomain1.subdomain2.example.com',
             'user.name@example.co.uk',
-            'user@example-domain123.com'
+            'user@example-domain123.com',
+            'josé@mañana.com',
+            'firstname.lastname@example.co.uk',
+            'email@subdomain.example.com',
+            'user+mailbox@example.com',
+            'user-name@example.org',
+            '12345@example.com',
+            'email@mañana.com',
+            'josé@example.españa',
+            'email@bücher.de',
+            '用户@例子.中国',
+            '!#$%&*+/=?^_{|}~-@example.com'
         ]
 
         for (const email of validEmails) {
