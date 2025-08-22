@@ -120,7 +120,7 @@ jobs:
                   TARGET_SLUG: ${{ steps.mrt_target_details.outputs.slug }}
                   MOBIFY_API_KEY: ${{ secrets.MRT_STG_PWA_KIT_CI_API_KEY }}
                   CLOUD_ORIGIN: ${{ vars.MRT_STG_CLOUD_ORIGIN }}
-                  MRT_TARGET_SETTINGS_FILE_PATH: ${{ vars.MRT_ENV_VARS_E2E_BASE_FILENAME }}
+                  MRT_TARGET_SETTINGS_FILE_PATH: ${{ vars.MRT_ENV_SETTINGS_E2E_BASE_FILENAME }}
                   MRT_TARGET_VARS_FILE_PATH: ${{ vars.MRT_ENV_VARS_E2E_BASE_FILENAME }}
 
             # Skip the rest of the workflow for now.
