@@ -47,8 +47,6 @@ class MRTTargetUpdater {
         const envVars = this._parseEnvFile()
         const payload = {}
 
-        console.log('🔍 Update Target Environment variables:', envVars)
-
         // Map environment variables to API payload properties
         if (envVars.MRT_TARGET_NAME) payload.name = envVars.MRT_TARGET_NAME
         if (envVars.MRT_TARGET_SSR_EXTERNAL_HOSTNAME)
