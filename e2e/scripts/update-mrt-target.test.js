@@ -7,9 +7,11 @@
 
 const MRTTargetUpdater = require('./update-mrt-target')
 const {Command} = require('commander')
+const dotenv = require('dotenv')
 
 // Mock dependencies
 jest.mock('commander')
+jest.mock('dotenv')
 
 // Mock console methods to avoid cluttering test output
 const originalConsoleLog = console.log
@@ -43,6 +45,7 @@ describe('MRTTargetUpdater', () => {
             expect(updater.targetSlug).toBeUndefined()
             expect(updater.cloudOrigin).toBe('https://cloud.mobify.com')
             expect(updater.mobifyApiKey).toBeUndefined()
+            expect(updater.envFile).toBeUndefined()
         })
 
         test('should create instance with custom options', () => {
@@ -50,7 +53,8 @@ describe('MRTTargetUpdater', () => {
                 projectSlug: 'test-project',
                 targetSlug: 'test-target',
                 cloudOrigin: 'https://custom.example.com',
-                mobifyApiKey: 'test-api-key'
+                mobifyApiKey: 'test-api-key',
+                envFile: '.env.test'
             }
 
             updater = new MRTTargetUpdater(options)
@@ -59,6 +63,7 @@ describe('MRTTargetUpdater', () => {
             expect(updater.targetSlug).toBe(options.targetSlug)
             expect(updater.cloudOrigin).toBe(options.cloudOrigin)
             expect(updater.mobifyApiKey).toBe(options.mobifyApiKey)
+            expect(updater.envFile).toBe(options.envFile)
         })
 
         test('should use default cloudOrigin when not provided', () => {
@@ -74,24 +79,75 @@ describe('MRTTargetUpdater', () => {
         })
     })
 
+    describe('_parseEnvFile', () => {
+        beforeEach(() => {
+            updater = new MRTTargetUpdater({envFile: '.env.test'})
+            jest.clearAllMocks()
+        })
+
+        test('should parse .env file successfully', () => {
+            dotenv.config.mockReturnValue({
+                parsed: {
+                    MRT_TARGET_NAME: 'test-target',
+                    MRT_TARGET_SSR_REGION: 'us-east-1',
+                    API_KEY: 'test-key'
+                }
+            })
+
+            const result = updater._parseEnvFile()
+
+            expect(dotenv.config).toHaveBeenCalledWith({path: '.env.test'})
+            expect(result).toEqual({
+                MRT_TARGET_NAME: 'test-target',
+                MRT_TARGET_SSR_REGION: 'us-east-1',
+                API_KEY: 'test-key'
+            })
+        })
+
+        test('should throw error when dotenv fails', () => {
+            dotenv.config.mockReturnValue({
+                error: new Error('Parse error')
+            })
+
+            expect(() => {
+                updater._parseEnvFile()
+            }).toThrow('Failed to parse .env file: Parse error')
+        })
+
+        test('should return empty object when parsed is null or undefined', () => {
+            // Test null
+            dotenv.config.mockReturnValue({parsed: null})
+            expect(updater._parseEnvFile()).toEqual({})
+
+            // Test undefined
+            dotenv.config.mockReturnValue({})
+            expect(updater._parseEnvFile()).toEqual({})
+        })
+    })
+
     describe('buildUpdateTargetPayload', () => {
         beforeEach(() => {
-            updater = new MRTTargetUpdater()
+            updater = new MRTTargetUpdater({envFile: '.env.test'})
+            jest.clearAllMocks()
         })
 
         test('should build payload with only truthy values', () => {
-            const properties = {
-                name: 'Test Target',
-                ssrExternalHostname: 'test.example.com',
-                ssrExternalDomain: 'example.com',
-                ssrRegion: 'us-east-1',
-                ssrWhitelistedIps: '192.168.1.1,10.0.0.1',
-                ssrProxyConfigs: '{"proxy1": {"target": "http://api.example.com"}}',
-                allowCookies: 'true',
-                enableSourceMaps: 'false'
-            }
+            dotenv.config.mockReturnValue({
+                parsed: {
+                    MRT_TARGET_NAME: 'Test Target',
+                    MRT_TARGET_SSR_EXTERNAL_HOSTNAME: 'test.example.com',
+                    MRT_TARGET_SSR_EXTERNAL_DOMAIN: 'example.com',
+                    MRT_TARGET_SSR_REGION: 'us-east-1',
+                    MRT_TARGET_SSR_WHITELISTED_IPS: '192.168.1.1,10.0.0.1',
+                    MRT_TARGET_SSR_PROXY_CONFIGS:
+                        '{"proxy1": {"target": "http://api.example.com"}}',
+                    MRT_TARGET_ALLOW_COOKIES: 'true',
+                    MRT_TARGET_ENABLE_SOURCE_MAPS: 'false',
+                    MRT_TARGET_LOG_LEVEL: 'info'
+                }
+            })
 
-            const payload = updater.buildUpdateTargetPayload(properties)
+            const payload = updater.buildUpdateTargetPayload()
 
             expect(payload).toEqual({
                 name: 'Test Target',
@@ -101,49 +157,45 @@ describe('MRTTargetUpdater', () => {
                 ssr_whitelisted_ips: '192.168.1.1,10.0.0.1',
                 ssr_proxy_configs: {proxy1: {target: 'http://api.example.com'}},
                 allow_cookies: true,
-                enable_source_maps: false
+                enable_source_maps: false,
+                log_level: 'info'
             })
         })
 
-        test('should skip falsy values', () => {
-            const properties = {
-                name: '',
-                ssrExternalHostname: null,
-                ssrExternalDomain: undefined,
-                ssrRegion: 'us-east-1',
-                ssrWhitelistedIps: '',
-                allowCookies: undefined,
-                enableSourceMaps: undefined
-            }
-
-            const payload = updater.buildUpdateTargetPayload(properties)
-
-            expect(payload).toEqual({
-                ssr_region: 'us-east-1'
+        test('should handle falsy values and boolean conversion', () => {
+            // Test skipping falsy values
+            dotenv.config.mockReturnValue({
+                parsed: {
+                    MRT_TARGET_NAME: '',
+                    MRT_TARGET_SSR_EXTERNAL_HOSTNAME: null,
+                    MRT_TARGET_SSR_EXTERNAL_DOMAIN: undefined,
+                    MRT_TARGET_SSR_REGION: 'us-east-1'
+                }
             })
-        })
+            expect(updater.buildUpdateTargetPayload()).toEqual({ssr_region: 'us-east-1'})
 
-        test('should handle boolean string conversion correctly', () => {
-            const properties = {
-                allowCookies: 'true',
-                enableSourceMaps: 'false'
-            }
-
-            const payload = updater.buildUpdateTargetPayload(properties)
-
-            expect(payload).toEqual({
+            // Test boolean string conversion
+            dotenv.config.mockReturnValue({
+                parsed: {
+                    MRT_TARGET_ALLOW_COOKIES: 'true',
+                    MRT_TARGET_ENABLE_SOURCE_MAPS: 'false'
+                }
+            })
+            expect(updater.buildUpdateTargetPayload()).toEqual({
                 allow_cookies: true,
                 enable_source_maps: false
             })
         })
 
         test('should parse JSON for ssrProxyConfigs', () => {
-            const properties = {
-                ssrProxyConfigs:
-                    '{"api": {"target": "http://api.example.com", "changeOrigin": true}}'
-            }
+            dotenv.config.mockReturnValue({
+                parsed: {
+                    MRT_TARGET_SSR_PROXY_CONFIGS:
+                        '{"api": {"target": "http://api.example.com", "changeOrigin": true}}'
+                }
+            })
 
-            const payload = updater.buildUpdateTargetPayload(properties)
+            const payload = updater.buildUpdateTargetPayload()
 
             expect(payload).toEqual({
                 ssr_proxy_configs: {
@@ -156,39 +208,65 @@ describe('MRTTargetUpdater', () => {
         })
 
         test('should return empty payload when all properties are falsy', () => {
-            const properties = {
-                name: '',
-                ssrExternalHostname: null,
-                ssrExternalDomain: undefined
-            }
+            dotenv.config.mockReturnValue({
+                parsed: {
+                    MRT_TARGET_NAME: '',
+                    MRT_TARGET_SSR_EXTERNAL_HOSTNAME: null,
+                    MRT_TARGET_SSR_EXTERNAL_DOMAIN: undefined
+                }
+            })
 
-            const payload = updater.buildUpdateTargetPayload(properties)
+            const payload = updater.buildUpdateTargetPayload()
 
             expect(payload).toEqual({})
         })
 
-        test('should handle undefined properties object', () => {
-            // This test should handle the case where properties is undefined
-            // We need to modify the test expectation since the main code doesn't have default parameter
+        test('should handle invalid JSON in proxy configs with warning', () => {
+            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
+
+            dotenv.config.mockReturnValue({
+                parsed: {
+                    MRT_TARGET_SSR_PROXY_CONFIGS: 'invalid json'
+                }
+            })
+
+            const payload = updater.buildUpdateTargetPayload()
+
+            expect(payload).toEqual({})
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+                expect.stringContaining('Warning: Failed to parse proxy configs')
+            )
+
+            consoleWarnSpy.mockRestore()
+        })
+
+        test('should throw error when env file parsing fails', () => {
+            dotenv.config.mockReturnValue({
+                error: new Error('Parse error')
+            })
+
             expect(() => {
-                updater.buildUpdateTargetPayload(undefined)
-            }).toThrow()
+                updater.buildUpdateTargetPayload()
+            }).toThrow('Failed to parse .env file: Parse error')
         })
     })
 
     describe('buildEnvVarsPayload', () => {
         beforeEach(() => {
-            updater = new MRTTargetUpdater()
+            updater = new MRTTargetUpdater({envFile: '.env.test'})
+            jest.clearAllMocks()
         })
 
         test('should build payload with environment variables in correct format', () => {
-            const envVars = {
-                NODE_ENV: 'production',
-                API_URL: 'https://api.example.com',
-                DEBUG: 'false'
-            }
+            dotenv.config.mockReturnValue({
+                parsed: {
+                    NODE_ENV: 'production',
+                    API_URL: 'https://api.example.com',
+                    DEBUG: 'false'
+                }
+            })
 
-            const payload = updater.buildEnvVarsPayload(envVars)
+            const payload = updater.buildEnvVarsPayload()
 
             expect(payload).toEqual({
                 NODE_ENV: {value: 'production'},
@@ -197,38 +275,46 @@ describe('MRTTargetUpdater', () => {
             })
         })
 
-        test('should return empty payload when envVars is empty', () => {
-            const payload = updater.buildEnvVarsPayload({})
+        test('should return empty payload when parsed env is empty, null, or undefined', () => {
+            // Test empty object
+            dotenv.config.mockReturnValue({parsed: {}})
+            expect(updater.buildEnvVarsPayload()).toEqual({})
 
-            expect(payload).toEqual({})
-        })
+            // Test null
+            dotenv.config.mockReturnValue({parsed: null})
+            expect(updater.buildEnvVarsPayload()).toEqual({})
 
-        test('should return empty payload when envVars is null', () => {
-            const payload = updater.buildEnvVarsPayload(null)
-
-            expect(payload).toEqual({})
-        })
-
-        test('should return empty payload when envVars is undefined', () => {
-            const payload = updater.buildEnvVarsPayload(undefined)
-
-            expect(payload).toEqual({})
+            // Test undefined
+            dotenv.config.mockReturnValue({})
+            expect(updater.buildEnvVarsPayload()).toEqual({})
         })
 
         test('should handle environment variables with null values', () => {
-            const envVars = {
-                NODE_ENV: 'production',
-                DELETE_ME: null,
-                API_URL: 'https://api.example.com'
-            }
+            dotenv.config.mockReturnValue({
+                parsed: {
+                    NODE_ENV: 'production',
+                    DELETE_ME: null,
+                    API_URL: 'https://api.example.com'
+                }
+            })
 
-            const payload = updater.buildEnvVarsPayload(envVars)
+            const payload = updater.buildEnvVarsPayload()
 
             expect(payload).toEqual({
                 NODE_ENV: {value: 'production'},
                 DELETE_ME: {value: null},
                 API_URL: {value: 'https://api.example.com'}
             })
+        })
+
+        test('should throw error when env file parsing fails', () => {
+            dotenv.config.mockReturnValue({
+                error: new Error('Parse error')
+            })
+
+            expect(() => {
+                updater.buildEnvVarsPayload()
+            }).toThrow('Failed to parse .env file: Parse error')
         })
     })
 
@@ -331,19 +417,23 @@ describe('MRTTargetUpdater', () => {
                 projectSlug: 'test-project',
                 targetSlug: 'test-target',
                 cloudOrigin: 'https://test.example.com',
-                mobifyApiKey: 'test-api-key'
+                mobifyApiKey: 'test-api-key',
+                envFile: '.env.integration'
             })
+            jest.clearAllMocks()
         })
 
         test('should handle complete target update workflow (payload building)', () => {
-            const properties = {
-                name: 'Updated Target',
-                ssrRegion: 'us-west-2',
-                allowCookies: 'true',
-                enableSourceMaps: 'false'
-            }
+            dotenv.config.mockReturnValue({
+                parsed: {
+                    MRT_TARGET_NAME: 'Updated Target',
+                    MRT_TARGET_SSR_REGION: 'us-west-2',
+                    MRT_TARGET_ALLOW_COOKIES: 'true',
+                    MRT_TARGET_ENABLE_SOURCE_MAPS: 'false'
+                }
+            })
 
-            const payload = updater.buildUpdateTargetPayload(properties)
+            const payload = updater.buildUpdateTargetPayload()
 
             expect(payload).toEqual({
                 name: 'Updated Target',
@@ -359,13 +449,15 @@ describe('MRTTargetUpdater', () => {
         })
 
         test('should handle complete environment variables update workflow (payload building)', () => {
-            const envVars = {
-                NODE_ENV: 'production',
-                API_URL: 'https://api.example.com',
-                DELETE_VAR: null
-            }
+            dotenv.config.mockReturnValue({
+                parsed: {
+                    NODE_ENV: 'production',
+                    API_URL: 'https://api.example.com',
+                    DELETE_VAR: null
+                }
+            })
 
-            const payload = updater.buildEnvVarsPayload(envVars)
+            const payload = updater.buildEnvVarsPayload()
 
             expect(payload).toEqual({
                 NODE_ENV: {value: 'production'},
@@ -380,8 +472,12 @@ describe('MRTTargetUpdater', () => {
         })
 
         test('should handle empty payloads gracefully', () => {
-            const emptyTargetPayload = updater.buildUpdateTargetPayload({})
-            const emptyEnvPayload = updater.buildEnvVarsPayload({})
+            dotenv.config.mockReturnValue({
+                parsed: {}
+            })
+
+            const emptyTargetPayload = updater.buildUpdateTargetPayload()
+            const emptyEnvPayload = updater.buildEnvVarsPayload()
 
             expect(emptyTargetPayload).toEqual({})
             expect(emptyEnvPayload).toEqual({})

@@ -6,7 +6,6 @@
  */
 
 const {Command} = require('commander')
-const fs = require('fs')
 const dotenv = require('dotenv')
 
 /**
@@ -26,10 +25,6 @@ class MRTTargetUpdater {
      * @returns {Object} - Object with environment variables
      */
     _parseEnvFile() {
-        if (!fs.existsSync(this.envFile)) {
-            throw new Error(`Environment file not found: ${this.envFile}`)
-        }
-
         const result = dotenv.config({path: this.envFile})
 
         if (result.error) {
