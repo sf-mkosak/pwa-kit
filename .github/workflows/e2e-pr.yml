@@ -174,4 +174,10 @@ jobs:
               # Run all 4 playwright projects in parallel to reduce run time.
             - name: Run Playwright tests
               if: ${{ env.SKIP_WORKFLOW != 'true' }}
-              run: npm run test:e2e -- --project=a11y-mobile --project=a11y-desktop --workers=4
+              run: |
+                  npx playwright test -- 
+                    --project=chromium 
+                    --project=mobile-chrome 
+                    --project=a11y-mobile 
+                    --project=a11y-desktop 
+                    --workers=4
