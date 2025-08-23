@@ -154,7 +154,6 @@ jobs:
               with:
                   mobify_user: ${{ secrets.MRT_STG_PWA_KIT_CI_USER }}
                   mobify_api_key: ${{ secrets.MRT_STG_PWA_KIT_CI_API_KEY }}
-                  cloud_origin: ${{ vars.MRT_STG_CLOUD_ORIGIN }}
 
             - name: Push Bundle to MRT (E2E Test PWA Kit)
               if: ${{ env.SKIP_WORKFLOW != 'true' }}
