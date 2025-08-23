@@ -15,6 +15,9 @@ permissions:
 jobs:
     test_e2e_private:
         runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            test-type: [e2e, a11y]
         env:
             AWS_S3_BUCKET: ${{ vars.AWS_S3_BUCKET }}
             AWS_REGION: ${{ vars.AWS_REGION }}
@@ -170,9 +173,9 @@ jobs:
               run: npx playwright install --with-deps
 
             - name: Run Playwright tests
-              if: ${{ env.SKIP_WORKFLOW != 'true' }}
+              if: ${{ env.SKIP_WORKFLOW != 'true' && matrix.test-type == 'e2e' }}
               run: npm run test:e2e
 
             - name: Run Playwright a11y tests
-              if: ${{ env.SKIP_WORKFLOW != 'true' }}
+              if: ${{ env.SKIP_WORKFLOW != 'true' && matrix.test-type == 'a11y' }}
               run: npm run test:e2e:a11y
