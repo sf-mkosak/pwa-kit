@@ -171,6 +171,7 @@ jobs:
               if: ${{ env.SKIP_WORKFLOW != 'true' }}
               run: npx playwright install chromium --with-deps
 
+              # Run all 4 playwright projects in parallel to reduce run time.
             - name: Run Playwright tests
               if: ${{ env.SKIP_WORKFLOW != 'true' }}
               run: npm run test:e2e -- --project=a11y-mobile --project=a11y-desktop --workers=4
