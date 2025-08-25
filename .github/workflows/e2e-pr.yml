@@ -140,11 +140,11 @@ jobs:
                   PROJECT_KEY: 'retail-app-private-client'
                   TEMPLATE_VERSION: ${{ env.retail_app_template_version }}
 
-            - name: Validate Retail App Without Extensibility
+            - name: Validate Generated Retail App
               if: ${{ env.SKIP_WORKFLOW != 'true' }}
               uses: ./.github/actions/e2e_validate_generated_app
               with:
-                  PROJECT_KEY: 'retail-app-no-ext'
+                  PROJECT_KEY: 'invalid-project-key'
                   TEMPLATE_VERSION: ${{ env.retail_app_template_version }}
 
             - name: Create MRT credentials file
