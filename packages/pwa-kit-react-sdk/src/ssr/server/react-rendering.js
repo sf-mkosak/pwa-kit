@@ -37,7 +37,8 @@ import {getRoutes, routeComponent} from '../universal/components/route-component
 import * as errors from '../universal/errors'
 import logger from '../../utils/logger-instance'
 
-import PerformanceTimer, {PERFORMANCE_MARKS} from '../../utils/performance'
+import PerformanceTimer from '../../utils/performance'
+import {PERFORMANCE_MARKS} from '../../utils/performance-marks'
 
 const CWD = process.cwd()
 const BUNDLES_PATH = path.resolve(CWD, 'build/loadable-stats.json')
