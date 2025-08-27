@@ -41,11 +41,16 @@ import {useToast} from '@salesforce/retail-react-app/app/hooks/use-toast'
 import LoadingSpinner from '@salesforce/retail-react-app/app/components/loading-spinner'
 import {getConfig} from '@salesforce/pwa-kit-runtime/utils/ssr-config'
 import {APIProvider} from '@vis.gl/react-google-maps'
+import { useGcpApiKey } from './util/useGcpApiKey'
+
+const GoogleAPIProvider = ({googleCloudAPIKey, children}) => {
+    return googleCloudAPIKey ? <APIProvider apiKey={googleCloudAPIKey}>{children}</APIProvider> : children
+}
 
 const Checkout = () => {
     const {formatMessage} = useIntl()
     const navigate = useNavigation()
-    const {step} = useCheckout()
+    const {step, configurations} = useCheckout()
     const [error, setError] = useState()
     const {data: basket} = useCurrentBasket()
     const [isLoading, setIsLoading] = useState(false)
@@ -54,7 +59,7 @@ const Checkout = () => {
     const idps = social?.idps
     const isSocialEnabled = !!social?.enabled
     const isPasswordlessEnabled = !!passwordless?.enabled
-
+    const googleCloudAPIKey = configurations?.configurations?.find(config => config.id === 'gcp')?.value
     // Only enable BOPIS functionality if the feature toggle is on
     const isPickupOrder = STORE_LOCATOR_IS_ENABLED
         ? basket?.shipments[0]?.shippingMethod?.c_storePickupEnabled === true
@@ -85,96 +90,98 @@ const Checkout = () => {
     }
 
     return (
-        <Box background="gray.50" flex="1">
-            <Container
-                data-testid="sf-checkout-container"
-                maxWidth="container.xl"
-                py={{base: 7, lg: 16}}
-                px={{base: 0, lg: 8}}
-            >
-                <Grid templateColumns={{base: '1fr', lg: '66% 1fr'}} gap={{base: 10, xl: 20}}>
-                    <GridItem>
-                        <Stack spacing={4}>
-                            {error && (
-                                <Alert status="error" variant="left-accent">
-                                    <AlertIcon />
-                                    {error}
-                                </Alert>
-                            )}
+        <GoogleAPIProvider googleCloudAPIKey={googleCloudAPIKey}>
+            <Box background="gray.50" flex="1">
+                <Container
+                    data-testid="sf-checkout-container"
+                    maxWidth="container.xl"
+                    py={{base: 7, lg: 16}}
+                    px={{base: 0, lg: 8}}
+                >
+                    <Grid templateColumns={{base: '1fr', lg: '66% 1fr'}} gap={{base: 10, xl: 20}}>
+                        <GridItem>
+                            <Stack spacing={4}>
+                                {error && (
+                                    <Alert status="error" variant="left-accent">
+                                        <AlertIcon />
+                                        {error}
+                                    </Alert>
+                                )}
 
-                            <ContactInfo
-                                isSocialEnabled={isSocialEnabled}
-                                isPasswordlessEnabled={isPasswordlessEnabled}
-                                idps={idps}
+                                <ContactInfo
+                                    isSocialEnabled={isSocialEnabled}
+                                    isPasswordlessEnabled={isPasswordlessEnabled}
+                                    idps={idps}
+                                />
+                                {isPickupOrder ? <PickupAddress /> : <ShippingAddress />}
+                                {!isPickupOrder && <ShippingOptions />}
+                                <Payment />
+
+                                {step === 5 && (
+                                    <Box pt={3} display={{base: 'none', lg: 'block'}}>
+                                        <Container variant="form">
+                                            <Button
+                                                w="full"
+                                                onClick={submitOrder}
+                                                isLoading={isLoading}
+                                                data-testid="sf-checkout-place-order-btn"
+                                            >
+                                                <FormattedMessage
+                                                    defaultMessage="Place Order"
+                                                    id="checkout.button.place_order"
+                                                />
+                                            </Button>
+                                        </Container>
+                                    </Box>
+                                )}
+                            </Stack>
+                        </GridItem>
+
+                        <GridItem py={6} px={[4, 4, 4, 0]}>
+                            <OrderSummary
+                                basket={basket}
+                                showTaxEstimationForm={false}
+                                showCartItems={true}
                             />
-                            {isPickupOrder ? <PickupAddress /> : <ShippingAddress />}
-                            {!isPickupOrder && <ShippingOptions />}
-                            <Payment />
 
                             {step === 5 && (
-                                <Box pt={3} display={{base: 'none', lg: 'block'}}>
-                                    <Container variant="form">
-                                        <Button
-                                            w="full"
-                                            onClick={submitOrder}
-                                            isLoading={isLoading}
-                                            data-testid="sf-checkout-place-order-btn"
-                                        >
-                                            <FormattedMessage
-                                                defaultMessage="Place Order"
-                                                id="checkout.button.place_order"
-                                            />
-                                        </Button>
-                                    </Container>
+                                <Box display={{base: 'none', lg: 'block'}} pt={2}>
+                                    <Button w="full" onClick={submitOrder} isLoading={isLoading}>
+                                        <FormattedMessage
+                                            defaultMessage="Place Order"
+                                            id="checkout.button.place_order"
+                                        />
+                                    </Button>
                                 </Box>
                             )}
-                        </Stack>
-                    </GridItem>
+                        </GridItem>
+                    </Grid>
+                </Container>
 
-                    <GridItem py={6} px={[4, 4, 4, 0]}>
-                        <OrderSummary
-                            basket={basket}
-                            showTaxEstimationForm={false}
-                            showCartItems={true}
-                        />
-
-                        {step === 5 && (
-                            <Box display={{base: 'none', lg: 'block'}} pt={2}>
-                                <Button w="full" onClick={submitOrder} isLoading={isLoading}>
-                                    <FormattedMessage
-                                        defaultMessage="Place Order"
-                                        id="checkout.button.place_order"
-                                    />
-                                </Button>
-                            </Box>
-                        )}
-                    </GridItem>
-                </Grid>
-            </Container>
-
-            {step === 5 && (
-                <Box
-                    display={{lg: 'none'}}
-                    position="sticky"
-                    bottom="0"
-                    px={4}
-                    pt={6}
-                    pb={11}
-                    background="white"
-                    borderTop="1px solid"
-                    borderColor="gray.100"
-                >
-                    <Container variant="form">
-                        <Button w="full" onClick={submitOrder} isLoading={isLoading}>
-                            <FormattedMessage
-                                defaultMessage="Place Order"
-                                id="checkout.button.place_order"
-                            />
-                        </Button>
-                    </Container>
-                </Box>
-            )}
-        </Box>
+                {step === 5 && (
+                    <Box
+                        display={{lg: 'none'}}
+                        position="sticky"
+                        bottom="0"
+                        px={4}
+                        pt={6}
+                        pb={11}
+                        background="white"
+                        borderTop="1px solid"
+                        borderColor="gray.100"
+                    >
+                        <Container variant="form">
+                            <Button w="full" onClick={submitOrder} isLoading={isLoading}>
+                                <FormattedMessage
+                                    defaultMessage="Place Order"
+                                    id="checkout.button.place_order"
+                                />
+                            </Button>
+                        </Container>
+                    </Box>
+                )}
+            </Box>
+        </GoogleAPIProvider>
     )
 }
 
@@ -185,7 +192,7 @@ const CheckoutContainer = () => {
     const removeItemFromBasketMutation = useShopperBasketsMutation('removeItemFromBasket')
     const toast = useToast()
     const [isDeletingUnavailableItem, setIsDeletingUnavailableItem] = useState(false)
-    const {googleCloudAPI = {}} = getConfig().app || {}
+    const googleCloudAPIKey = useGcpApiKey();
 
     const handleRemoveItem = async (product) => {
         await removeItemFromBasketMutation.mutateAsync(
@@ -224,17 +231,14 @@ const CheckoutContainer = () => {
     }
 
     return (
-        <APIProvider apiKey={googleCloudAPI.apiKey}>
-            <CheckoutProvider>
+        <CheckoutProvider>
                 {isDeletingUnavailableItem && <LoadingSpinner wrapperStyles={{height: '100vh'}} />}
-
-                <Checkout />
-                <UnavailableProductConfirmationModal
-                    productItems={basket?.productItems}
-                    handleUnavailableProducts={handleUnavailableProducts}
+                    <Checkout />
+                    <UnavailableProductConfirmationModal
+                        productItems={basket?.productItems}
+                        handleUnavailableProducts={handleUnavailableProducts}
                 />
-            </CheckoutProvider>
-        </APIProvider>
+        </CheckoutProvider>
     )
 }
 

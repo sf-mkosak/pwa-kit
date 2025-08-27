@@ -10,12 +10,14 @@ import useEinstein from '@salesforce/retail-react-app/app/hooks/use-einstein'
 import {useCurrentCustomer} from '@salesforce/retail-react-app/app/hooks/use-current-customer'
 import {useCurrentBasket} from '@salesforce/retail-react-app/app/hooks/use-current-basket'
 import {STORE_LOCATOR_IS_ENABLED} from '@salesforce/retail-react-app/app/constants'
+import {useConfigurations} from '@salesforce/commerce-sdk-react'
 
 const CheckoutContext = React.createContext()
 
 export const CheckoutProvider = ({children}) => {
     const {data: customer} = useCurrentCustomer()
     const {data: basket} = useCurrentBasket()
+    const {data: configurations} = useConfigurations({});
     const einstein = useEinstein()
     const [step, setStep] = useState()
 
@@ -97,7 +99,8 @@ export const CheckoutProvider = ({children}) => {
         step,
         STEPS,
         goToNextStep,
-        goToStep
+        goToStep,
+        configurations
     }
 
     return <CheckoutContext.Provider value={value}>{children}</CheckoutContext.Provider>
