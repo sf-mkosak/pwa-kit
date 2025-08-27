@@ -116,7 +116,7 @@ export const tracePerformance = async (name, fn, res = null, req = null) => {
     let ctx = null
     const includeServerTimingHeader = '__server_timing' in req.query
     const shouldTrackPerformance = includeServerTimingHeader || process.env.SERVER_TIMING
-    if (otelConfig.enabled) {
+    if (otelConfig.enabled && shouldTrackPerformance) {
         // Initialize server tracing if needed for this request
         if (shouldTrackPerformance && !isServerTracingInitialized()) {
             initializeServerTracing()

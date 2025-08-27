@@ -261,7 +261,7 @@ const performRender = async (req, res, next) => {
 
 export const render = (req, res, next) => {
     res.__performanceTimer = new PerformanceTimer({enabled: shouldTrackPerformance(req)})
-    if (shouldTrackPerformance) {
+    if (shouldTrackPerformance(req)) {
         return tracePerformance('ssr.render', () => performRender(req, res, next), res, req)
     } else {
         return performRender(req, res, next)
