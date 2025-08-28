@@ -64,8 +64,11 @@ module.exports = {
         googleCloudAPI: {
             apiKey: process.env.GOOGLE_CLOUD_API_KEY
         },
-        partialHydrationEnabled: false
+        partialHydrationEnabled: false,
+        storeLocatorEnabled: true,
+        multishipEnabled: true
     },
+    envBasePath: '/',
     externals: [],
     pageNotFoundURL: '/page-not-found',
     ssrEnabled: true,
