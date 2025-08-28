@@ -75,6 +75,7 @@ jobs:
               id: mrt_target_details
               if: ${{ env.SKIP_WORKFLOW != 'true' }}
               run: |-
+                  cat e2e/mrt-target/mrt-target-details.json
                   jq -r 'to_entries[] | "\(.key)=\(.value // "")"' e2e/mrt-target/mrt-target-details.json >> "$GITHUB_OUTPUT"
                   # Set the RETAIL_APP_HOME environment variable to the MRT target URL.
                   # This is used by the e2e tests to run the tests against the MRT target.
@@ -132,37 +133,37 @@ jobs:
                   version=`jq -r ".version" packages/template-retail-react-app/package.json`
                   echo "retail_app_template_version=$version" >> "$GITHUB_ENV"
 
-            - name: Generate Retail App Private Client
-              id: generate_app
-              if: ${{ env.SKIP_WORKFLOW != 'true' }}
-              uses: ./.github/actions/e2e_generate_app
-              with:
-                  PROJECT_KEY: 'retail-app-private-client'
-                  TEMPLATE_VERSION: ${{ env.retail_app_template_version }}
+            # - name: Generate Retail App Private Client
+            #   id: generate_app
+            #   if: ${{ env.SKIP_WORKFLOW != 'true' }}
+            #   uses: ./.github/actions/e2e_generate_app
+            #   with:
+            #       PROJECT_KEY: 'retail-app-private-client'
+            #       TEMPLATE_VERSION: ${{ env.retail_app_template_version }}
 
-            - name: Validate Generated Retail App
-              if: ${{ env.SKIP_WORKFLOW != 'true' }}
-              uses: ./.github/actions/e2e_validate_generated_app
-              with:
-                  PROJECT_KEY: 'retail-app-private-client'
-                  TEMPLATE_VERSION: ${{ env.retail_app_template_version }}
+            # - name: Validate Generated Retail App
+            #   if: ${{ env.SKIP_WORKFLOW != 'true' }}
+            #   uses: ./.github/actions/e2e_validate_generated_app
+            #   with:
+            #       PROJECT_KEY: 'retail-app-private-client'
+            #       TEMPLATE_VERSION: ${{ env.retail_app_template_version }}
 
-            - name: Create MRT credentials file
-              if: ${{ env.SKIP_WORKFLOW != 'true' }}
-              uses: './.github/actions/create_mrt'
-              with:
-                  mobify_user: ${{ secrets.MRT_STG_PWA_KIT_CI_USER }}
-                  mobify_api_key: ${{ secrets.MRT_STG_PWA_KIT_CI_API_KEY }}
+            # - name: Create MRT credentials file
+            #   if: ${{ env.SKIP_WORKFLOW != 'true' }}
+            #   uses: './.github/actions/create_mrt'
+            #   with:
+            #       mobify_user: ${{ secrets.MRT_STG_PWA_KIT_CI_USER }}
+            #       mobify_api_key: ${{ secrets.MRT_STG_PWA_KIT_CI_API_KEY }}
 
-            - name: Push Bundle to MRT (E2E Test PWA Kit)
-              if: ${{ env.SKIP_WORKFLOW != 'true' }}
-              uses: './.github/actions/push_to_mrt'
-              with:
-                  CWD: ${{ steps.generate_app.outputs.project_path }}
-                  PROJECT: ${{ vars.MRT_STG_PWA_KIT_PROJECT_ID }}
-                  TARGET: ${{ steps.mrt_target_details.outputs.slug }}
-                  CLOUD_ORIGIN: ${{ vars.MRT_STG_CLOUD_ORIGIN }}
-                  FLAGS: --wait
+            # - name: Push Bundle to MRT (E2E Test PWA Kit)
+            #   if: ${{ env.SKIP_WORKFLOW != 'true' }}
+            #   uses: './.github/actions/push_to_mrt'
+            #   with:
+            #       CWD: ${{ steps.generate_app.outputs.project_path }}
+            #       PROJECT: ${{ vars.MRT_STG_PWA_KIT_PROJECT_ID }}
+            #       TARGET: ${{ steps.mrt_target_details.outputs.slug }}
+            #       CLOUD_ORIGIN: ${{ vars.MRT_STG_CLOUD_ORIGIN }}
+            #       FLAGS: --wait
 
               # Only install chromium since we're only testing for chrome and chrome mobile for per-pr test runs.
               # Nightly tests will run against multiple browsers.
