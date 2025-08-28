@@ -178,6 +178,7 @@ jobs:
               run: |
                   # Set the RETAIL_APP_HOME environment variable to the MRT target URL.
                   # This is used by the e2e tests to run the tests against the MRT target.
-                  echo "RETAIL_APP_HOME=https://${{ steps.mrt_target_details.outputs.ssrExternalHostname }}" >> "$GITHUB_ENV"
+                  export RETAIL_APP_HOME="https://${{ steps.mrt_target_details.outputs.ssrExternalHostname }}"
+                  echo "RETAIL_APP_HOME=$RETAIL_APP_HOME" >> "$GITHUB_ENV"
                   echo "RETAIL_APP_HOME environment variable value: $RETAIL_APP_HOME"
                   # npx playwright test --project=chromium --project=mobile-chrome --project=a11y-mobile --project=a11y-desktop --workers=4
