@@ -75,7 +75,6 @@ jobs:
               id: mrt_target_details
               if: ${{ env.SKIP_WORKFLOW != 'true' }}
               run: |-
-                  cat e2e/mrt-target/mrt-target-details.json
                   jq -r 'to_entries[] | "\(.key)=\(.value // "")"' e2e/mrt-target/mrt-target-details.json >> "$GITHUB_OUTPUT"
 
               # Engage post-run cleanup via a Node action that has a post hook.
