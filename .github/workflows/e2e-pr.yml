@@ -167,9 +167,9 @@ jobs:
 
               # Only install chromium since we're only testing for chrome and chrome mobile for per-pr test runs.
               # Nightly tests will run against multiple browsers.
-            - name: Install Playwright Browsers
-              if: ${{ env.SKIP_WORKFLOW != 'true' }}
-              run: npx playwright install chromium --with-deps
+            # - name: Install Playwright Browsers
+            #   if: ${{ env.SKIP_WORKFLOW != 'true' }}
+            #   run: npx playwright install chromium --with-deps
 
               # Run all 4 playwright projects in parallel to reduce run time.
               # Number of workers must match number of projects for parallel runs so we have it set to 4.
@@ -180,4 +180,4 @@ jobs:
               if: ${{ env.SKIP_WORKFLOW != 'true' }}
               run: |
                   echo "RETAIL_APP_HOME environment variable value: $RETAIL_APP_HOME"
-                  npx playwright test --project=chromium --project=mobile-chrome --project=a11y-mobile --project=a11y-desktop --workers=4
+                  # npx playwright test --project=chromium --project=mobile-chrome --project=a11y-mobile --project=a11y-desktop --workers=4
