@@ -51,14 +51,28 @@ module.exports = defineConfig({
             testIgnore: ['**/a11y/**', '**/desktop/**', '**/extra-features.spec.js']
         },
         {
-            name: 'a11y-mobile',
+            name: 'a11y-mobile-slas-public-client',
             use: {...devices['Pixel 5']},
-            testDir: './e2e/tests/a11y/mobile'
+            testDir: './e2e/tests/a11y/mobile',
+            snapshotDir: './e2e/tests/a11y/mobile/slas-public-client/__snapshots__'
         },
         {
-            name: 'a11y-desktop',
+            name: 'a11y-desktop-slas-public-client',
             use: {...devices['Desktop Chrome']},
-            testDir: './e2e/tests/a11y/desktop'
+            testDir: './e2e/tests/a11y/desktop',
+            snapshotDir: './e2e/tests/a11y/desktop/slas-public-client/__snapshots__'
+        },
+        {
+            name: 'a11y-mobile-slas-private-client',
+            use: {...devices['Pixel 5']},
+            testDir: './e2e/tests/a11y/mobile',
+            snapshotDir: './e2e/tests/a11y/mobile/slas-private-client/__snapshots__'
+        },
+        {
+            name: 'a11y-desktop-slas-private-client',
+            use: {...devices['Desktop Chrome']},
+            testDir: './e2e/tests/a11y/desktop',
+            snapshotDir: './e2e/tests/a11y/desktop/slas-private-client/__snapshots__'
         },
         {
             name: 'extra-features-desktop',
