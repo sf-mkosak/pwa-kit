@@ -188,7 +188,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IS_TEMPLATE_FROM_RETAIL_REACT_APP: ${{ matrix.template == 'retail-react-app-test-project' || matrix.template == 'retail-react-app-demo' }}
-      PROJECT_DIR: generated-${{ matrix.template }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -201,22 +200,24 @@ jobs:
       - name: Setup Ubuntu Machine
         uses: "./.github/actions/setup_ubuntu"
 
-      - name: Set generated projects directory
-        run: echo "GENERATED_PROJECTS_DIR=$(node -e "console.log(require('./e2e/config.js').GENERATED_PROJECTS_DIR)")" >> $GITHUB_ENV
+      - name: Set project directory with generated projects path
+        run: |
+          GENERATED_PROJECTS_DIR=$(node -e "console.log(require('./e2e/config.js').GENERATED_PROJECTS_DIR)")
+          echo "PATH_TO_PROJECT_DIR=$GENERATED_PROJECTS_DIR/generated-${{ matrix.template }}" >> $GITHUB_ENV
 
       - name: Create generated-projects directory
-        run: mkdir -p "${{ env.GENERATED_PROJECTS_DIR }}"
+        run: mkdir -p "$(dirname "${{ env.PATH_TO_PROJECT_DIR }}")"
 
       - name: Generate ${{ matrix.template }} project
         run: |-
-          node packages/pwa-kit-create-app/scripts/create-mobify-app-dev.js --outputDir "${{ env.GENERATED_PROJECTS_DIR }}/${{ env.PROJECT_DIR }}"
+          node packages/pwa-kit-create-app/scripts/create-mobify-app-dev.js --outputDir "${{ env.PATH_TO_PROJECT_DIR }}"
         env:
           GENERATOR_PRESET: ${{ matrix.template }}
         timeout-minutes: 8
 
       - name: Check Generated Project
         run: |-
-          PROJECT_PATH="${{ env.GENERATED_PROJECTS_DIR }}/${{ env.PROJECT_DIR }}"
+          PROJECT_PATH="${{ env.PATH_TO_PROJECT_DIR }}"
           echo "Checking: $PROJECT_PATH"
 
           if [ -d "$PROJECT_PATH/overrides" ]; then
@@ -238,13 +239,13 @@ jobs:
         if: env.IS_TEMPLATE_FROM_RETAIL_REACT_APP == 'true'
         uses: "./.github/actions/unit_tests"
         with:
-          cwd: ${{ env.GENERATED_PROJECTS_DIR }}/${{ env.PROJECT_DIR }}
+          cwd: ${{ env.PATH_TO_PROJECT_DIR }}
 
       - name: Run smoke tests
         if: env.IS_TEMPLATE_FROM_RETAIL_REACT_APP == 'true'
         uses: "./.github/actions/smoke_tests"
         with:
-          dir: ${{ env.GENERATED_PROJECTS_DIR }}/${{ env.PROJECT_DIR }}
+          dir: ${{ env.PATH_TO_PROJECT_DIR }}
 
       - name: Count Generated Project Dependencies
         id: count_deps
@@ -284,7 +285,7 @@ jobs:
         if: env.IS_NOT_FORK == 'true' && env.DEVELOP == 'true' && matrix.template == 'retail-react-app-test-project'
         uses: "./.github/actions/push_to_mrt"
         with:
-          CWD: ${{ env.PROJECT_DIR }}
+          CWD: ${{ env.PATH_TO_PROJECT_DIR }}
           TARGET: generated-pwa
 
       - name: Send GitHub Action data to Slack workflow (Generated)
@@ -307,7 +308,6 @@ jobs:
     runs-on: windows-latest
     env:
       IS_TEMPLATE_FROM_RETAIL_REACT_APP: ${{ matrix.template == 'retail-react-app-test-project' || matrix.template == 'retail-react-app-demo' }}
-      PROJECT_DIR: generated-${{ matrix.template }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -320,19 +320,20 @@ jobs:
       - name: Setup Windows Machine
         uses: "./.github/actions/setup_windows"
 
-      - name: Set generated projects directory
+      - name: Set project directory with generated projects path
         run: |
           $generatedProjectsDir = node -e "console.log(require('./e2e/config.js').GENERATED_PROJECTS_DIR)"
-          echo "GENERATED_PROJECTS_DIR_WIN=$($generatedProjectsDir -replace '/', '\')" >> $env:GITHUB_ENV
-        shell: powershell
+          $projectDirWin = "$($generatedProjectsDir -replace '/', '\')\generated-${{ matrix.template }}"
+          echo "PATH_TO_PROJECT_DIR=$projectDirWin" >> $env:GITHUB_ENV
 
       - name: Create generated-projects directory
-        run: mkdir "${{ env.GENERATED_PROJECTS_DIR_WIN }}"
-        shell: powershell
+        run: |
+          $parentDir = Split-Path "${{ env.PATH_TO_PROJECT_DIR }}" -Parent
+          mkdir -Force $parentDir
 
       - name: Generate ${{ matrix.template }} project
         run: |-
-          node packages/pwa-kit-create-app/scripts/create-mobify-app-dev.js --outputDir "${{ env.GENERATED_PROJECTS_DIR_WIN }}\${{ env.PROJECT_DIR }}"
+          node packages/pwa-kit-create-app/scripts/create-mobify-app-dev.js --outputDir "${{ env.PATH_TO_PROJECT_DIR }}"
         env:
           GENERATOR_PRESET: ${{ matrix.template }}
         timeout-minutes: 7
@@ -343,13 +344,13 @@ jobs:
         if: env.IS_TEMPLATE_FROM_RETAIL_REACT_APP == 'true'
         uses: "./.github/actions/unit_tests"
         with:
-          cwd: ${{ env.GENERATED_PROJECTS_DIR_WIN }}\${{ env.PROJECT_DIR }}
+          cwd: ${{ env.PATH_TO_PROJECT_DIR }}
 
       - name: Run smoke tests
         if: env.IS_TEMPLATE_FROM_RETAIL_REACT_APP == 'true'
         uses: "./.github/actions/smoke_tests"
         with:
-          dir: ${{ env.GENERATED_PROJECTS_DIR_WIN }}\${{ env.PROJECT_DIR }}
+          dir: ${{ env.PATH_TO_PROJECT_DIR }}
 
       - name: Count Generated Project Dependencies
         if: env.IS_TEMPLATE_FROM_RETAIL_REACT_APP == 'true'
