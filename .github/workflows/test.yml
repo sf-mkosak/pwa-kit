@@ -251,6 +251,8 @@ jobs:
         id: count_deps
         if: env.IS_TEMPLATE_FROM_RETAIL_REACT_APP == 'true'
         uses: "./.github/actions/count_deps"
+        with:
+          project_dir: ${{ env.PATH_TO_PROJECT_DIR }}
 
       - name: Store Verdaccio logfile artifact
         uses: actions/upload-artifact@v4
@@ -355,6 +357,8 @@ jobs:
       - name: Count Generated Project Dependencies
         if: env.IS_TEMPLATE_FROM_RETAIL_REACT_APP == 'true'
         uses: "./.github/actions/count_deps"
+        with:
+          project_dir: ${{ env.PATH_TO_PROJECT_DIR }}
 
       - name: Store Verdaccio logfile artifact
         uses: actions/upload-artifact@v4
