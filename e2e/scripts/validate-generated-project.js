@@ -78,6 +78,7 @@ const main = async (opts) => {
         }
     } catch (err) {
         console.error(err)
+        throw err
     }
 }
 
