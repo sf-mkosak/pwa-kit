@@ -19,6 +19,7 @@ const validateGeneratedArtifacts = async (project) => {
             project
         )
         const generatedArtifacts = fs.readdirSync(generatedProjectDirPath)
+        console.log('Dir contents', process.cwd(), config.GENERATED_PROJECTS_DIR, project, fs.readdirSync(process.cwd()))
         console.log('generatedArtifacts', generatedArtifacts, generatedProjectDirPath)
 
         return new Promise((resolve, reject) => {
