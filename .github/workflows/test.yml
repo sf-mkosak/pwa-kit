@@ -213,26 +213,6 @@ jobs:
           GENERATOR_PRESET: ${{ matrix.template }}
         timeout-minutes: 8
 
-      - name: Check Generated Project
-        run: |-
-          PROJECT_PATH="${{ env.PATH_TO_PROJECT_DIR }}"
-          echo "Checking: $PROJECT_PATH"
-
-          if [ -d "$PROJECT_PATH/overrides" ]; then
-              echo "✅ Overrides directory exists"
-          else
-              echo "❌ Overrides directory missing"
-          fi
-
-          TEST_COUNT=$(find "$PROJECT_PATH" -name "*.test.js" -o -name "*.test.jsx" -not -path "*/node_modules/*" 2>/dev/null | wc -l)
-          if [ "$TEST_COUNT" -gt 0 ]; then
-              echo "✅ Found $TEST_COUNT test files"
-              find "$PROJECT_PATH" -name "*.test.js" -o -name "*.test.jsx" -not -path "*/node_modules/*" 2>/dev/null | head -5
-              [ "$TEST_COUNT" -gt 5 ] && echo "   ... and $((TEST_COUNT - 5)) more"
-          else
-              echo "❌ No test files found"
-          fi
-
       - name: Run unit tests
         if: env.IS_TEMPLATE_FROM_RETAIL_REACT_APP == 'true'
         uses: "./.github/actions/unit_tests"
