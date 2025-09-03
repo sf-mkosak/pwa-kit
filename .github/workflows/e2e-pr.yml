@@ -148,10 +148,10 @@ jobs:
               if: ${{ env.SKIP_WORKFLOW != 'true' }}
               uses: ./.github/actions/update_mrt_target
               with:
-                  PROJECT_SLUG: ${{ vars.MRT_STG_PWA_KIT_PROJECT_ID }}
-                  TARGET_SLUG: ${{ steps.mrt_target_details.outputs.slug }}
-                  MOBIFY_API_KEY: ${{ secrets.MRT_STG_PWA_KIT_CI_API_KEY }}
-                  CLOUD_ORIGIN: ${{ vars.MRT_STG_CLOUD_ORIGIN }}
+                  PROJECT_SLUG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mrt_project_slug || vars.MRT_STG_PWA_KIT_PROJECT_ID }}
+                  TARGET_SLUG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mrt_target_slug || steps.mrt_target_details.outputs.slug }}
+                  MOBIFY_API_KEY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mrt_admin_api_key || secrets.MRT_STG_PWA_KIT_CI_API_KEY }}
+                  CLOUD_ORIGIN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mrt_admin_cloud_origin || vars.MRT_STG_CLOUD_ORIGIN }}
                   MRT_TARGET_SETTINGS_FILE_PATH: ${{ vars.MRT_ENV_SETTINGS_E2E_BASE_FILENAME }}
                   MRT_TARGET_VARS_FILE_PATH: ${{ vars.MRT_ENV_VARS_E2E_BASE_FILENAME }}
 
