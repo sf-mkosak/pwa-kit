@@ -30,7 +30,7 @@ on:
           required: false
         skip_tests:
           type: boolean
-          description: 'Set to false if you want to run the tests as a part of this deployment'
+          description: 'Skip Tests - Uncheck if you want to run the tests as a part of this deployment'
           required: false
           default: true
     pull_request: # Default: opened, reopened, synchronize (head branch updated)
