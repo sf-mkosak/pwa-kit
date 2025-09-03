@@ -101,6 +101,7 @@ const DrawerMenu = ({
     const socialIconVariant = useBreakpointValue({base: 'flex', md: 'flex-start'})
     const {site, buildUrl} = useMultiSite()
     const {l10n} = site
+    const storeLocatorEnabled = getConfig()?.app?.storeLocatorEnabled ?? STORE_LOCATOR_IS_ENABLED
     const [showLoading, setShowLoading] = useState(false)
     const [ariaBusy, setAriaBusy] = useState('true')
     const logout = useAuthHelper(AuthHelpers.Logout)
@@ -290,7 +291,7 @@ const DrawerMenu = ({
                                     </Link>
                                 )}
                             </Box>
-                            {STORE_LOCATOR_IS_ENABLED && (
+                            {storeLocatorEnabled && (
                                 <Box {...styles.actionsItem}>
                                     <Link to={STORE_LOCATOR_HREF}>
                                         <HStack>

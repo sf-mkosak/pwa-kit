@@ -64,7 +64,9 @@ module.exports = {
         oneClickCheckout: {
             enabled: true
         },
-        partialHydrationEnabled: false
+        partialHydrationEnabled: false,
+        storeLocatorEnabled: true,
+        multishipEnabled: true
     },
     envBasePath: '/',
     externals: [],
