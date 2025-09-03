@@ -69,7 +69,7 @@ If the user requests a project using a **template**:
 `
 
 class CreateAppGuidelinesTool {
-    name = 'create_app_guidelines'
+    name = 'create_storefront_app'
     description = `
     
 This tool is used to provide the agent with the instructions on how to use the @salesforce/pwa-kit-create-app CLI tool to create a new PWA Kit projects.
@@ -100,23 +100,28 @@ Example Triggers:
         if (isGitRepo) {
             // Already a git repo: only add and commit
             result = shell.exec('git add .', {cwd: directory, silent: true})
-            if (result.code !== 0)
+            if (result.code !== 0) {
                 throw new Error(`git add failed: ${result.stderr || result.stdout}`)
+            }
             result = shell.exec('git commit -m "Initial commit"', {cwd: directory, silent: true})
-            if (result.code !== 0)
+            if (result.code !== 0) {
                 throw new Error(`git commit failed: ${result.stderr || result.stdout}`)
+            }
         } else {
             // Not a git repo: create .gitignore, init, add, commit
             this.createBasicGitignore(directory)
             result = shell.exec('git init', {cwd: directory, silent: true})
-            if (result.code !== 0)
+            if (result.code !== 0) {
                 throw new Error(`git init failed: ${result.stderr || result.stdout}`)
+            }
             result = shell.exec('git add .', {cwd: directory, silent: true})
-            if (result.code !== 0)
+            if (result.code !== 0) {
                 throw new Error(`git add failed: ${result.stderr || result.stdout}`)
+            }
             result = shell.exec('git commit -m "Initial commit"', {cwd: directory, silent: true})
-            if (result.code !== 0)
+            if (result.code !== 0) {
                 throw new Error(`git commit failed: ${result.stderr || result.stdout}`)
+            }
         }
     }
 
