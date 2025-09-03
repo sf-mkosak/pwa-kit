@@ -19,11 +19,13 @@ jest.mock('../utils/utils', () => {
         ...originalModule,
         isMonoRepo: jest.fn(() => true),
         getCreateAppCommand: jest.fn(() => mockScriptPath),
-        runCommand: jest.fn().mockResolvedValue(JSON.stringify({
-            data: {},
-            metadata: {description: 'CLI Description'},
-            schemas: {}
-        }))
+        runCommand: jest.fn().mockResolvedValue(
+            JSON.stringify({
+                data: {},
+                metadata: {description: 'CLI Description'},
+                schemas: {}
+            })
+        )
     }
 })
 
@@ -49,7 +51,7 @@ describe('CreateAppGuidelinesTool', () => {
         jest.clearAllMocks()
         tool = new CreateAppGuidelinesTool()
         mockUtils = require('../utils/utils')
-        
+
         // Reset mocks
         shell.which.mockReset()
         shell.exec.mockReset()
@@ -62,7 +64,9 @@ describe('CreateAppGuidelinesTool', () => {
         it('should have correct structure', () => {
             expect(tool).toMatchObject({
                 name: 'create_storefront_app',
-                description: expect.stringContaining('This tool is used to provide the agent with the instructions'),
+                description: expect.stringContaining(
+                    'This tool is used to provide the agent with the instructions'
+                ),
                 inputSchema: EmptyJsonSchema,
                 fn: expect.any(Function)
             })
@@ -106,7 +110,7 @@ describe('CreateAppGuidelinesTool', () => {
 
         it('should call runCommand with correct parameters', async () => {
             await tool.fn()
-            
+
             expect(mockUtils.runCommand).toHaveBeenCalledWith('node', [
                 '../pwa-kit-create-app/scripts/create-mobify-app.js',
                 '--displayProgram'
@@ -127,7 +131,9 @@ describe('CreateAppGuidelinesTool', () => {
 
                 expect(() => {
                     tool.handleGitVersionControl(testDirectory)
-                }).toThrow('git is not installed or not found in PATH. Please install git to initialize a repository.')
+                }).toThrow(
+                    'git is not installed or not found in PATH. Please install git to initialize a repository.'
+                )
             })
 
             it('should handle existing git repository correctly', () => {
@@ -139,8 +145,14 @@ describe('CreateAppGuidelinesTool', () => {
                     tool.handleGitVersionControl(testDirectory)
                 }).not.toThrow()
 
-                expect(shell.exec).toHaveBeenCalledWith('git add .', {cwd: testDirectory, silent: true})
-                expect(shell.exec).toHaveBeenCalledWith('git commit -m "Initial commit"', {cwd: testDirectory, silent: true})
+                expect(shell.exec).toHaveBeenCalledWith('git add .', {
+                    cwd: testDirectory,
+                    silent: true
+                })
+                expect(shell.exec).toHaveBeenCalledWith('git commit -m "Initial commit"', {
+                    cwd: testDirectory,
+                    silent: true
+                })
                 expect(shell.exec).not.toHaveBeenCalledWith('git init', expect.any(Object))
             })
 
@@ -153,9 +165,18 @@ describe('CreateAppGuidelinesTool', () => {
                     tool.handleGitVersionControl(testDirectory)
                 }).not.toThrow()
 
-                expect(shell.exec).toHaveBeenCalledWith('git init', {cwd: testDirectory, silent: true})
-                expect(shell.exec).toHaveBeenCalledWith('git add .', {cwd: testDirectory, silent: true})
-                expect(shell.exec).toHaveBeenCalledWith('git commit -m "Initial commit"', {cwd: testDirectory, silent: true})
+                expect(shell.exec).toHaveBeenCalledWith('git init', {
+                    cwd: testDirectory,
+                    silent: true
+                })
+                expect(shell.exec).toHaveBeenCalledWith('git add .', {
+                    cwd: testDirectory,
+                    silent: true
+                })
+                expect(shell.exec).toHaveBeenCalledWith('git commit -m "Initial commit"', {
+                    cwd: testDirectory,
+                    silent: true
+                })
             })
 
             it('should throw error if git add fails', () => {
@@ -249,7 +270,8 @@ describe('CreateAppGuidelinesTool', () => {
 
                 expect(result).toEqual({
                     success: false,
-                    message: 'Error: git is not installed or not found in PATH. Please install git to initialize a repository.'
+                    message:
+                        'Error: git is not installed or not found in PATH. Please install git to initialize a repository.'
                 })
             })
 
