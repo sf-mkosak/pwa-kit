@@ -185,7 +185,36 @@ jobs:
 
             - name: Check MRT credentials file
               run: |-
+                  echo "=== MRT Credentials File Content ==="
                   cat /home/runner/.mobify
+                  echo ""
+                  echo "=== Verifying JSON structure ==="
+                  jq . /home/runner/.mobify
+                  echo ""
+                  echo "=== Extracting username and api_key ==="
+                  USERNAME=$(jq -r '.username' /home/runner/.mobify)
+                  API_KEY=$(jq -r '.api_key' /home/runner/.mobify)
+                  echo "Username: $USERNAME"
+                  echo "API Key length: ${#API_KEY}"
+                  echo "API Key first 10 chars: ${API_KEY:0:10}..."
+                  echo ""
+                  echo "=== Testing Basic Auth encoding ==="
+                  BASIC_AUTH_STRING="$USERNAME:$API_KEY"
+                  ENCODED=$(echo -n "$BASIC_AUTH_STRING" | base64)
+                  echo "Basic Auth String length: ${#BASIC_AUTH_STRING}"
+                  echo "Encoded Basic Auth: $ENCODED"
+                  echo "Authorization header would be: Basic $ENCODED"
+
+            - name: Debug Push Bundle Parameters
+              if: ${{ env.SKIP_WORKFLOW != 'true' }}
+              run: |-
+                  echo "=== Push Bundle Debug Info ==="
+                  echo "CWD: ${{ steps.generate_app.outputs.project_path }}"
+                  echo "PROJECT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mrt_project_slug || vars.MRT_STG_PWA_KIT_PROJECT_ID }}"
+                  echo "TARGET: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mrt_target_slug || steps.mrt_target_details.outputs.slug }}"
+                  echo "CLOUD_ORIGIN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mrt_admin_cloud_origin || vars.MRT_STG_CLOUD_ORIGIN }}"
+                  echo "Credentials file exists: $(test -f /home/runner/.mobify && echo 'YES' || echo 'NO')"
+                  echo "Credentials file permissions: $(ls -la /home/runner/.mobify || echo 'File not found')"
 
             - name: Push Bundle to MRT (E2E Test PWA Kit)
               if: ${{ env.SKIP_WORKFLOW != 'true' }}
