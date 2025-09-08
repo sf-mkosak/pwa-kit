@@ -11,11 +11,11 @@ import * as utils from '../utils/utils.js'
 describe('CreateNewPageTool', () => {
     const originalEnv = process.env
     const mockAbsolutePaths = {
-        node_modules_path: '/mock/node_modules',
-        components_path: '/mock/app/components',
-        pages_path: '/mock/app/pages',
-        routes_path: '/mock/app/routes.jsx',
-        has_overrides_dir: false
+        nodeModulesPath: '/mock/node_modules',
+        componentsPath: '/mock/app/components',
+        pagesPath: '/mock/app/pages',
+        routesPath: '/mock/app/routes.jsx',
+        hasOverridesDir: false
     }
 
     beforeEach(() => {
@@ -43,8 +43,8 @@ describe('CreateNewPageTool', () => {
         jest.spyOn(createNewPageTool, 'updateRoutes').mockResolvedValue()
         jest.spyOn(utils, 'logMCPMessage').mockImplementation(() => {})
         const result = await createNewPageTool.handler({
-            page_name: 'Test',
-            component_list: ['Foo'],
+            pageName: 'Test',
+            componentList: ['Foo'],
             route: '/test',
             ...mockAbsolutePaths
         })
@@ -56,8 +56,8 @@ describe('CreateNewPageTool', () => {
         jest.spyOn(fs, 'access').mockResolvedValue()
         jest.spyOn(utils, 'logMCPMessage').mockImplementation(() => {})
         const result = await createNewPageTool.handler({
-            page_name: 'Test',
-            component_list: ['Foo'],
+            pageName: 'Test',
+            componentList: ['Foo'],
             route: '/test',
             ...mockAbsolutePaths
         })
@@ -84,8 +84,8 @@ describe('CreateNewPageTool', () => {
             return Promise.resolve('dummy')
         })
         const result = await createNewPageTool.handler({
-            page_name: 'Test',
-            component_list: ['MissingComponent'],
+            pageName: 'Test',
+            componentList: ['MissingComponent'],
             route: '/test',
             ...mockAbsolutePaths
         })
@@ -101,8 +101,8 @@ describe('CreateNewPageTool', () => {
         jest.spyOn(createNewPageTool, 'updateRoutes').mockResolvedValue()
         jest.spyOn(utils, 'logMCPMessage').mockImplementation(() => {})
         const result = await createNewPageTool.handler({
-            page_name: 'Test',
-            component_list: ['ProductView'],
+            pageName: 'Test',
+            componentList: ['ProductView'],
             route: '/test',
             ...mockAbsolutePaths
         })
@@ -214,8 +214,8 @@ describe('CreateNewPageTool', () => {
             return Promise.resolve('dummy')
         })
         const result = await createNewPageTool.handler({
-            page_name: 'Test',
-            component_list: ['ImageSpliter'],
+            pageName: 'Test',
+            componentList: ['ImageSpliter'],
             route: '/test',
             ...mockAbsolutePaths
         })
@@ -311,11 +311,11 @@ describe('updateRoutes route insertion', () => {
     const importStatement = `const ${pageName} = loadable(() => import('./pages/test-page'), {fallback})`
     const routeObject = `    {\n        path: '${route}',\n        component: ${pageName},\n        exact: true\n    },`
     const mockAbsolutePaths = {
-        node_modules_path: '/mock/node_modules',
-        components_path: '/mock/app/components',
-        pages_path: '/mock/app/pages',
-        routes_path: '/mock/app/routes.jsx',
-        has_overrides_dir: false
+        nodeModulesPath: '/mock/node_modules',
+        componentsPath: '/mock/app/components',
+        pagesPath: '/mock/app/pages',
+        routesPath: '/mock/app/routes.jsx',
+        hasOverridesDir: false
     }
 
     let mockWriteFile, mockReadFile, createNewPageTool

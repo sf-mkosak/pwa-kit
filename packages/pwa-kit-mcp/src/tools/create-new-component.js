@@ -47,7 +47,7 @@ class CreateNewComponentTool {
         this.description =
             'Create a sample React component. Gather information from user for the MCP tool parameters **one at a time**, in a natural and conversational way. Do **not** ask all the questions at once.'
         this.inputSchema = {
-            component_name: z.string().min(1, 'The name of the new component to create?'),
+            componentName: z.string().min(1, 'The name of the new component to create?'),
             purpose: z
                 .string()
                 .min(
@@ -61,7 +61,7 @@ class CreateNewComponentTool {
                 .default(process.env.PWA_STOREFRONT_APP_PATH)
         }
         this.handler = async (args) => {
-            if (!args || !args.component_name || !args.purpose || !args.location) {
+            if (!args || !args.componentName || !args.purpose || !args.location) {
                 return {
                     role: 'system',
                     content: [{type: 'text', text: systemPrompt}]

@@ -12,7 +12,7 @@ describe('PWA Development Guidelines', () => {
         it('should have correct structure', () => {
             expect(DeveloperGuidelinesTool).toMatchObject({
                 name: 'get_development_guidelines',
-                description: `You must follow these development guidelines before attempting to analyze, generate, refactor, modify, or fix code.
+                description: `You must follow the PWA Kit development guidelines before attempting to analyze, generate, refactor, modify, or fix code.
 Example prompts: "Create a customer service Chat component", "Find bugs in my_script.jsx", and "Refactor my_script.jsx to use React Hooks".`,
                 inputSchema: EmptyJsonSchema,
                 fn: expect.any(Function)
