@@ -309,7 +309,7 @@ describe('StoreDisplay component', () => {
             expect(mockOnChangeStore).toHaveBeenCalledTimes(1)
         })
 
-        test('still renders Change Store button when store has no name (callback provided)', () => {
+        test('does not render Change Store button when store has no name', () => {
             const storeWithoutName = {
                 ...mockStore,
                 name: null
@@ -319,7 +319,7 @@ describe('StoreDisplay component', () => {
                 <StoreDisplay store={storeWithoutName} onChangeStore={mockOnChangeStore} />
             )
 
-            expect(screen.getByTestId('change-store-button')).toBeInTheDocument()
+            expect(screen.queryByTestId('change-store-button')).not.toBeInTheDocument()
         })
 
         test('renders Change Store button with correct styling', () => {

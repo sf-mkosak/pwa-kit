@@ -202,7 +202,7 @@ const StoreDisplay = ({
     if (!store) {
         return null
     }
-    const showContactInfo = store.phone !== undefined || store.c_customerServiceEmail !== undefined
+    const showContactInfo = Boolean(store.phone) || Boolean(store.c_customerServiceEmail)
 
     if (isDesktop) {
         return (
@@ -215,7 +215,7 @@ const StoreDisplay = ({
                             textSize={textSize}
                             intl={intl}
                         />
-                        {onChangeStore && (
+                        {onChangeStore && store.name && (
                             <Button
                                 variant="link"
                                 size="sm"
@@ -230,9 +230,7 @@ const StoreDisplay = ({
                             </Button>
                         )}
                     </Flex>
-                    {showDistance &&
-                    store.distance !== undefined &&
-                    store.distanceUnit !== undefined ? (
+                    {showDistance && Boolean(store.distance) && Boolean(store.distanceUnit) ? (
                         <Flex align="stretch" gap={3} mt={2} w="100%">
                             <Box flex="1" minW={0}>
                                 <StoreDistance store={store} textSize={textSize} intl={intl} />
@@ -329,7 +327,7 @@ const StoreDisplay = ({
                     }
                 )}
             </Box>
-            {showDistance && store.distance !== undefined && store.distanceUnit !== undefined && (
+            {showDistance && Boolean(store.distance) && Boolean(store.distanceUnit) && (
                 <>
                     <br />
                     <StoreDistance store={store} textSize={textSize} intl={intl} />
