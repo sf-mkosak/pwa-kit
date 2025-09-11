@@ -46,7 +46,9 @@ const Payment = ({
     setEnableUserRegistration,
     registeredUserChoseGuest = false,
     onPaymentMethodSaved,
-    onSavePreferenceChange
+    onSavePreferenceChange,
+    selectedPaymentMethod,
+    onSelectedPaymentMethodChange
 }) => {
     const {formatMessage} = useIntl()
     const currentBasketQuery = useCurrentBasket()
@@ -309,7 +311,13 @@ const Payment = ({
 
                     <Stack spacing={6}>
                         {isApplyingSavedPayment ? null : !appliedPayment?.paymentCard ? (
-                            <PaymentForm form={paymentMethodForm} onSubmit={onSubmit}>
+                            <PaymentForm
+                                form={paymentMethodForm}
+                                onSubmit={onSubmit}
+                                savedPaymentInstruments={customer.paymentInstruments}
+                                onPaymentMethodChange={onSelectedPaymentMethodChange}
+                                selectedPaymentMethod={selectedPaymentMethod}
+                            >
                                 {/* Save Payment Method - Show right underneath credit card fields */}
                                 {isGuest && newPaymentInstruments.length > 0 && (
                                     <SavePaymentMethod
@@ -457,7 +465,11 @@ Payment.propTypes = {
     /** Callback when payment method is successfully saved */
     onPaymentMethodSaved: PropTypes.func,
     /** Callback when save preference changes */
-    onSavePreferenceChange: PropTypes.func
+    onSavePreferenceChange: PropTypes.func,
+    /** Currently selected payment method */
+    selectedPaymentMethod: PropTypes.string,
+    /** Callback when selected payment method changes */
+    onSelectedPaymentMethodChange: PropTypes.func
 }
 
 const PaymentCardSummary = ({payment}) => {
