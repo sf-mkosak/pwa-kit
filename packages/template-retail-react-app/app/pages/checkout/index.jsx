@@ -42,8 +42,12 @@ import LoadingSpinner from '@salesforce/retail-react-app/app/components/loading-
 import {getConfig} from '@salesforce/pwa-kit-runtime/utils/ssr-config'
 import {APIProvider} from '@vis.gl/react-google-maps'
 import {useMultiship} from '@salesforce/retail-react-app/app/hooks/use-multiship'
+import resolveGoogleCloudAPIKey from '@salesforce/retail-react-app/app/pages/checkout/util/google-key-resolver'
 
-const GoogleAPIProvider = ({googleCloudAPIKey, children}) => {
+const GoogleAPIProvider = ({children}) => {
+    const {configurations} = useCheckout()
+    const googleCloudAPIKey = resolveGoogleCloudAPIKey(configurations)
+
     return googleCloudAPIKey ? (
         <APIProvider apiKey={googleCloudAPIKey}>{children}</APIProvider>
     ) : (
@@ -80,9 +84,9 @@ const Checkout = () => {
     // Check if there are pickup shipments
     const hasPickupShipments = derivedData?.totalPickupShipments > 0
 
-    const googleCloudAPIKey = configurations?.configurations?.find(
-        (config) => config.id === 'gcp'
-    )?.value
+    const googleCloudAPIKey =
+        getConfig()?.app?.googleCloudAPI?.apiKey ||
+        configurations?.configurations?.find((config) => config.id === 'gcp')?.value
     // Only enable BOPIS functionality if the feature toggle is on
     const isPickupOrderOnly = !isDeliveryAndPickupOrder && hasPickupShipments
 
@@ -119,106 +123,104 @@ const Checkout = () => {
     }
 
     return (
-        <GoogleAPIProvider googleCloudAPIKey={googleCloudAPIKey}>
-            <Box background="gray.50" flex="1">
-                <Container
-                    data-testid="sf-checkout-container"
-                    maxWidth="container.xl"
-                    py={{base: 7, lg: 16}}
-                    px={{base: 0, lg: 8}}
-                >
-                    <Grid templateColumns={{base: '1fr', lg: '66% 1fr'}} gap={{base: 10, xl: 20}}>
-                        <GridItem>
-                            <Stack spacing={4}>
-                                {error && (
-                                    <Alert status="error" variant="left-accent">
-                                        <AlertIcon />
-                                        {error}
-                                    </Alert>
-                                )}
+        <Box background="gray.50" flex="1">
+            <Container
+                data-testid="sf-checkout-container"
+                maxWidth="container.xl"
+                py={{base: 7, lg: 16}}
+                px={{base: 0, lg: 8}}
+            >
+                <Grid templateColumns={{base: '1fr', lg: '66% 1fr'}} gap={{base: 10, xl: 20}}>
+                    <GridItem>
+                        <Stack spacing={4}>
+                            {error && (
+                                <Alert status="error" variant="left-accent">
+                                    <AlertIcon />
+                                    {error}
+                                </Alert>
+                            )}
 
-                                <ContactInfo
-                                    isSocialEnabled={isSocialEnabled}
-                                    isPasswordlessEnabled={isPasswordlessEnabled}
-                                    idps={idps}
-                                />
-
-                                {isPickupOrderOnly ? (
-                                    <PickupAddress />
-                                ) : (
-                                    <>
-                                        {hasPickupShipments && <PickupAddress />}
-                                        <ShippingAddress />
-                                        <ShippingMethods />
-                                    </>
-                                )}
-                                <Payment />
-
-                                {step === 5 && (
-                                    <Box pt={3} display={{base: 'none', lg: 'block'}}>
-                                        <Container variant="form">
-                                            <Button
-                                                w="full"
-                                                onClick={submitOrder}
-                                                isLoading={isLoading}
-                                                data-testid="sf-checkout-place-order-btn"
-                                            >
-                                                <FormattedMessage
-                                                    defaultMessage="Place Order"
-                                                    id="checkout.button.place_order"
-                                                />
-                                            </Button>
-                                        </Container>
-                                    </Box>
-                                )}
-                            </Stack>
-                        </GridItem>
-
-                        <GridItem py={6} px={[4, 4, 4, 0]}>
-                            <OrderSummary
-                                basket={basket}
-                                showTaxEstimationForm={false}
-                                showCartItems={true}
+                            <ContactInfo
+                                isSocialEnabled={isSocialEnabled}
+                                isPasswordlessEnabled={isPasswordlessEnabled}
+                                idps={idps}
                             />
 
+                            {isPickupOrderOnly ? (
+                                <PickupAddress />
+                            ) : (
+                                <>
+                                    {hasPickupShipments && <PickupAddress />}
+                                    <ShippingAddress />
+                                    <ShippingMethods />
+                                </>
+                            )}
+                            <Payment />
+
                             {step === 5 && (
-                                <Box display={{base: 'none', lg: 'block'}} pt={2}>
-                                    <Button w="full" onClick={submitOrder} isLoading={isLoading}>
-                                        <FormattedMessage
-                                            defaultMessage="Place Order"
-                                            id="checkout.button.place_order"
-                                        />
-                                    </Button>
+                                <Box pt={3} display={{base: 'none', lg: 'block'}}>
+                                    <Container variant="form">
+                                        <Button
+                                            w="full"
+                                            onClick={submitOrder}
+                                            isLoading={isLoading}
+                                            data-testid="sf-checkout-place-order-btn"
+                                        >
+                                            <FormattedMessage
+                                                defaultMessage="Place Order"
+                                                id="checkout.button.place_order"
+                                            />
+                                        </Button>
+                                    </Container>
                                 </Box>
                             )}
-                        </GridItem>
-                    </Grid>
-                </Container>
+                        </Stack>
+                    </GridItem>
 
-                {step === 5 && (
-                    <Box
-                        display={{lg: 'none'}}
-                        position="sticky"
-                        bottom="0"
-                        px={4}
-                        pt={6}
-                        pb={11}
-                        background="white"
-                        borderTop="1px solid"
-                        borderColor="gray.100"
-                    >
-                        <Container variant="form">
-                            <Button w="full" onClick={submitOrder} isLoading={isLoading}>
-                                <FormattedMessage
-                                    defaultMessage="Place Order"
-                                    id="checkout.button.place_order"
-                                />
-                            </Button>
-                        </Container>
-                    </Box>
-                )}
-            </Box>
-        </GoogleAPIProvider>
+                    <GridItem py={6} px={[4, 4, 4, 0]}>
+                        <OrderSummary
+                            basket={basket}
+                            showTaxEstimationForm={false}
+                            showCartItems={true}
+                        />
+
+                        {step === 5 && (
+                            <Box display={{base: 'none', lg: 'block'}} pt={2}>
+                                <Button w="full" onClick={submitOrder} isLoading={isLoading}>
+                                    <FormattedMessage
+                                        defaultMessage="Place Order"
+                                        id="checkout.button.place_order"
+                                    />
+                                </Button>
+                            </Box>
+                        )}
+                    </GridItem>
+                </Grid>
+            </Container>
+
+            {step === 5 && (
+                <Box
+                    display={{lg: 'none'}}
+                    position="sticky"
+                    bottom="0"
+                    px={4}
+                    pt={6}
+                    pb={11}
+                    background="white"
+                    borderTop="1px solid"
+                    borderColor="gray.100"
+                >
+                    <Container variant="form">
+                        <Button w="full" onClick={submitOrder} isLoading={isLoading}>
+                            <FormattedMessage
+                                defaultMessage="Place Order"
+                                id="checkout.button.place_order"
+                            />
+                        </Button>
+                    </Container>
+                </Box>
+            )}
+        </Box>
     )
 }
 
@@ -226,6 +228,7 @@ const CheckoutContainer = () => {
     const {data: customer} = useCurrentCustomer()
     const {data: basket} = useCurrentBasket()
     const {formatMessage} = useIntl()
+   // const {configurations} = useCheckout()
     const removeItemFromBasketMutation = useShopperBasketsMutation('removeItemFromBasket')
     const toast = useToast()
     const [isDeletingUnavailableItem, setIsDeletingUnavailableItem] = useState(false)
@@ -269,7 +272,9 @@ const CheckoutContainer = () => {
     return (
         <CheckoutProvider>
             {isDeletingUnavailableItem && <LoadingSpinner wrapperStyles={{height: '100vh'}} />}
-            <Checkout />
+            <GoogleAPIProvider>
+                <Checkout />
+            </GoogleAPIProvider>
             <UnavailableProductConfirmationModal
                 productItems={basket?.productItems}
                 handleUnavailableProducts={handleUnavailableProducts}

@@ -9,8 +9,31 @@ import {useState, useRef, useCallback, useEffect} from 'react'
 import {useMapsLibrary} from '@vis.gl/react-google-maps'
 import {convertGoogleMapsSuggestions} from '@salesforce/retail-react-app/app/utils/address-suggestions'
 import {useCheckout} from '@salesforce/retail-react-app/app/pages/checkout/util/checkout-context'
+import {getConfig} from '@salesforce/pwa-kit-runtime/utils/ssr-config'
 
 const DEBOUNCE_DELAY = 300
+
+/**
+ * Resolve the Google Cloud API key from the configurations
+ * It will only return a key if the FT is enabled
+ * regardless of the key being provided by the platform or the MRT env variable
+ * Custom keys(MRT Env variable) take precedence over the platform provided key
+ *
+ * @param {Object} configurations - The configurations object
+ * @returns {string} The Google Cloud API key
+ */
+function resolveGoogleCloudAPIKey(configurations) {
+    // If the FT is not enabled, the gcp API key will not be returned from the Shopper Config API
+    // Therefore the presence of the SF platform provided key is also serving as our feature toggle
+    // const platformProvidedKey = configurations?.configurations?.find(
+    //     (config) => config.id === 'gcp'
+    // )?.value
+
+    // return !platformProvidedKey
+    //     ? null
+    //     : getConfig()?.app?.googleCloudAPI?.apiKey || platformProvidedKey
+    return getConfig()?.app?.googleCloudAPI?.apiKey
+}
 
 /**
  * Custom hook for Google Maps Places autocomplete suggestions
@@ -24,11 +47,6 @@ export const useAutocompleteSuggestions = (
     countryCode = '',
     requestOptions = {}
 ) => {
-    const {configurations} = useCheckout()
-    // If the FT is not enabled, the API key will not be returned
-    const googleCloudAPIKey = configurations?.configurations?.find(
-        (config) => config.id === 'gcp'
-    )?.value
     const places = useMapsLibrary('places')
 
     const sessionTokenRef = useRef(null)
@@ -39,7 +57,7 @@ export const useAutocompleteSuggestions = (
 
     const fetchSuggestions = useCallback(
         async (input) => {
-            if (!places || !googleCloudAPIKey || !input || input.length < 3) {
+            if (!places || !input || input.length < 3) {
                 setSuggestions([])
                 return
             }
