@@ -84,9 +84,6 @@ const Checkout = () => {
     // Check if there are pickup shipments
     const hasPickupShipments = derivedData?.totalPickupShipments > 0
 
-    const googleCloudAPIKey =
-        getConfig()?.app?.googleCloudAPI?.apiKey ||
-        configurations?.configurations?.find((config) => config.id === 'gcp')?.value
     // Only enable BOPIS functionality if the feature toggle is on
     const isPickupOrderOnly = !isDeliveryAndPickupOrder && hasPickupShipments
 
