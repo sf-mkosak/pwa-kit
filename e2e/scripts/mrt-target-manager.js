@@ -333,13 +333,6 @@ class MRTTargetManager {
                         return false
                     }
 
-                    if (!env.ciRunInfo || !env.ciRunInfo.ciAcquiredAt) {
-                        console.warn(
-                            `⚠️ Environment ${env.slug} is in-use but missing ciAcquiredAt timestamp`
-                        )
-                        return false
-                    }
-
                     const acquiredAt = new Date(env.ciRunInfo.ciAcquiredAt)
                     return acquiredAt < cutoffTime
                 })
