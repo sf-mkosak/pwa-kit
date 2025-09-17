@@ -61,12 +61,15 @@ const CheckoutOneClick = () => {
     const {formatMessage} = useIntl()
     const navigate = useNavigation()
     const {step, STEPS} = useCheckout()
+    const {data: customer} = useCurrentCustomer()
     const showToast = useToast()
     const [isLoading, setIsLoading] = useState(false)
     const [enableUserRegistration, setEnableUserRegistration] = useState(false)
     const [registeredUserChoseGuest, setRegisteredUserChoseGuest] = useState(false)
     const [shouldSavePaymentMethod, setShouldSavePaymentMethod] = useState(false)
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('cc')
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
+        customer?.paymentInstruments?.[0]?.paymentInstrumentId || 'cc'
+    )
     const currentBasketQuery = useCurrentBasket()
     const {data: basket} = currentBasketQuery
     const [error] = useState()
@@ -386,7 +389,6 @@ const CheckoutOneClick = () => {
                 await addPaymentInstrumentToBasket({
                     parameters: {basketId: basket?.basketId},
                     body: {
-                        paymentMethodId: 'CREDIT_CARD',
                         customerPaymentInstrumentId: selectedPaymentMethod
                     }
                 })

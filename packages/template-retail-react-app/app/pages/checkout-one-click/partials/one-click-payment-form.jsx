@@ -69,6 +69,24 @@ const PaymentForm = ({
                             })}
                             name="payment-selection"
                         >
+                            {savedPaymentInstruments?.map((paymentInstrument) => (
+                                <Box
+                                    py={3}
+                                    px={[4, 4, 6]}
+                                    bg="gray.50"
+                                    borderBottom="1px solid"
+                                    borderColor="gray.100"
+                                    key={paymentInstrument.paymentInstrumentId}
+                                >
+                                    <Radio
+                                        value={paymentInstrument.paymentInstrumentId}
+                                        key={paymentInstrument.paymentInstrumentId}
+                                    >
+                                        <PaymentCardSummary payment={paymentInstrument} />
+                                    </Radio>
+                                </Box>
+                            ))}
+
                             <Box
                                 py={3}
                                 px={[4, 4, 6]}
@@ -117,24 +135,6 @@ const PaymentForm = ({
                                     </Stack>
                                 </Box>
                             </Collapse>
-
-                            {savedPaymentInstruments?.map((paymentInstrument) => (
-                                <Box
-                                    py={3}
-                                    px={[4, 4, 6]}
-                                    bg="gray.50"
-                                    borderBottom="1px solid"
-                                    borderColor="gray.100"
-                                    key={paymentInstrument.paymentInstrumentId}
-                                >
-                                    <Radio
-                                        value={paymentInstrument.paymentInstrumentId}
-                                        key={paymentInstrument.paymentInstrumentId}
-                                    >
-                                        <PaymentCardSummary payment={paymentInstrument} />
-                                    </Radio>
-                                </Box>
-                            ))}
 
                             <Box py={3} px={[4, 4, 6]} bg="gray.50" borderColor="gray.100">
                                 <Radio value="paypal">
