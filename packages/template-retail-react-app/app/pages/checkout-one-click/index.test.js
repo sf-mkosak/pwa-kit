@@ -533,12 +533,6 @@ describe('Checkout One Click', () => {
             expect(step1.getAllByText('123 Main St').length).toBeGreaterThan(0)
         }
 
-        // Submit selected shipping method if button present
-        const contToPayment = screen.queryByText(/continue to payment/i)
-        if (contToPayment) {
-            await user.click(contToPayment)
-        }
-
         // Wait for next step to render
         await waitFor(() => {
             expect(screen.getByTestId('sf-toggle-card-step-3-content')).not.toBeEmptyDOMElement()
@@ -587,6 +581,7 @@ describe('Checkout One Click', () => {
         const placeOrderBtn = await screen.findByTestId('place-order-button', undefined, {
             timeout: 5000
         })
+        expect(placeOrderBtn).toBeEnabled()
         // Place the order
         await user.click(placeOrderBtn)
 
@@ -1009,4 +1004,81 @@ describe('Checkout One Click', () => {
         // Clean up
         document.cookie = ''
     })
+
+    // test('validates that registered user with saved payment methods has payment method pre-selected', async () => {
+    //     // Set up additional requests for intercepting/mocking for just this test.
+    //     global.server.use(
+    //         // mock adding guest email to basket
+    //         rest.get('*/customer/:customerId', (req, res, ctx) => {
+    //             currentBasket.customerInfo.email = 'test@test.com'
+    //             return res(ctx.json(currentBasket))
+    //         })
+    //     )
+
+    //     // mock add shipping and billing address to basket
+    //     // Set the initial browser router path and render our component tree.
+    //     window.history.pushState({}, 'Checkout', createPathWithDefaults('/checkout'))
+    //     const {user} = renderWithProviders(<WrappedCheckout history={history} />, {
+    //         wrapperProps: {
+    //             // Not bypassing auth as usual, so we can test the registered customer flow
+    //             bypassAuth: true,
+    //             isGuest: false,
+    //             siteAlias: 'uk',
+    //             locale: {id: 'en-GB'},
+    //             appConfig: mockConfig.app
+    //         }
+    //     })
+
+    //     // Wait for checkout to load and verify customer email is displayed
+    //     await waitFor(() => {
+    //         expect(screen.getByText('customer@test.com')).toBeInTheDocument()
+    //     })
+
+    //     // Select a saved address and continue to shipping method
+    //     await waitFor(() => {
+    //         const address = screen.getByDisplayValue('savedaddress1')
+    //         user.click(address)
+    //         user.click(screen.getByText(/continue to shipping method/i))
+    //     })
+
+    //     // Move through shipping options
+    //     await waitFor(() => {
+    //         expect(screen.getByTestId('sf-toggle-card-step-2-content')).not.toBeEmptyDOMElement()
+    //     })
+    //     await user.click(screen.getByText(/continue to payment/i))
+
+    //     // Wait for payment step to render
+    //     await waitFor(() => {
+    //         expect(screen.getByTestId('sf-toggle-card-step-3-content')).not.toBeEmptyDOMElement()
+    //     })
+
+    //     const step3Content = within(screen.getByTestId('sf-toggle-card-step-3-content'))
+
+    //     // Verify that saved payment method is pre-selected and displayed
+    //     await step3Content.findByText(/credit card/i)
+
+    //     // Check that the saved payment method details are visible and pre-selected
+    //     expect(step3Content.getByText(/master card/i)).toBeInTheDocument()
+    //     expect(
+    //         step3Content.getByText((_, node) => {
+    //             const text = node?.textContent || ''
+    //             return /5454\b/.test(text)
+    //         })
+    //     ).toBeInTheDocument()
+
+    //     // Verify that the payment method appears to be selected (no form fields visible)
+    //     expect(step3Content.queryByLabelText(/card number/i)).not.toBeInTheDocument()
+    //     expect(step3Content.queryByLabelText(/name on card/i)).not.toBeInTheDocument()
+    //     expect(step3Content.queryByLabelText(/expiration date/i)).not.toBeInTheDocument()
+    //     expect(step3Content.queryByLabelText(/security code/i)).not.toBeInTheDocument()
+
+    //     // Verify that Place Order button is enabled (indicating payment method is selected)
+    //     const placeOrderBtn = await screen.findByTestId('place-order-button', undefined, {
+    //         timeout: 5000
+    //     })
+    //     expect(placeOrderBtn).toBeEnabled()
+
+    //     // Clean up
+    //     document.cookie = ''
+    // })
 })

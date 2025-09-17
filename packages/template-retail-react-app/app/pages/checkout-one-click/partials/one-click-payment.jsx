@@ -64,7 +64,6 @@ const Payment = ({
 
     // Track whether user wants to save the payment method
     const [shouldSavePaymentMethod, setShouldSavePaymentMethod] = useState(false)
-    const [isApplyingSavedPayment, setIsApplyingSavedPayment] = useState(false)
 
     // Callback when user changes save preference
     const handleSavePreferenceChange = (shouldSave) => {
@@ -188,50 +187,6 @@ const Payment = ({
         })
     }
 
-    // Auto-select a saved payment instrument for registered customers (run at most once)
-    const autoAppliedRef = useRef(false)
-    useEffect(() => {
-        const autoSelectSavedPayment = async () => {
-            if (step !== STEPS.PAYMENT) return
-            if (autoAppliedRef.current) return
-
-            const isRegistered = customer?.isRegistered
-            const hasSaved = customer?.paymentInstruments?.length > 0
-            const alreadyApplied = (basket?.paymentInstruments?.length || 0) > 0
-            if (!isRegistered || !hasSaved || alreadyApplied) return
-
-            autoAppliedRef.current = true
-            const preferred =
-                customer.paymentInstruments.find((pi) => pi.preferred === true) ||
-                customer.paymentInstruments[0]
-
-            try {
-                setIsApplyingSavedPayment(true)
-                await addPaymentInstrumentToBasket({
-                    parameters: {basketId: basket?.basketId},
-                    body: {
-                        paymentMethodId: 'CREDIT_CARD',
-                        customerPaymentInstrumentId: preferred.paymentInstrumentId
-                    }
-                })
-                // After auto-apply, if we already have a shipping address, submit billing so we can advance
-                if (selectedShippingAddress) {
-                    await onBillingSubmit()
-                    // Stay on Payment; place-order button is rendered on Payment step in this flow
-                }
-                // Ensure basket is refreshed with payment & billing
-                await currentBasketQuery.refetch()
-            } catch (_e) {
-                // Ignore and allow manual selection
-                console.error(_e)
-            } finally {
-                setIsApplyingSavedPayment(false)
-            }
-        }
-
-        autoSelectSavedPayment()
-    }, [step])
-
     const onBillingSubmit = async () => {
         // When billing is same as shipping, skip form validation and use shipping address directly
         let billingAddress
@@ -311,7 +266,7 @@ const Payment = ({
                     </Box>
 
                     <Stack spacing={6}>
-                        {isApplyingSavedPayment ? null : !appliedPayment?.paymentCard ? (
+                        {!appliedPayment?.paymentCard ? (
                             <PaymentForm
                                 form={paymentMethodForm}
                                 onSubmit={onSubmit}
@@ -320,7 +275,7 @@ const Payment = ({
                                 selectedPaymentMethod={selectedPaymentMethod}
                             >
                                 {/* Show for returning users (registered) while editing/adding a new card */}
-                                {isGuest && (
+                                {!isGuest && (
                                     <SavePaymentMethod
                                         paymentInstrument={currentFormPayment}
                                         onSaved={handleSavePreferenceChange}
