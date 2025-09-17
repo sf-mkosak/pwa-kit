@@ -20,7 +20,7 @@ import {
     mockedCustomerProductLists
 } from '@salesforce/retail-react-app/app/mocks/mock-data'
 import mockConfig from '@salesforce/retail-react-app/config/mocks/default'
-import resolveGoogleCloudAPIKey from '@salesforce/retail-react-app/app/pages/checkout/util/google-key-resolver'
+import resolveGoogleCloudAPIKey from '@salesforce/retail-react-app/app/utils/address-suggestions'
 import {useMapsLibrary} from '@vis.gl/react-google-maps'
 
 // Mock Google Maps API

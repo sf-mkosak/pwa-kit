@@ -6,7 +6,6 @@
  */
 import React, {useEffect, useState} from 'react'
 import {FormattedMessage, useIntl} from 'react-intl'
-import PropTypes from 'prop-types'
 import {
     Alert,
     AlertIcon,
@@ -40,30 +39,13 @@ import {
 import {useToast} from '@salesforce/retail-react-app/app/hooks/use-toast'
 import LoadingSpinner from '@salesforce/retail-react-app/app/components/loading-spinner'
 import {getConfig} from '@salesforce/pwa-kit-runtime/utils/ssr-config'
-import {APIProvider} from '@vis.gl/react-google-maps'
 import {useMultiship} from '@salesforce/retail-react-app/app/hooks/use-multiship'
-import resolveGoogleCloudAPIKey from '@salesforce/retail-react-app/app/pages/checkout/util/google-key-resolver'
-
-const GoogleAPIProvider = ({children}) => {
-    const {configurations} = useCheckout()
-    const googleCloudAPIKey = resolveGoogleCloudAPIKey(configurations)
-
-    return googleCloudAPIKey ? (
-        <APIProvider apiKey={googleCloudAPIKey}>{children}</APIProvider>
-    ) : (
-        children
-    )
-}
-
-GoogleAPIProvider.propTypes = {
-    googleCloudAPIKey: PropTypes.string,
-    children: PropTypes.node.isRequired
-}
+import {GoogleAPIProvider} from '@salesforce/retail-react-app/app/pages/checkout/util/google-api-provider'
 
 const Checkout = () => {
     const {formatMessage} = useIntl()
     const navigate = useNavigation()
-    const {step, configurations} = useCheckout()
+    const {step} = useCheckout()
     const [error, setError] = useState()
     const {data: basket, derivedData} = useCurrentBasket()
     const [isLoading, setIsLoading] = useState(false)
