@@ -104,8 +104,8 @@ const AppConfig = ({children, locals = {}}) => {
             defaultDnt={DEFAULT_DNT_STATE}
             // Set 'enablePWAKitPrivateClient' to true to use SLAS private client login flows.
             // Make sure to also enable useSLASPrivateClient in ssr.js when enabling this setting.
-            enablePWAKitPrivateClient={true}
-            privateClientProxyEndpoint={slasPrivateClientProxyEndpoint}
+            enablePWAKitPrivateClient={false}
+            slasPrivateClientProxyEndpoint={slasPrivateClientProxyEndpoint}
             // Uncomment 'hybridAuthEnabled' if the current site has Hybrid Auth enabled. Do NOT set this flag for hybrid storefronts using Plugin SLAS.
             // hybridAuthEnabled={true}
             logger={createLogger({packageName: 'commerce-sdk-react'})}
