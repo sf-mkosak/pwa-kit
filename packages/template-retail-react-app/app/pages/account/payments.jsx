@@ -64,7 +64,6 @@ const AccountPayments = () => {
     )
     const onAddPaymentSubmit = async (values) => {
         const body = createCreditCardPaymentBodyFromForm(values)
-        // Shopper Customers expects 'Credit Card' (not 'CREDIT_CARD')
         body.paymentMethodId = 'CREDIT_CARD'
         // Remove fields not supported by CustomerPaymentCardRequest
         if (body.paymentCard && 'securityCode' in body.paymentCard) {
