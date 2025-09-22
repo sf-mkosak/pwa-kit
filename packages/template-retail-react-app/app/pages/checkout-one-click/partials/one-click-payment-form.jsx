@@ -70,11 +70,6 @@ const PaymentForm = ({
         displayedSavedPaymentInstruments?.length === (savedPaymentInstruments?.length || 0) &&
         showAllPaymentInstruments
 
-    console.log('displayedSavedPaymentInstruments', displayedSavedPaymentInstruments.length)
-    console.log('savedPaymentInstruments', savedPaymentInstruments)
-    console.log('showAllPaymentInstruments', showAllPaymentInstruments)
-    console.log('isDisplayingAllPaymentInstruments', isDisplayingAllPaymentInstruments)
-
     return (
         <form onSubmit={form.handleSubmit(onSubmit)}>
             <Stack spacing={8}>
@@ -172,10 +167,15 @@ const PaymentForm = ({
                                     setShowAllPaymentInstruments(!showAllPaymentInstruments)
                                 }
                             >
-                                {`View All (${
-                                    savedPaymentInstruments?.length -
-                                    INITIAL_DISPLAYED_SAVED_PAYMENT_INSTRUMENTS
-                                } more)`}
+                                <FormattedMessage
+                                    defaultMessage="View All ({count} more)"
+                                    id="payment_selection.button.view_all"
+                                    values={{
+                                        count:
+                                            savedPaymentInstruments?.length -
+                                            INITIAL_DISPLAYED_SAVED_PAYMENT_INSTRUMENTS
+                                    }}
+                                />
                             </button>
                         </Box>
                     )}

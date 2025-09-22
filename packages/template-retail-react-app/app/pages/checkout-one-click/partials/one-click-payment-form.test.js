@@ -326,7 +326,7 @@ describe('PaymentForm Component', () => {
                         savedPaymentInstruments={mockSavedPaymentInstruments}
                     />
                 )
-                expect(screen.getByText('View All (1 more)')).toBeInTheDocument()
+                expect(screen.getByText('payment_selection.button.view_all')).toBeInTheDocument()
             })
 
             test('does not render show all button when there are no more than 1 saved payment methods', () => {
@@ -365,7 +365,7 @@ describe('PaymentForm Component', () => {
                 // Both saved payment methods should be present
                 expect(screen.getByDisplayValue('saved-payment-1')).toBeInTheDocument()
 
-                const showAllButton = screen.getByText('View All (1 more)')
+                const showAllButton = screen.getByText('payment_selection.button.view_all')
                 await showAllButton.click()
 
                 expect(screen.getByDisplayValue('saved-payment-2')).toBeInTheDocument()
