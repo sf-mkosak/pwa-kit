@@ -67,8 +67,7 @@ const PaymentForm = ({
                 : INITIAL_DISPLAYED_SAVED_PAYMENT_INSTRUMENTS
         ) || []
     const isDisplayingAllPaymentInstruments =
-        displayedSavedPaymentInstruments?.length === (savedPaymentInstruments?.length || 0) &&
-        showAllPaymentInstruments
+        displayedSavedPaymentInstruments?.length === (savedPaymentInstruments?.length || 0)
 
     return (
         <form onSubmit={form.handleSubmit(onSubmit)}>

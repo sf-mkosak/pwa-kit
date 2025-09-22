@@ -329,7 +329,7 @@ describe('PaymentForm Component', () => {
                 expect(screen.getByText('payment_selection.button.view_all')).toBeInTheDocument()
             })
 
-            test('does not render show all button when there are no more than 1 saved payment methods', () => {
+            test('does not render show all button when there is only one saved payment method', () => {
                 render(
                     <PaymentForm
                         form={mockForm}
@@ -337,7 +337,9 @@ describe('PaymentForm Component', () => {
                         savedPaymentInstruments={mockSavedPaymentInstruments.slice(0, 1)}
                     />
                 )
-                expect(screen.queryByText('View All (1 more)')).not.toBeInTheDocument()
+                expect(
+                    screen.queryByText('payment_selection.button.view_all')
+                ).not.toBeInTheDocument()
             })
 
             test('does not render show all button when there are no saved payment methods', () => {
@@ -349,7 +351,9 @@ describe('PaymentForm Component', () => {
                             savedPaymentInstruments={savedPaymentInstruments}
                         />
                     )
-                    expect(screen.queryByText('View All (1 more)')).not.toBeInTheDocument()
+                    expect(
+                        screen.queryByText('payment_selection.button.view_all')
+                    ).not.toBeInTheDocument()
                 })
             })
 
