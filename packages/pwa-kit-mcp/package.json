@@ -7,10 +7,8 @@
   "files": [
     "CHANGELOG.md",
     "LICENSE",
-    "dist/**/*.{js,d.ts,json}",
+    "dist/",
     "docs/",
-    "!dist/CHANGELOG.md",
-    "!dist/README.md",
     "!**/*.test.{ts,js}"
   ],
   "scripts": {
