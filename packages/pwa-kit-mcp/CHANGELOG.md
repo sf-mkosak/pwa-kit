@@ -1,4 +1,4 @@
-## v0.3.0-preview.0 (Sep 19, 2025)
+## v0.3.0-preview.3 (Sep 23, 2025)
 - Added telemetry for MCP tools. [#3327](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3327)
 
 ## v0.2.0 (Sep 4, 2025)
