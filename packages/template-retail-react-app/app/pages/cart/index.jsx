@@ -1146,7 +1146,6 @@ const Cart = () => {
                                                             />
                                                         )
                                                     )}
-
                                                     {/* Render grouped bonus products from this shipment */}
                                                     {shipmentInfo.categorizedProducts.bonusProducts
                                                         ?.filter(
@@ -1191,7 +1190,6 @@ const Cart = () => {
                                                                 }}
                                                             />
                                                         ))}
-
                                                     {/* Render SelectBonusProductsCard for each bonusDiscountLineItem */}
                                                     {basket.bonusDiscountLineItems?.map(
                                                         (bonusDiscountLineItem) => {
@@ -1241,7 +1239,6 @@ const Cart = () => {
                                                             )
                                                         }
                                                     )}
-
                                                     {/* Render orphaned bonus products (bonus products without bonusDiscountLineItemId) */}
                                                     {(() => {
                                                         const orphanedBonusProducts =

@@ -58,7 +58,6 @@ describe('Bonus Product Cart Utilities', () => {
             expect(result[0].quantity).toBe(2)
         })
     })
-
     describe('getBonusProductsForSpecificCartItem', () => {
         const extendedBasket = {
             bonusDiscountLineItems: [
@@ -1543,7 +1542,6 @@ describe('Bonus Product Cart Utilities', () => {
             })
         })
     })
-
     describe('findAllBonusProductItemsToRemove', () => {
         test('finds all bonus products with same productId and promotionId', () => {
             const targetBonusProduct = {
