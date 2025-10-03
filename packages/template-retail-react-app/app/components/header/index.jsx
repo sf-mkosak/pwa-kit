@@ -118,6 +118,7 @@ const Header = ({
     const {isRegistered} = useCustomerType()
     const logout = useAuthHelper(AuthHelpers.Logout)
     const navigate = useNavigation()
+    const storeLocatorEnabled = getConfig()?.app?.storeLocatorEnabled ?? STORE_LOCATOR_IS_ENABLED
     const {
         getButtonProps: getAccountMenuButtonProps,
         getDisclosureProps: getAccountMenuDisclosureProps,
@@ -319,7 +320,7 @@ const Header = ({
                         {...styles.wishlistIcon}
                         onClick={onWishlistClick}
                     />
-                    {STORE_LOCATOR_IS_ENABLED && (
+                    {storeLocatorEnabled && (
                         <IconButton
                             aria-label={intl.formatMessage({
                                 defaultMessage: 'Store Locator',
