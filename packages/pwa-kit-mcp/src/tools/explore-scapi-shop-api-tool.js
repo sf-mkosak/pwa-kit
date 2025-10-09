@@ -170,7 +170,7 @@ function parseReturnType(returnTypeString, fileContent) {
 }
 
 function extractReturnTypeStructure(typeName, fileContent) {
-    // Common Commerce SDK return types with their key properties
+    // Common Commerce SDK return types with their key properties (hardcoded for core types)
     const commonTypes = {
         Product: ['id', 'name', 'price', 'currency', 'imageGroups', 'variationAttributes'],
         ProductSearchResult: ['hits', 'query', 'total', 'count', 'searchPhraseSuggestions'],
@@ -179,22 +179,23 @@ function extractReturnTypeStructure(typeName, fileContent) {
         Order: ['orderNo', 'orderToken', 'productItems', 'orderTotal', 'status'],
         Category: ['id', 'name', 'description', 'parentCategoryId', 'subCategories']
     }
-
     if (commonTypes[typeName]) {
         return {
             properties: commonTypes[typeName].map((prop) => ({name: prop, type: 'unknown'}))
         }
     }
-
     // Try to find interface/type definition in the file content
-    const interfaceRegex = new RegExp(`interface\\s+${typeName}\\s*{([^}]+)}`, 'ms')
-    const typeRegex = new RegExp(`type\\s+${typeName}\\s*=\\s*{([^}]+)}`, 'ms')
-
+    const interfaceRegex = new RegExp(`interface\\s+${typeName}\\s*{([^}]*)}`, 'ms')
+    const typeRegex = new RegExp(`type\\s+${typeName}\\s*=\\s*{([^}]*)}`, 'ms')
     const interfaceMatch = fileContent.match(interfaceRegex) || fileContent.match(typeRegex)
     if (interfaceMatch) {
         return parseInterfaceProperties(interfaceMatch[1])
     }
-
+    // fallback for type = ...; forms
+    const fallback = fileContent.match(new RegExp(`type\\s+${typeName}\\s*=\\s*([^;]+);`, 'm'))
+    if (fallback) {
+        return {properties: [{name: '(raw)', type: fallback[1].trim()}]}
+    }
     return {properties: []}
 }
 
