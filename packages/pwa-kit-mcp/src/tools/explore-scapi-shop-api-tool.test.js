@@ -82,8 +82,9 @@ describe('parseJSDoc', () => {
 })
 
 describe('parseTypeScriptParameters & parseOptionsParameter', () => {
-    const {parseTypeScriptParameters, parseOptionsParameter} =
-        jest.requireActual('./explore-scapi-shop-api-tool.js')
+    const {parseTypeScriptParameters, parseOptionsParameter} = jest.requireActual(
+        './explore-scapi-shop-api-tool.js'
+    )
     it('recognizes empty parameter string', () => {
         expect(parseTypeScriptParameters('')).toEqual({parameters: {}, headers: {}})
     })
@@ -107,8 +108,9 @@ describe('parseTypeScriptParameters & parseOptionsParameter', () => {
 })
 
 describe('parseReturnType & extractReturnTypeStructure', () => {
-    const {parseReturnType, extractReturnTypeStructure} =
-        jest.requireActual('./explore-scapi-shop-api-tool.js')
+    const {parseReturnType, extractReturnTypeStructure} = jest.requireActual(
+        './explore-scapi-shop-api-tool.js'
+    )
 
     const FILE_CONTENT_WITH_INTERFACE = `interface User { id: string; email: string }
   type MyType = { foo: number, bar: string }

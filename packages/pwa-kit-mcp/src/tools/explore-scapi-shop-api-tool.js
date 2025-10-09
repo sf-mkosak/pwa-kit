@@ -222,6 +222,95 @@ function parseInterfaceProperties(interfaceBody) {
     return {properties}
 }
 
+function extractNamedParameterTypes(parametersString) {
+    // Match param: <name>: <TypeName>
+    // Only matches top-level non-primitive type references
+    const regex = /(?:[\w\d_]+)\s*:\s*([A-Z][A-Za-z0-9_]+)/g
+    const types = new Set()
+    let match
+    while ((match = regex.exec(parametersString))) {
+        // Exclude primitives
+        if (
+            !['string', 'number', 'boolean', 'void', 'any', 'unknown', 'object'].includes(match[1])
+        ) {
+            types.add(match[1])
+        }
+    }
+    return Array.from(types)
+}
+
+function getTypeDefinitionMarkdown(typeName, fileContent) {
+    // Find interface or type definition block
+    const interfaceRegex = new RegExp(`interface\\s+${typeName}\\s*{([\\s\\S]*?)}\\s`, 'm')
+    const typeRegex = new RegExp(`type\\s+${typeName}\\s*=\\s*{([\\s\\S]*?)}\\s`, 'm')
+    let match = fileContent.match(interfaceRegex) || fileContent.match(typeRegex)
+    if (!match) {
+        // fallback for type = ...; forms
+        const fallback = fileContent.match(new RegExp(`type\\s+${typeName}\\s*=\\s*([^;]+);`, 'm'))
+        if (fallback) return `\n**Type ${typeName}:** \n\n\`${fallback[1].trim()}\``
+        return `\n_No type definition found for ${typeName}_\n`
+    }
+    const block = match[1].trim()
+    // Format as markdown properties
+    const lines = block
+        .split('\n')
+        .filter(Boolean)
+        .map((l) => l.trim().replace(/;?$/, ''))
+    let out = `\n**Parameters for \`${typeName}\`**\n\n| Name | Type |\n|---|---|\n`
+    for (const line of lines) {
+        // Parse as: name?: type
+        const propMatch = line.match(/^(\w+)\??\s*:\s*([^,{}]+)/)
+        if (propMatch) {
+            out += `| \`${propMatch[1]}\` | \`${propMatch[2].trim()}\` |\n`
+        }
+    }
+    return out
+}
+
+function printTypeWithNestedReferences(typeName, fileContent, seenTypes = new Set()) {
+    if (seenTypes.has(typeName)) return ''
+    seenTypes.add(typeName)
+    // Find interface or type definition block
+    const interfaceRegex = new RegExp(`interface\\s+${typeName}\\s*{([\\s\\S]*?)}\\s`, 'm')
+    const typeRegex = new RegExp(`type\\s+${typeName}\\s*=\\s*{([\\s\\S]*?)}\\s`, 'm')
+    let match = fileContent.match(interfaceRegex) || fileContent.match(typeRegex)
+    if (!match) {
+        // fallback for type = ...; forms
+        const fallback = fileContent.match(new RegExp(`type\\s+${typeName}\\s*=\\s*([^;]+);`, 'm'))
+        if (fallback) return `\n**Type ${typeName}:** \n\n\`${fallback[1].trim()}\``
+        return `\n_No type definition found for ${typeName}_\n`
+    }
+    const block = match[1].trim()
+    // Format as markdown property table
+    const lines = block
+        .split('\n')
+        .filter(Boolean)
+        .map((l) => l.trim().replace(/;?$/, ''))
+    let out = `\n**Parameters for \`${typeName}\`**\n\n| Name | Type |\n|---|---|\n`
+    const nestedTypes = []
+    for (const line of lines) {
+        // Parse as: name?: type
+        const propMatch = line.match(/^(\w+)\??\s*:\s*([^,{}]+)/)
+        if (propMatch) {
+            out += `| \`${propMatch[1]}\` | \`${propMatch[2].trim()}\` |\n`
+            // If this property is a capitalized type reference, queue it for expansion if not seen yet
+            const subType = propMatch[2].trim()
+            if (
+                /^[A-Z][A-Za-z0-9_]+$/.test(subType) &&
+                !seenTypes.has(subType) &&
+                !['String', 'Number', 'Boolean', 'Object', 'Date'].includes(subType)
+            ) {
+                nestedTypes.push(subType)
+            }
+        }
+    }
+    // Add 1-level nested types inline below this table
+    for (const nested of nestedTypes) {
+        out += printTypeWithNestedReferences(nested, fileContent, seenTypes)
+    }
+    return out
+}
+
 class ExploreCommerceAPITool {
     constructor() {
         this.name = 'pwakit_explore_scapi_shop_api'
@@ -234,45 +323,80 @@ class ExploreCommerceAPITool {
                     'Natural language question or method query (e.g., "How do I get a product?", "ShopperProducts.getProduct", "search products")'
                 )
         }
-        // Bind handler to always have correct 'this'
         this.handler = this.handler.bind(this)
     }
 
     /**
-     * Generate dynamic API context from Commerce SDK TypeScript definitions
+     * Returns a markdown snippet for just the most relevant class(es)/method(s) for the user's query, plus referenced parameter types.
      */
-    async getAllAPIMethods(fileContent) {
+    getRelevantAPIContext(fileContent, userQuery) {
         const classNames = extractAllClassNames(fileContent)
-        let apiContext = '# Commerce SDK API Reference\n\n'
+        const normalizedQuery = userQuery.toLowerCase()
+        let context = '# Commerce SDK API Reference\n\n'
 
-        for (const className of classNames) {
-            const classDocs = extractClassDocs(fileContent, className)
-            if (classDocs.error) continue
-
-            apiContext += `## ${className}\n`
-
-            const methodNames = Object.keys(classDocs)
-            for (const methodName of methodNames) {
-                const method = classDocs[methodName]
-                apiContext += `- **${methodName}**: ${method.description}\n`
-
-                // Add key parameter info
-                if (method.parameterStructure && method.parameterStructure.parameters) {
-                    const keyParams = Object.keys(method.parameterStructure.parameters).slice(0, 3)
-                    if (keyParams.length > 0) {
-                        apiContext += `  - Key params: ${keyParams.join(', ')}\n`
-                    }
-                }
-
-                // Add return type info
-                if (method.returnType && method.returnType.type) {
-                    apiContext += `  - Returns: ${method.returnType.type}\n`
-                }
-            }
-            apiContext += '\n'
+        // Try to detect explicit class.method: e.g., ShopperProducts.getProduct
+        let matchClass = null
+        let matchMethod = null
+        const dotMatch = userQuery.match(/(\w+)\.(\w+)/)
+        if (dotMatch) {
+            matchClass = dotMatch[1]
+            matchMethod = dotMatch[2]
+        } else {
+            // Try keyword match: see if query includes a class name
+            matchClass = classNames.find((cn) => normalizedQuery.includes(cn.toLowerCase())) || null
         }
 
-        return apiContext
+        if (matchClass) {
+            const classDocs = extractClassDocs(fileContent, matchClass)
+            if (classDocs.error) return `Class ${matchClass} not found.`
+            context += `## ${matchClass}\n`
+            if (matchMethod && classDocs[matchMethod]) {
+                const method = classDocs[matchMethod]
+                context += `- **${matchMethod}**: ${method.description || ''}\n`
+                context += `  - Full signature: ${method.fullSignature}\n`
+                // Look for referenced parameter types and print those
+                const refTypes = extractNamedParameterTypes(method.fullSignature)
+                for (const refType of refTypes) {
+                    context += printTypeWithNestedReferences(refType, fileContent) + '\n'
+                }
+                if (
+                    method.parameterStructure &&
+                    method.parameterStructure.parameters &&
+                    Object.keys(method.parameterStructure.parameters).length > 0
+                ) {
+                    context += `  - Parameters: ${JSON.stringify(
+                        method.parameterStructure.parameters
+                    )}\n`
+                }
+                if (method.returnType && method.returnType.type) {
+                    context += `  - Returns: ${method.returnType.type}\n`
+                }
+                if (method.example) {
+                    context += `  - Example: ${method.example}\n`
+                }
+            } else {
+                // No explicit method, show all methods in class
+                for (const key of Object.keys(classDocs)) {
+                    const method = classDocs[key]
+                    context += `- **${key}**: ${method.description || ''}\n`
+                }
+            }
+        } else {
+            // Ambiguous/keyword: show candidate classes with a sample method for each
+            context += '## Top classes in Commerce SDK\n'
+            for (const cn of classNames.slice(0, 3)) {
+                const classDocs = extractClassDocs(fileContent, cn)
+                if (!classDocs.error) {
+                    context += `### ${cn}\n`
+                    const keys = Object.keys(classDocs).slice(0, 1)
+                    for (const key of keys) {
+                        const method = classDocs[key]
+                        context += `- **${key}**: ${method.description || ''}\n`
+                    }
+                }
+            }
+        }
+        return context
     }
 
     async handler(args) {
@@ -284,7 +408,6 @@ class ExploreCommerceAPITool {
                 describePath = getDescribePath(nodeModulesPath)
             }
         }
-
         if (!describePath) {
             return {
                 role: 'system',
@@ -296,7 +419,6 @@ class ExploreCommerceAPITool {
                 ]
             }
         }
-
         // Read Commerce SDK TypeScript definitions
         let fileContent
         try {
@@ -312,29 +434,26 @@ class ExploreCommerceAPITool {
                 ]
             }
         }
-
-        // Generate dynamic API context for LLM to analyze
-        const apiContext = await this.getAllAPIMethods(fileContent)
-
-        // Let LLM do the semantic analysis and provide documentation
+        // Only build context for relevant API area
+        const apiContext = this.getRelevantAPIContext(fileContent, args.prompt)
         return {
             role: 'system',
             content: [
                 {
                     type: 'text',
-                    text: `${apiContext}
----
-**User Query:** "${args.prompt}"
-Please analyze this query and provide:
-1. The most relevant Commerce SDK API method(s) for this query
-2. Complete documentation including:
-   - Method description and purpose
-   - Full method signature
-   - Detailed parameter structure (especially the 'options' object)
-   - Return type structure with key properties
-   - Usage examples if available
-If the query is ambiguous, suggest 2-3 relevant options with brief explanations.
-Focus on being comprehensive and practical for developers using the Commerce SDK.`
+                    text:
+                        `${apiContext}\n---\n` +
+                        `**User Query:** "${args.prompt}"\n` +
+                        'Please analyze this query and provide:\n' +
+                        '1. The most relevant Commerce SDK API method(s) for this query\n' +
+                        '2. Complete documentation including:\n' +
+                        '   - Method description and purpose\n' +
+                        '   - Full method signature\n' +
+                        "   - Detailed parameter structure (especially the 'options' object)\n" +
+                        '   - Return type structure with key properties\n' +
+                        '   - Usage examples if available\n' +
+                        'If the query is ambiguous, suggest 2-3 relevant options with brief explanations.\n' +
+                        'Focus on being concise, comprehensive, and practical for developers using the Commerce SDK.'
                 }
             ]
         }
@@ -349,6 +468,8 @@ export {
     parseOptionsParameter,
     parseReturnType,
     extractReturnTypeStructure,
-    parseInterfaceProperties
+    parseInterfaceProperties,
+    extractNamedParameterTypes,
+    getTypeDefinitionMarkdown
 }
 export default ExploreCommerceAPITool
