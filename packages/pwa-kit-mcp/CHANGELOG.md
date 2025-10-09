@@ -1,6 +1,7 @@
 ## v0.4.0-dev (Sep 26, 2025)
 - Unexposed the extra parameters on create_page tool. [#3359] (https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3359), [#3379] (https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3379)
 - Added Agent Guidelines. [#3366](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3366)
+- Added Explore API Tool  [#3385](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3385)
 
 ## v0.3.0 (Sep 25, 2025)
 - Added telemetry for MCP tools. [#3327](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3327)
