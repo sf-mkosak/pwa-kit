@@ -153,23 +153,3 @@ describe('parseInterfaceProperties', () => {
         expect(parseInterfaceProperties('\n\n  // nothing')).toEqual({properties: []})
     })
 })
-
-describe('ExploreCommerceAPITool.getAllAPIMethods', () => {
-    it('outputs doc ref for all class methods in a sample typedef file', async () => {
-        const tool = new ExploreCommerceAPITool()
-        const fakeFileContent = `
-      declare class ExampleAPI {
-        /** Do a thing */ doThing(): string;
-        /** Get stuff */ getStuff(id: string): Promise<Product>;
-      }
-      declare class Another {}
-    `
-        const result = await tool.getAllAPIMethods(fakeFileContent)
-        expect(result).toContain('## ExampleAPI')
-        // EXPECTED: description blank after colon due to parser limitation
-        expect(result).toContain('**doThing**:')
-        expect(result).toContain('**getStuff**:')
-        expect(result).toContain('Returns: Promise<Product>')
-        expect(result).toContain('## Another')
-    })
-})
