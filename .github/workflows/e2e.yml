@@ -65,7 +65,7 @@ jobs:
         # Run all matrix env at once because we will not deploy demo app to MRT.
         node: [20, 22]
         npm: [10, 11]
-    runs-on: ubuntu-latest-16-cores
+    runs-on: ubuntu-latest
     env:
       # The "default" npm is the one that ships with a given version of node.
       # For more: https://nodejs.org/en/download/releases/
@@ -177,7 +177,7 @@ jobs:
         # Run all matrix env at once because we will not deploy demo app to MRT.
         node: [20, 22]
         npm: [10, 11]
-    runs-on: ubuntu-latest-16-cores
+    runs-on: ubuntu-latest
     env:
       # The "default" npm is the one that ships with a given version of node.
       # For more: https://nodejs.org/en/download/releases/
@@ -293,7 +293,7 @@ jobs:
           # Run all matrix env at once because we will not deploy demo app to MRT.
           node: [20, 22]
           npm: [10, 11]
-    runs-on: ubuntu-latest-16-cores
+    runs-on: ubuntu-latest
     env:
       # The "default" npm is the one that ships with a given version of node.
       # For more: https://nodejs.org/en/download/releases/
@@ -400,7 +400,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   test-extra-features:
-    runs-on: ubuntu-latest-16-cores
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
