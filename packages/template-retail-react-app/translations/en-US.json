@@ -279,6 +279,30 @@
   "checkout.title.checkout": {
     "defaultMessage": "Checkout"
   },
+  "home.title.home": {
+    "defaultMessage": "Home"
+  },
+  "cart.title.shopping_cart": {
+    "defaultMessage": "Shopping Cart"
+  },
+  "product_detail.title.product_details": {
+    "defaultMessage": "Product Details"
+  },
+  "login.title.sign_in": {
+    "defaultMessage": "Sign In"
+  },
+  "registration.title.create_account": {
+    "defaultMessage": "Create Account"
+  },
+  "account.title.my_account": {
+    "defaultMessage": "My Account"
+  },
+  "page_not_found.title.page_not_found": {
+    "defaultMessage": "Page Not Found"
+  },
+  "reset_password.title.reset_password": {
+    "defaultMessage": "Reset Password"
+  },
   "checkout_confirmation.button.create_account": {
     "defaultMessage": "Create Account"
   },
