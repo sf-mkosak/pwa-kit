@@ -191,9 +191,7 @@ describe('SLAS private proxy', () => {
         RemoteServerFactory._setupSlasPrivateClientProxy(app, options)
 
         // Attempt to access the SLAS private proxy path
-        const response = await request(app).get(
-            '/mobify/slas/private/shopper/auth/v1/oauth2/token'
-        )
+        const response = await request(app).get('/mobify/slas/private/shopper/auth/v1/oauth2/token')
 
         expect(response.status).toBe(404)
     })
@@ -217,9 +215,7 @@ describe('SLAS private proxy', () => {
 
         RemoteServerFactory._setupSlasPrivateClientProxy(app, options)
 
-        const response = await request(app).get(
-            '/mobify/slas/private/shopper/auth/v1/oauth2/token'
-        )
+        const response = await request(app).get('/mobify/slas/private/shopper/auth/v1/oauth2/token')
 
         expect(response.status).toBe(501)
     })
