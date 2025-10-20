@@ -157,7 +157,19 @@ export const RemoteServerFactory = {
             // To allow additional SLAS endpoints, users can override this value in
             // their project's ssr.js.
             applySLASPrivateClientToEndpoints:
-                /\/oauth2\/(token|passwordless\/(login|token)|password\/(reset|action))/
+                /\/oauth2\/(token|passwordless\/(login|token)|password\/(reset|action))/,
+
+            // Custom callback to modify the SLAS proxy request. This callback is invoked
+            // after the built-in proxy request handling. Users can provide additional
+            // request modifications (e.g., custom headers).
+            // Signature: (proxyRequest, incomingRequest, res) => void
+            onSlasProxyReq: undefined,
+
+            // Custom callback to modify the SLAS proxy response. This callback is invoked
+            // after the built-in proxy response handling. Users can modify or replace
+            // the response buffer.
+            // Signature: (responseBuffer, proxyRes, req, res) => Buffer
+            onSlasProxyRes: undefined
         }
 
         options = Object.assign({}, defaults, options)
@@ -930,8 +942,27 @@ export const RemoteServerFactory = {
                         // purpose so we don't want to overwrite the header for those calls.
                         proxyRequest.setHeader('Authorization', `Basic ${encodedSlasCredentials}`)
                     }
+
+                    // Allow users to apply additional custom modifications to the proxy request
+                    if (typeof options.onSlasProxyReq === 'function') {
+                        try {
+                            options.onSlasProxyReq(proxyRequest, incomingRequest, res)
+                        } catch (error) {
+                            logger.error(
+                                'Error in custom onSlasProxyReq callback',
+                                /* istanbul ignore next */
+                                {
+                                    namespace: '_setupSlasPrivateClientProxy',
+                                    additionalProperties: {
+                                        error: error
+                                    }
+                                }
+                            )
+                        }
+                    }
                 },
                 onProxyRes: responseInterceptor((responseBuffer, proxyRes, req, res) => {
+                    let workingBuffer = responseBuffer
                     try {
                         // If the passwordless login endpoint returns a 404, which corresponds to a user
                         // email not being found, we mask it with a 200 OK response so that it is not
@@ -946,15 +977,43 @@ export const RemoteServerFactory = {
 
                             // When a /passwordless/login endpoint response returns 200, it has no body
                             // so we return an empty body here to match an actual 200 response.
-                            return Buffer.from('', 'utf8')
+                            workingBuffer = Buffer.from('', 'utf8')
                         }
-                        return responseBuffer
+
+                        // Allow users to apply additional custom modifications to the proxy response
+                        if (typeof options.onSlasProxyRes === 'function') {
+                            try {
+                                const customBuffer = options.onSlasProxyRes(
+                                    workingBuffer,
+                                    proxyRes,
+                                    req,
+                                    res
+                                )
+                                // Only use the custom buffer if it was returned
+                                if (customBuffer !== undefined) {
+                                    workingBuffer = customBuffer
+                                }
+                            } catch (error) {
+                                logger.error(
+                                    'Error in custom onSlasProxyRes callback',
+                                    /* istanbul ignore next */
+                                    {
+                                        namespace: '_setupSlasPrivateClientProxy',
+                                        additionalProperties: {
+                                            error: error
+                                        }
+                                    }
+                                )
+                            }
+                        }
+
+                        return workingBuffer
                     } catch (error) {
                         console.error(
                             'There is an error processing the response from SLAS. Returning original response.',
                             error
                         )
-                        return responseBuffer
+                        return workingBuffer
                     }
                 })
             })
@@ -1319,6 +1378,16 @@ export const RemoteServerFactory = {
      * @param {Boolean} [options.allowCookies] - This boolean value indicates
      * whether or not we strip cookies from requests and block setting of cookies. Defaults
      * to 'false'.
+     * @param {Boolean} [options.useSLASPrivateClient=false] - Enable the SLAS private client
+     * proxy handler. Requires PWA_KIT_SLAS_CLIENT_SECRET environment variable.
+     * @param {RegExp} [options.applySLASPrivateClientToEndpoints] - A regex pattern to match
+     * SLAS endpoints where the Authorization header should be injected.
+     * @param {function} [options.onSlasProxyReq] - Custom callback to modify SLAS proxy requests.
+     * Called after built-in request handling. Signature: (proxyRequest, incomingRequest, res) => void.
+     * Use this to add custom headers or modify the proxy request.
+     * @param {function} [options.onSlasProxyRes] - Custom callback to modify SLAS proxy responses.
+     * Called after built-in response handling. Signature: (responseBuffer, proxyRes, req, res) => Buffer.
+     * Should return the modified buffer or undefined to use the existing buffer.
      */
     createHandler(options, customizeApp) {
         process.on('unhandledRejection', catchAndLog)
