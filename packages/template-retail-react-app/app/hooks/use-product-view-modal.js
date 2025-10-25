@@ -44,6 +44,7 @@ export const useProductViewModal = (
         {parameters: {id: (variant || product)?.productId}},
         {
             placeholderData: initialProduct,
+            ...queryOptions,
             select: (data) => {
                 // if the product id is the same as the initial product id,
                 // then merge the data with the initial product to be able to show correct quantity in the modal
