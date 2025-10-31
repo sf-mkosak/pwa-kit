@@ -1,4 +1,6 @@
-## v4.2.0-dev (Sep 26, 2025)
+
+## v4.2.0-preview.0 (Oct 31, 2025)
+
 - Prevent headers from being overriden in `generateCustomEndpointOptions` [#3405](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3405/)
 
 ## v4.1.0 (Sep 25, 2025)
