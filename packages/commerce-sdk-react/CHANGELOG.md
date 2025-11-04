@@ -1,6 +1,6 @@
 ## v4.2.0-preview.1 (Nov 04, 2025)
 
-- Upgrade to commerce-sdk-isomorphic v4.1.0 [#2879](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/2879)
+- Upgrade to commerce-sdk-isomorphic v4.0.1 [#3449](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3449)
 - Prevent headers from being overriden in `generateCustomEndpointOptions` [#3405](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3405/)
 
 ## v4.1.0 (Sep 25, 2025)
