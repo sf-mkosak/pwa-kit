@@ -1,4 +1,4 @@
-## v8.2.0-preview.1 (Nov 04, 2025)
+## v8.2.0 (Nov 04, 2025)
 
 - Add support for Rule Based Promotions for Choice of Bonus Products. We are currently supporting only one product level rule based promotion per product [#3418](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3418)
 - Added Einstein suggestions support for popular and recent searches in search functionality. Users can now see personalized search suggestions based on Einstein AI recommendations. [#3422](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3422)
