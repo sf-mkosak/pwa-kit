@@ -29,21 +29,38 @@ const ProductItemList = ({
     localQuantity = {},
     localIsGiftItems = {},
     isCartItemLoading = false,
-    selectedItem = null
+    selectedItem = null,
+    removingItemIds = [],
+    // Styling options
+    hideBorder = false,
+    hideBottomBorder = false,
+    // Pickup information
+    getShipmentInfoForProduct = null
 }) => {
     return (
         <Stack spacing={4}>
             {productItems.map((productItem) => {
                 const isBonusProductItem = productItem.bonusProductLineItem
+                // Check if this product item (regular or bonus) is being removed
+                const isBeingRemoved = removingItemIds.includes(productItem.itemId)
+
+                // Get pickup information for this product item
+                const shipmentInfo = getShipmentInfoForProduct
+                    ? getShipmentInfoForProduct(productItem)
+                    : null
+                const pickupInStore = shipmentInfo?.isPickupOrder || false
 
                 return (
                     <ProductItem
                         key={productItem.itemId}
                         isBonusProduct={isBonusProductItem}
+                        isRemoving={isBeingRemoved}
+                        pickupInStore={pickupInStore}
                         containerStyles={{
                             borderX: 'none',
                             borderTop: 'none',
-                            boxShadow: 'none'
+                            boxShadow: 'none',
+                            ...(hideBottomBorder && {borderBottom: 'none'})
                         }}
                         secondaryActions={
                             renderSecondaryActions
@@ -71,9 +88,11 @@ const ProductItemList = ({
                         }}
                         onItemQuantityChange={onItemQuantityChange?.bind(this, productItem)}
                         showLoading={
-                            isCartItemLoading && selectedItem?.itemId === productItem.itemId
+                            (isCartItemLoading && selectedItem?.itemId === productItem.itemId) ||
+                            isBeingRemoved
                         }
                         handleRemoveItem={onRemoveItemClick}
+                        hideBorder={hideBorder}
                     />
                 )
             })}
@@ -92,7 +111,11 @@ ProductItemList.propTypes = {
     localQuantity: PropTypes.object,
     localIsGiftItems: PropTypes.object,
     isCartItemLoading: PropTypes.bool,
-    selectedItem: PropTypes.object
+    selectedItem: PropTypes.object,
+    removingItemIds: PropTypes.arrayOf(PropTypes.string),
+    hideBorder: PropTypes.bool,
+    hideBottomBorder: PropTypes.bool,
+    getShipmentInfoForProduct: PropTypes.func
 }
 
 export default ProductItemList

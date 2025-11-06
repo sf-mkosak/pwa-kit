@@ -44,10 +44,12 @@ const ProductItem = ({
     deliveryActions,
     onItemQuantityChange = noop,
     showLoading = false,
-    containerStyles = {}
+    containerStyles = {},
+    isRemoving = false,
+    pickupInStore = false
 }) => {
     const {stepQuantity, showInventoryMessage, inventoryMessage, quantity, setQuantity} =
-        useDerivedProduct(product)
+        useDerivedProduct(product, false, false, pickupInStore)
     const {currency: activeCurrency} = useCurrency()
     return (
         <Box
@@ -73,24 +75,29 @@ const ProductItem = ({
                                         </Box>
                                     </HideOnDesktop>
                                 </Stack>
-                                {deliveryActions && <HideOnMobile>{deliveryActions}</HideOnMobile>}
+                                {deliveryActions && !product.bonusProductLineItem && (
+                                    <HideOnMobile>{deliveryActions}</HideOnMobile>
+                                )}
                             </Flex>
 
-                            {deliveryActions && <HideOnDesktop>{deliveryActions}</HideOnDesktop>}
+                            {deliveryActions && !product.bonusProductLineItem && (
+                                <HideOnDesktop>{deliveryActions}</HideOnDesktop>
+                            )}
 
                             <Flex align="flex-end" justify="space-between">
                                 <Stack spacing={1}>
-                                    {product.bonusProductLineItem ? (
-                                        <BonusProductQuantity product={product} />
-                                    ) : (
-                                        <ProductQuantityPicker
-                                            product={product}
-                                            onItemQuantityChange={onItemQuantityChange}
-                                            stepQuantity={stepQuantity}
-                                            quantity={quantity}
-                                            setQuantity={setQuantity}
-                                        />
-                                    )}
+                                    {!(isRemoving && product.bonusProductLineItem) &&
+                                        (product.bonusProductLineItem ? (
+                                            <BonusProductQuantity product={product} />
+                                        ) : (
+                                            <ProductQuantityPicker
+                                                product={product}
+                                                onItemQuantityChange={onItemQuantityChange}
+                                                stepQuantity={stepQuantity}
+                                                quantity={quantity}
+                                                setQuantity={setQuantity}
+                                            />
+                                        ))}
                                 </Stack>
                                 <Stack>
                                     <HideOnMobile>
@@ -134,7 +141,9 @@ ProductItem.propTypes = {
     primaryAction: PropTypes.node,
     secondaryActions: PropTypes.node,
     deliveryActions: PropTypes.node,
-    containerStyles: PropTypes.object
+    containerStyles: PropTypes.object,
+    isRemoving: PropTypes.bool,
+    pickupInStore: PropTypes.bool
 }
 
 export default ProductItem

@@ -147,7 +147,12 @@ const ProductView = forwardRef(
             pickupInStore = false,
             setPickupInStore = () => {},
             onOpenStoreLocator = () => {},
-            showDeliveryOptions = false
+            showDeliveryOptions = true,
+            customButtons = [],
+            maxOrderQuantity = null,
+            imageGalleryFooter = null,
+            controlledVariationValues = null,
+            onVariationChange = null
         },
         ref
     ) => {
@@ -180,7 +185,14 @@ const ProductView = forwardRef(
             unfulfillable,
             isSelectedStoreOutOfStock,
             selectedStore
-        } = useDerivedProduct(product, isProductPartOfSet, isProductPartOfBundle)
+        } = useDerivedProduct(
+            product,
+            isProductPartOfSet,
+            isProductPartOfBundle,
+            pickupInStore,
+            controlledVariationValues,
+            onVariationChange
+        )
         const priceData = useMemo(() => {
             return getPriceData(product, {quantity})
         }, [product, quantity])
@@ -379,6 +391,19 @@ const ProductView = forwardRef(
                 )
             }
 
+            // Add custom buttons if provided
+            if (customButtons && customButtons.length > 0) {
+                customButtons.forEach((customButton, index) => {
+                    buttons.push(
+                        React.cloneElement(customButton, {
+                            key: `custom-button-${index}`,
+                            width: customButton.props.width || '100%',
+                            marginBottom: customButton.props.marginBottom || 4
+                        })
+                    )
+                })
+            }
+
             return buttons
         }
 
@@ -494,11 +519,27 @@ const ProductView = forwardRef(
                             ) : (
                                 <ImageGallerySkeleton />
                             )}
+                            {/* Custom footer content (e.g., Back to Selection button) */}
+                            {imageGalleryFooter && (
+                                <Box mt={6} mb={2}>
+                                    {imageGalleryFooter}
+                                </Box>
+                            )}
                         </Box>
                     )}
 
                     {/* Variations & Quantity Selector & CTA buttons */}
-                    <VStack align="stretch" spacing={8} flex={1}>
+                    <VStack
+                        align="stretch"
+                        spacing={8}
+                        flex={1}
+                        pb={[
+                            isProductPartOfSet || isProductPartOfBundle ? 4 : '120px',
+                            isProductPartOfSet || isProductPartOfBundle ? 4 : '120px',
+                            isProductPartOfSet || isProductPartOfBundle ? 4 : '120px',
+                            4
+                        ]}
+                    >
                         <Box display={['none', 'none', 'none', 'block']}>
                             <ProductViewHeader
                                 name={product?.name}
@@ -598,6 +639,11 @@ const ProductView = forwardRef(
                                                 },
                                                 {variantType: name}
                                             )}
+                                            handleChange={
+                                                onVariationChange
+                                                    ? (value) => onVariationChange(id, value)
+                                                    : undefined
+                                            }
                                         >
                                             {swatches}
                                         </SwatchGroup>
@@ -621,6 +667,7 @@ const ProductView = forwardRef(
                                         step={stepQuantity}
                                         value={quantity}
                                         min={minOrderQuantity}
+                                        {...(maxOrderQuantity != null && {max: maxOrderQuantity})}
                                         onChange={(stringValue, numberValue) => {
                                             // Set the Quantity of product to value of input if value number
                                             if (numberValue >= 0) {
@@ -892,7 +939,14 @@ ProductView.propTypes = {
     pickupInStore: PropTypes.bool,
     setPickupInStore: PropTypes.func,
     onOpenStoreLocator: PropTypes.func,
-    showDeliveryOptions: PropTypes.bool
+    showDeliveryOptions: PropTypes.bool,
+    customButtons: PropTypes.array,
+    promotionId: PropTypes.string,
+    maxOrderQuantity: PropTypes.number,
+    imageGalleryFooter: PropTypes.node,
+    alignItems: PropTypes.string,
+    controlledVariationValues: PropTypes.object,
+    onVariationChange: PropTypes.func
 }
 
 export default ProductView

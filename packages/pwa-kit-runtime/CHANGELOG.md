@@ -1,4 +1,15 @@
-## v3.12.0-dev (Jul 22, 2025)
+## v3.15.0-dev (Nov 05, 2025)
+
+## v3.14.0 (Nov 04, 2025)
+- Replace aws-serverless-express with @h4ad/serverless-adapter [#3325](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3325)
+- Added Hybrid Proxy support for local and ODS hybrid development [#3409] (https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3409)
+- Add extensibility hooks for SLAS private client proxy with `onSLASPrivateProxyReq` and `onSLASPrivateProxyRes` callbacks [#3411](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3411)
+- Remove exception when transfer-encoding: chunked [#3439](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3439)
+- Fix chunked encoding option name [#3440](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3440)
+
+## v3.13.0 (Sep 25, 2025)
+
+## v3.12.0 (Sep 04, 2025)
 - Add support for environment level base paths on /mobify routes [#2892](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/2892)
 - This feature introduces an AI-powered shopping assistant that integrates Salesforce Embedded Messaging Service with PWA Kit applications. The shopper agent provides real-time chat support, search assistance, and personalized shopping guidance directly within the e-commerce experience. [#2658](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/2658)
 - Disallow the SLAS private client proxy from handling trusted system on behalf of requests [#3042](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3042)

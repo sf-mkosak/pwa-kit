@@ -13,7 +13,7 @@ import {
     ToggleCardEdit,
     ToggleCardSummary
 } from '@salesforce/retail-react-app/app/components/toggle-card'
-import {Text} from '@salesforce/retail-react-app/app/components/shared/ui'
+import {Text, useDisclosure} from '@salesforce/retail-react-app/app/components/shared/ui'
 import ShippingAddressSelection from '@salesforce/retail-react-app/app/pages/checkout/partials/shipping-address-selection'
 import AddressDisplay from '@salesforce/retail-react-app/app/components/address-display'
 import {
@@ -24,6 +24,7 @@ import {useCurrentCustomer} from '@salesforce/retail-react-app/app/hooks/use-cur
 import {useCurrentBasket} from '@salesforce/retail-react-app/app/hooks/use-current-basket'
 import ShippingMultiAddress from '@salesforce/retail-react-app/app/pages/checkout/partials/shipping-multi-address'
 import {useToast} from '@salesforce/retail-react-app/app/hooks/use-toast'
+import {useItemShipmentManagement} from '@salesforce/retail-react-app/app/hooks/use-item-shipment-management'
 import {useMultiship} from '@salesforce/retail-react-app/app/hooks/use-multiship'
 import {DEFAULT_SHIPMENT_ID} from '@salesforce/retail-react-app/app/constants'
 import {getConfig} from '@salesforce/pwa-kit-runtime/utils/ssr-config'
@@ -35,6 +36,7 @@ import {
     findExistingDeliveryShipment,
     isPickupShipment
 } from '@salesforce/retail-react-app/app/utils/shipment-utils'
+import SingleAddressToggleModal from '@salesforce/retail-react-app/app/components/single-address-toggle-modal'
 
 const submitButtonMessage = defineMessage({
     defaultMessage: 'Continue to Shipping Method',
@@ -63,10 +65,15 @@ export default function ShippingAddress() {
     const {data: customer} = useCurrentCustomer()
     const {data: basket} = useCurrentBasket()
     const multishipEnabled = getConfig()?.app?.multishipEnabled ?? true
-    const {moveItemsToDeliveryShipment, removeEmptyShipments} = useMultiship(basket)
+    const {removeEmptyShipments} = useMultiship(basket)
+    const {updateItemsToDeliveryShipment} = useItemShipmentManagement(basket?.basketId)
     const selectedShipment = findExistingDeliveryShipment(basket)
     const selectedShippingAddress = selectedShipment?.shippingAddress
     const isAddressFilled = selectedShippingAddress?.address1 && selectedShippingAddress?.city
+
+    // Check if there are multiple product items to show option to ship to multiple addresses
+    const productItemsCount = basket?.productItems?.length || 0
+    const hasMultipleProductItems = productItemsCount > 1
 
     // Check if there are multiple delivery shipments (multi-shipping was used)
     const deliveryShipments =
@@ -75,6 +82,12 @@ export default function ShippingAddress() {
 
     // Initialize multi-shipping state based on existing basket shipments
     const [isMultiShipping, setIsMultiShipping] = useState(hasMultipleDeliveryShipments)
+    const {
+        isOpen: showWarningModal,
+        onOpen: openWarningModal,
+        onClose: closeWarningModal
+    } = useDisclosure()
+    const [hasUnpersistedGuestAddresses, sethasUnpersistedGuestAddresses] = useState(false)
     const {step, STEPS, goToStep} = useCheckout()
     const createCustomerAddress = useShopperCustomersMutation('createCustomerAddress')
     const updateCustomerAddress = useShopperCustomersMutation('updateCustomerAddress')
@@ -87,6 +100,30 @@ export default function ShippingAddress() {
     useEffect(() => {
         setIsMultiShipping(hasMultipleDeliveryShipments)
     }, [hasMultipleDeliveryShipments])
+
+    // handle unpersisted address status from ShippingMultiAddress
+    const handleUnsavedGuestAddressesToggleWarning = (hasUnsaved) => {
+        sethasUnpersistedGuestAddresses(hasUnsaved)
+    }
+
+    // Handle toggle between single and multi-shipping
+    const handleToggleShippingMode = () => {
+        if (isMultiShipping && customer?.isGuest && hasUnpersistedGuestAddresses) {
+            openWarningModal()
+        } else {
+            setIsMultiShipping(!isMultiShipping)
+        }
+    }
+
+    // handle confirmation to single address
+    const handleConfirmSwitchToSingle = () => {
+        setIsMultiShipping(false)
+        closeWarningModal()
+    }
+
+    const handleCancelSwitch = () => {
+        closeWarningModal()
+    }
 
     const submitAndContinue = async (address) => {
         setIsLoading(true)
@@ -132,9 +169,10 @@ export default function ShippingAddress() {
                 ) || []
             const itemsToMove = deliveryItems.filter((item) => item.shipmentId !== targetShipmentId)
             if (itemsToMove.length > 0) {
-                basketAfterItemMoves = await moveItemsToDeliveryShipment(
+                basketAfterItemMoves = await updateItemsToDeliveryShipment(
                     itemsToMove,
                     targetShipmentId
+                    // note: passing defaultInventoryId here is not needed
                 )
             }
             // Remove any empty shipments.
@@ -159,72 +197,81 @@ export default function ShippingAddress() {
     const isEditingShippingAddress = step === STEPS.SHIPPING_ADDRESS
 
     return (
-        <ToggleCard
-            id="step-1"
-            title={formatMessage({
-                defaultMessage: 'Shipping Address',
-                id: 'shipping_address.title.shipping_address'
-            })}
-            editing={isEditingShippingAddress}
-            isLoading={isLoading}
-            disabled={step === STEPS.CONTACT_INFO && !selectedShippingAddress}
-            onEdit={() => goToStep(STEPS.SHIPPING_ADDRESS)}
-            editLabel={
-                isMultiShipping
-                    ? formatMessage({
-                          defaultMessage: 'Edit Shipping Addresses',
-                          id: 'toggle_card.action.editShippingAddresses'
-                      })
-                    : formatMessage({
-                          defaultMessage: 'Edit Shipping Address',
-                          id: 'toggle_card.action.editShippingAddress'
-                      })
-            }
-            editAction={
-                multishipEnabled
-                    ? isMultiShipping
-                        ? formatMessage(shipToOneAddressLabel)
-                        : formatMessage(deliverToMultipleAddressesLabel)
-                    : null
-            }
-            onEditActionClick={
-                multishipEnabled
-                    ? async () => {
-                          setIsMultiShipping(!isMultiShipping)
-                      }
-                    : null
-            }
-        >
-            <ToggleCardEdit>
-                {!isMultiShipping ? (
-                    <ShippingAddressSelection
-                        selectedAddress={selectedShippingAddress}
-                        submitButtonLabel={submitButtonMessage}
-                        onSubmit={submitAndContinue}
-                        formTitleAriaLabel={shippingAddressAriaLabel}
-                    />
-                ) : (
-                    <ShippingMultiAddress
-                        basket={basket}
-                        submitButtonLabel={submitButtonMessage}
-                        noItemsInBasketMessage={noItemsInBasketMessage}
-                    />
-                )}
-            </ToggleCardEdit>
-            {isAddressFilled && (
-                <ToggleCardSummary>
-                    {hasMultipleDeliveryShipments ? (
-                        <Text>
-                            {formatMessage({
-                                defaultMessage: 'Your items will be shipped to multiple addresses.',
-                                id: 'shipping_address.summary.multiple_addresses'
-                            })}
-                        </Text>
+        <>
+            <ToggleCard
+                id="step-1"
+                title={formatMessage({
+                    defaultMessage: 'Shipping Address',
+                    id: 'shipping_address.title.shipping_address'
+                })}
+                editing={isEditingShippingAddress}
+                isLoading={isLoading}
+                disabled={step === STEPS.CONTACT_INFO && !selectedShippingAddress}
+                onEdit={() => goToStep(STEPS.SHIPPING_ADDRESS)}
+                editLabel={
+                    isMultiShipping
+                        ? formatMessage({
+                              defaultMessage: 'Edit Shipping Addresses',
+                              id: 'toggle_card.action.editShippingAddresses'
+                          })
+                        : formatMessage({
+                              defaultMessage: 'Edit Shipping Address',
+                              id: 'toggle_card.action.editShippingAddress'
+                          })
+                }
+                editAction={
+                    multishipEnabled && hasMultipleProductItems
+                        ? isMultiShipping
+                            ? formatMessage(shipToOneAddressLabel)
+                            : formatMessage(deliverToMultipleAddressesLabel)
+                        : null
+                }
+                onEditActionClick={
+                    multishipEnabled && hasMultipleProductItems ? handleToggleShippingMode : null
+                }
+            >
+                <ToggleCardEdit>
+                    {!isMultiShipping ? (
+                        <ShippingAddressSelection
+                            selectedAddress={selectedShippingAddress}
+                            submitButtonLabel={submitButtonMessage}
+                            onSubmit={submitAndContinue}
+                            formTitleAriaLabel={shippingAddressAriaLabel}
+                        />
                     ) : (
-                        <AddressDisplay address={selectedShippingAddress} />
+                        <ShippingMultiAddress
+                            basket={basket}
+                            submitButtonLabel={submitButtonMessage}
+                            noItemsInBasketMessage={noItemsInBasketMessage}
+                            onUnsavedGuestAddressesToggleWarning={
+                                handleUnsavedGuestAddressesToggleWarning
+                            }
+                        />
                     )}
-                </ToggleCardSummary>
-            )}
-        </ToggleCard>
+                </ToggleCardEdit>
+                {isAddressFilled && (
+                    <ToggleCardSummary>
+                        {hasMultipleDeliveryShipments ? (
+                            <Text>
+                                {formatMessage({
+                                    defaultMessage:
+                                        'Your items will be shipped to multiple addresses.',
+                                    id: 'shipping_address.summary.multiple_addresses'
+                                })}
+                            </Text>
+                        ) : (
+                            <AddressDisplay address={selectedShippingAddress} />
+                        )}
+                    </ToggleCardSummary>
+                )}
+            </ToggleCard>
+
+            <SingleAddressToggleModal
+                isOpen={showWarningModal}
+                onClose={closeWarningModal}
+                onConfirm={handleConfirmSwitchToSingle}
+                onCancel={handleCancelSwitch}
+            />
+        </>
     )
 }

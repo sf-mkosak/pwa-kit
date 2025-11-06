@@ -22,7 +22,7 @@ module.exports = defineConfig({
     /* Fail the build on CI if you accidentally left test.only in the source code. */
     forbidOnly: !!process.env.CI,
     /* Retry on CI only */
-    retries: 3,
+    retries: 2,
     /* Opt out of parallel tests on CI. */
     workers: 1,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -36,15 +36,12 @@ module.exports = defineConfig({
         trace: 'on-first-retry'
     },
     snapshotPathTemplate: '{testDir}/{testFileDir}/__snapshots__/{arg}{ext}',
-    /* Configure projects for major browsers */
     projects: [
         {
             name: 'chromium',
             use: {...devices['Desktop Chrome']},
             testIgnore: ['**/a11y/**', '**/mobile/**', '**/extra-features.spec.js']
         },
-
-        /* Test against mobile viewports. */
         {
             name: 'mobile-chrome',
             use: {...devices['Pixel 5']},
@@ -53,12 +50,12 @@ module.exports = defineConfig({
         {
             name: 'a11y-mobile',
             use: {...devices['Pixel 5']},
-            testDir: './e2e/tests/a11y/mobile'
+            testDir: './e2e/tests/a11y/mobile',
         },
         {
             name: 'a11y-desktop',
             use: {...devices['Desktop Chrome']},
-            testDir: './e2e/tests/a11y/desktop'
+            testDir: './e2e/tests/a11y/desktop',
         },
         {
             name: 'extra-features-desktop',

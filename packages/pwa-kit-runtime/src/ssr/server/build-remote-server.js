@@ -49,25 +49,45 @@ import {
     slasPrivateProxyPath
 } from '../../utils/ssr-namespace-paths'
 import {applyProxyRequestHeaders} from '../../utils/ssr-server/configure-proxy'
-import awsServerlessExpress from 'aws-serverless-express'
 import expressLogging from 'morgan'
 import logger from '../../utils/logger-instance'
 import {createProxyMiddleware, responseInterceptor} from 'http-proxy-middleware'
+import {hybridProxy} from '../../utils/ssr-server/hybrid-proxy'
 import {convertExpressRouteToRegex} from '../../utils/ssr-server/convert-express-route'
+import {ServerlessAdapter} from '@h4ad/serverless-adapter'
+import {DefaultHandler} from '@h4ad/serverless-adapter/lib/handlers/default'
+import {CallbackResolver} from '@h4ad/serverless-adapter/lib/resolvers/callback'
+import {ApiGatewayV1Adapter} from '@h4ad/serverless-adapter/lib/adapters/aws'
+import {ExpressFramework} from '@h4ad/serverless-adapter/lib/frameworks/express'
+import {is as typeis} from 'type-is'
 
 /**
  * An Array of mime-types (Content-Type values) that are considered
- * as binary by awsServerlessExpress when processing responses.
+ * as binary by serverless-adapter when processing responses.
  * We intentionally exclude all text/* values since we assume UTF8
  * encoding and there's no reason to bulk up the response by base64
  * encoding the result.
  *
  * We can use '*' in these types as a wildcard - see
  * https://www.npmjs.com/package/type-is#type--typeisismediatype-types
- *
  * @private
  */
 const binaryMimeTypes = ['application/*', 'audio/*', 'font/*', 'image/*', 'video/*']
+
+export const isContentTypeBinary = (headers) => {
+    // Replicating the aws-serverless-express behavior
+    let contentType = headers['content-type'] || headers['Content-Type']
+    if (!contentType) {
+        return false
+    }
+    // Remove the encoding from the content type
+    contentType = contentType.split(';')[0]
+    return !!typeis(contentType, binaryMimeTypes)
+}
+
+export const isBinary = (headers) => {
+    return isContentTypeBinary(headers)
+}
 
 /**
  * Environment variables that must be set for the Express app to run remotely.
@@ -138,7 +158,19 @@ export const RemoteServerFactory = {
             // To allow additional SLAS endpoints, users can override this value in
             // their project's ssr.js.
             applySLASPrivateClientToEndpoints:
-                /\/oauth2\/(token|passwordless\/(login|token)|password\/(reset|action))/
+                /\/oauth2\/(token|passwordless\/(login|token)|password\/(reset|action))/,
+
+            // Custom callback to modify the SLAS private client proxy request. This callback is invoked
+            // after the built-in proxy request handling. Users can provide additional
+            // request modifications (e.g., custom headers).
+            // Signature: (proxyRequest, incomingRequest, res) => void
+            onSLASPrivateProxyReq: undefined,
+
+            // Custom callback to modify the SLAS private client proxy response. This callback is invoked
+            // after the built-in proxy response handling. Users can modify or replace
+            // the response buffer.
+            // Signature: (responseBuffer, proxyRes, req, res) => Buffer
+            onSLASPrivateProxyRes: undefined
         }
 
         options = Object.assign({}, defaults, options)
@@ -386,6 +418,7 @@ export const RemoteServerFactory = {
         this._setupProxying(app, options)
 
         this._setupSlasPrivateClientProxy(app, options)
+        this._setupHybridProxy(app, options)
 
         // Beyond this point, we know that this is not a proxy request
         // and not a bundle request, so we can apply specific
@@ -395,6 +428,12 @@ export const RemoteServerFactory = {
         this._addStaticAssetServing(app)
         this._addDevServerGarbageCollection(app)
         return app
+    },
+
+    _setupHybridProxy(app, options) {
+        if (options.hybridProxy?.enabled) {
+            app.use(hybridProxy(options))
+        }
     },
 
     /**
@@ -911,8 +950,23 @@ export const RemoteServerFactory = {
                         // purpose so we don't want to overwrite the header for those calls.
                         proxyRequest.setHeader('Authorization', `Basic ${encodedSlasCredentials}`)
                     }
+
+                    // Allow users to apply additional custom modifications to the proxy request
+                    if (typeof options.onSLASPrivateProxyReq === 'function') {
+                        try {
+                            options.onSLASPrivateProxyReq(proxyRequest, incomingRequest, res)
+                        } catch (error) {
+                            logger.error('Error in custom onSLASPrivateProxyReq callback', {
+                                namespace: '_setupSlasPrivateClientProxy',
+                                additionalProperties: {
+                                    error: error
+                                }
+                            })
+                        }
+                    }
                 },
                 onProxyRes: responseInterceptor((responseBuffer, proxyRes, req, res) => {
+                    let workingBuffer = responseBuffer
                     try {
                         // If the passwordless login endpoint returns a 404, which corresponds to a user
                         // email not being found, we mask it with a 200 OK response so that it is not
@@ -927,15 +981,43 @@ export const RemoteServerFactory = {
 
                             // When a /passwordless/login endpoint response returns 200, it has no body
                             // so we return an empty body here to match an actual 200 response.
-                            return Buffer.from('', 'utf8')
+                            workingBuffer = Buffer.from('', 'utf8')
                         }
-                        return responseBuffer
+
+                        // Allow users to apply additional custom modifications to the proxy response
+                        if (typeof options.onSLASPrivateProxyRes === 'function') {
+                            try {
+                                const customBuffer = options.onSLASPrivateProxyRes(
+                                    workingBuffer,
+                                    proxyRes,
+                                    req,
+                                    res
+                                )
+                                // Only use the custom buffer if it was returned
+                                if (customBuffer !== undefined) {
+                                    workingBuffer = customBuffer
+                                }
+                            } catch (error) {
+                                logger.error(
+                                    'Error in custom onSLASPrivateProxyRes callback',
+                                    /* istanbul ignore next */
+                                    {
+                                        namespace: '_setupSlasPrivateClientProxy',
+                                        additionalProperties: {
+                                            error: error
+                                        }
+                                    }
+                                )
+                            }
+                        }
+
+                        return workingBuffer
                     } catch (error) {
                         console.error(
                             'There is an error processing the response from SLAS. Returning original response.',
                             error
                         )
-                        return responseBuffer
+                        return workingBuffer
                     }
                 })
             })
@@ -1187,7 +1269,21 @@ export const RemoteServerFactory = {
         // it indicates that the Lambda container has been reused.
         let lambdaContainerReused = false
 
-        const server = awsServerlessExpress.createServer(app, null, binaryMimeTypes)
+        const serverlessAdapterHandler = ServerlessAdapter.new(app)
+            .setBinarySettings({
+                isBinary: isBinary
+            })
+            .setFramework(new ExpressFramework())
+            .setHandler(new DefaultHandler())
+            .setResolver(new CallbackResolver())
+            .addAdapter(
+                new ApiGatewayV1Adapter({
+                    // Preserve the original aws-serverless-express behavior
+                    lowercaseRequestHeaders: true,
+                    throwOnChunkedTransferEncoding: false
+                })
+            )
+            .build()
 
         const handler = (event, context, callback) => {
             // encode non ASCII request headers
@@ -1244,42 +1340,25 @@ export const RemoteServerFactory = {
                 app.sendMetric('LambdaCreated')
             }
 
-            // Proxy the request through to the server. When the response
-            // is done, context.succeed will be called with the response
-            // data.
-            awsServerlessExpress.proxy(
-                server,
-                event, // The incoming event
-                context, // The event context
-                'CALLBACK', // How the proxy signals completion
-                (err, response) => {
-                    // The 'response' parameter here is NOT the same response
-                    // object handled by ExpressJS code. The awsServerlessExpress
-                    // middleware works by sending an http.Request to the Express
-                    // server and parsing the HTTP response that it returns.
-                    // Wait util all pending metrics have been sent, and any pending
-                    // response caching to complete. We have to do this now, before
-                    // sending the response; there's no way to do it afterwards
-                    // because the Lambda container is frozen inside the callback.
-
-                    // We return this Promise, but the awsServerlessExpress object
-                    // doesn't make any use of it.
-                    return (
-                        app._requestMonitor
-                            ._waitForResponses()
-                            .then(() => app.metrics.flush())
-                            // Now call the Lambda callback to complete the response
-                            .then(() => callback(err, processLambdaResponse(response, event)))
-                        // DON'T add any then() handlers here, after the callback.
-                        // They won't be called after the response is sent, but they
-                        // *might* be called if the Lambda container running this code
-                        // is reused, which can lead to odd and unpredictable
-                        // behaviour.
-                    )
-                }
-            )
+            const managedCallback = (err, response) => {
+                return (
+                    app._requestMonitor
+                        ._waitForResponses()
+                        .then(() => app.metrics.flush())
+                        // Now call the Lambda callback to complete the response
+                        .then(() => callback(err, processLambdaResponse(response, event)))
+                    // DON'T add any then() handlers here, after the callback.
+                    // They won't be called after the response is sent, but they
+                    // *might* be called if the Lambda container running this code
+                    // is reused, which can lead to odd and unpredictable
+                    // behaviour.
+                )
+            }
+            return serverlessAdapterHandler(event, context, managedCallback)
         }
-        return {handler, server, app}
+        // Upgrading to serverless-adapter removes the server property
+        // return a null server to maintain backwards compatibility
+        return {handler, server: null, app}
     },
 
     /**
@@ -1309,6 +1388,16 @@ export const RemoteServerFactory = {
      * @param {Boolean} [options.allowCookies] - This boolean value indicates
      * whether or not we strip cookies from requests and block setting of cookies. Defaults
      * to 'false'.
+     * @param {Boolean} [options.useSLASPrivateClient=false] - Enable the SLAS private client
+     * proxy handler. Requires PWA_KIT_SLAS_CLIENT_SECRET environment variable.
+     * @param {RegExp} [options.applySLASPrivateClientToEndpoints] - A regex pattern to match
+     * SLAS endpoints where the Authorization header should be injected.
+     * @param {function} [options.onSLASPrivateProxyReq] - Custom callback to modify SLAS private client
+     * proxy requests. Called after built-in request handling. Signature: (proxyRequest, incomingRequest, res) => void.
+     * Use this to add custom headers or modify the proxy request.
+     * @param {function} [options.onSLASPrivateProxyRes] - Custom callback to modify SLAS private client
+     * proxy responses. Called after built-in response handling. Signature: (responseBuffer, proxyRes, req, res) => Buffer.
+     * Should return the modified buffer or undefined to use the existing buffer.
      */
     createHandler(options, customizeApp) {
         process.on('unhandledRejection', catchAndLog)
@@ -1475,9 +1564,10 @@ const applyPatches = once((options) => {
     https.request = outgoingRequestHook(https.request, options)
     https.get = outgoingRequestHook(https.get, options)
 
-    // Patch the ExpressJS Response class's redirect function to suppress
-    // the creation of a body (DESKTOP-485). Including the body may
-    // trigger a parsing error in aws-serverless-express.
+    // We no longer use aws-serverless-express but to maintain compatibility with the old code, we still patch the redirect function.
+    // - Patch the ExpressJS Response class's redirect function to suppress
+    // - the creation of a body (DESKTOP-485). Including the body may
+    // - trigger a parsing error in aws-serverless-express.
     express.response.redirect = function (status, url) {
         let workingStatus = status
         let workingUrl = url
@@ -1489,6 +1579,9 @@ const applyPatches = once((options) => {
 
         // Duplicate behaviour in node_modules/express/lib/response.js
         const address = this.location(workingUrl).get('Location')
+
+        // aws-serverless-express would add a Content-Length header to the response even if there was no body
+        this.set('Content-Length', 0)
 
         // Send a minimal response with just a status and location
         this.status(workingStatus).location(address).end()
