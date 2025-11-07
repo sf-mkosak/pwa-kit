@@ -56,7 +56,7 @@ The PWA Kit MCP Server offers the following intelligent tools tailored to Salesf
   
   **Fallback Mode**: If SFCC credentials are not available, the tool will search for `api.json` and `schema.yaml` files locally in the following order:
   1. `SFCC_CARTRIDGE_PATH` environment variable (if set) - searches recursively up to 10 levels deep
-  2. `PWA_STOREFRONT_APP_PATH` - searches current directory and up to 5 parent directories, then recursively down 10 levels in each
+  2. `PWA_STOREFRONT_APP_PATH` - searches current directory and parent directories (up to filesystem root or home directory, max 10 levels), then recursively down 10 levels in each
   
   *Custom API DX Endpoint Documentation*: [https://developer.salesforce.com/docs/commerce/commerce-api/references/custom-apis?meta=getEndpoints](https://developer.salesforce.com/docs/commerce/commerce-api/references/custom-apis?meta=getEndpoints)
 
@@ -166,7 +166,7 @@ For the `scapi_custom_api_discovery` tool, if SFCC credentials are not available
 }
 ```
 
-**Method 2: Auto-discovery** - If `SFCC_CARTRIDGE_PATH` is not set, the tool will automatically search for `api.json` and `schema.yaml` files starting from `PWA_STOREFRONT_APP_PATH` and traversing up to 5 parent directories. At each directory level, it searches recursively down through subdirectories (up to 10 levels deep).
+**Method 2: Auto-discovery** - If `SFCC_CARTRIDGE_PATH` is not set, the tool will automatically search for `api.json` and `schema.yaml` files starting from `PWA_STOREFRONT_APP_PATH` and traversing up through parent directories until it reaches the filesystem root or home directory (max 10 levels). At each directory level, it searches recursively down through subdirectories (up to 10 levels deep).
 
 **File Structure Expected:**
 ```

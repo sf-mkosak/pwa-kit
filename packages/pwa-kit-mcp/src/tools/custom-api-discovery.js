@@ -97,20 +97,28 @@ function fetchAndValidateConfigs() {
     const config = loadConfig()
     const {clientId, clientSecret, organizationId, instanceId, shortCode, hostname} = config
 
-    // Validate configuration fields
-    const nullConfigFields = Object.entries(config)
-        .filter(([, value]) => value === null || value === undefined)
-        .map(([key]) => key)
+    // Define which fields are critical for SFCC API connection
+    const criticalFields = ['clientId', 'clientSecret', 'organizationId', 'instanceId']
 
-    // Check if ALL required fields are missing (complete fallback scenario)
-    if (nullConfigFields.length === Object.keys(config).length || nullConfigFields.length >= 4) {
+    // Check which critical fields are missing
+    const missingCriticalFields = criticalFields.filter(
+        (field) => !config[field] || config[field].trim() === ''
+    )
+
+    // If all critical fields are missing, use fallback mode (local file search)
+    if (missingCriticalFields.length === criticalFields.length) {
         return {isFallback: true}
     }
 
-    if (nullConfigFields.length > 0) {
-        throw new Error(`Required configuration fields are null: ${nullConfigFields.join(', ')}`)
+    // If some (but not all) critical fields are missing, throw an error with helpful message
+    if (missingCriticalFields.length > 0) {
+        throw new Error(
+            `Required SFCC API credentials are missing: ${missingCriticalFields.join(', ')}. ` +
+                `Either provide all credentials or use SFCC_CARTRIDGE_PATH environment variable for local fallback.`
+        )
     }
 
+    // All critical fields present, return config
     return {clientId, clientSecret, organizationId, instanceId, shortCode, hostname}
 }
 

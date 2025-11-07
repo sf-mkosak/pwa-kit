@@ -384,7 +384,7 @@ describe('CustomApiTool', () => {
         })
 
         await expect(CustomApiTool.fn()).rejects.toThrow(
-            'Required configuration fields are null: clientSecret, organizationId'
+            'Required SFCC API credentials are missing: clientSecret, organizationId'
         )
     })
 
@@ -453,8 +453,8 @@ describe('CustomApiTool', () => {
             expect(parsedResult.metadata.message).toContain('No SFCC configuration found')
         })
 
-        test('should use fallback when 4+ config fields are missing', async () => {
-            // Mock 4 fields as null (triggers fallback)
+        test('should use fallback when all critical fields are missing', async () => {
+            // Mock all 4 critical fields as null (triggers fallback)
             loadConfig.mockReturnValue({
                 clientId: null,
                 clientSecret: null,
@@ -481,8 +481,8 @@ describe('CustomApiTool', () => {
             expect(parsedResult.metadata.source).toBe('PWA_STOREFRONT_APP_PATH')
         })
 
-        test('should not use fallback when only 1-2 config fields are missing', async () => {
-            // Mock only 2 fields as null (should throw error, not use fallback)
+        test('should not use fallback when only some critical fields are missing', async () => {
+            // Mock only 2 critical fields as null (should throw error, not use fallback)
             loadConfig.mockReturnValue({
                 clientId: 'test-id',
                 clientSecret: null,
@@ -493,7 +493,7 @@ describe('CustomApiTool', () => {
             })
 
             await expect(CustomApiTool.fn()).rejects.toThrow(
-                'Required configuration fields are null'
+                'Required SFCC API credentials are missing'
             )
         })
     })

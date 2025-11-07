@@ -7,6 +7,7 @@
 import fs from 'fs'
 import fsPromises from 'fs/promises'
 import path from 'path'
+import os from 'os'
 import {spawn} from 'cross-spawn'
 import {zodToJsonSchema} from 'zod-to-json-schema'
 import {z} from 'zod'
@@ -683,26 +684,43 @@ export function loadCustomApiFromFallbackPath() {
             return result
         }
 
-        // Traverse up parent directories (up to 5 levels)
+        // Traverse up parent directories until we hit root or home directory
         let currentPath = path.resolve(storefrontAppPath)
-        for (let i = 0; i < 5; i++) {
+        const homeDir = os.homedir()
+        const rootDir = path.parse(currentPath).root
+        let level = 0
+
+        while (currentPath !== rootDir && currentPath !== homeDir) {
             const parentPath = path.dirname(currentPath)
 
-            // Stop if we've reached the root
+            // Stop if we've reached the root or same path (safety check)
             if (parentPath === currentPath) {
                 break
             }
 
-            logMCPMessage(`Searching parent directory: ${parentPath}`)
+            level++
+            logMCPMessage(`Searching parent directory (level ${level}): ${parentPath}`)
             result = searchForCustomApiFiles(
                 parentPath,
-                `PWA_STOREFRONT_APP_PATH (parent ${i + 1})`
+                `PWA_STOREFRONT_APP_PATH (parent ${level})`
             )
             if (result) {
                 return result
             }
 
             currentPath = parentPath
+
+            // Safety limit: stop at 10 levels to prevent excessive traversal
+            if (level >= 10) {
+                logMCPMessage('Reached maximum parent directory traversal depth (10 levels)')
+                break
+            }
+        }
+
+        if (currentPath === homeDir) {
+            logMCPMessage('Stopped search at home directory')
+        } else if (currentPath === rootDir) {
+            logMCPMessage('Stopped search at filesystem root')
         }
     }
 
