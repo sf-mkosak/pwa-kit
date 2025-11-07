@@ -10,6 +10,7 @@ import path from 'path'
 import {spawn} from 'cross-spawn'
 import {zodToJsonSchema} from 'zod-to-json-schema'
 import {z} from 'zod'
+import {execSync} from 'child_process'
 
 // CONSTANTS
 const CREATE_APP_VERSION = 'latest'
@@ -487,14 +488,72 @@ function checkCommerceSDKInNodeModules(nodeModulesPath) {
 }
 
 /**
- * Recursively searches for a file in a directory and its subdirectories
+ * Recursively searches for a file in a directory using native OS commands for better performance
+ * Falls back to JS implementation if OS commands fail
  * @param {string} dir - Directory to search in
  * @param {string} filename - Filename to search for
  * @param {number} maxDepth - Maximum depth to search (default: 10)
- * @param {number} currentDepth - Current recursion depth (internal use)
  * @returns {string|null} Full path to the file if found, null otherwise
  */
-function findFileRecursively(dir, filename, maxDepth = 10, currentDepth = 0) {
+function findFileRecursively(dir, filename, maxDepth = 10) {
+    try {
+        // Try using native OS commands for better performance
+        const isWindows = process.platform === 'win32'
+
+        let result
+        if (isWindows) {
+            // Windows: Use Get-ChildItem (PowerShell) or dir with recursion
+            try {
+                // PowerShell command for recursive search
+                const psCommand = `Get-ChildItem -Path "${dir}" -Filter "${filename}" -Recurse -Depth ${maxDepth} -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName`
+                result = execSync(`powershell -Command "${psCommand}"`, {
+                    encoding: 'utf8',
+                    stdio: ['pipe', 'pipe', 'pipe'],
+                    timeout: 5000
+                }).trim()
+            } catch (psError) {
+                logMCPMessage(`PowerShell search failed: ${psError.message}`)
+                return findFileRecursivelyFallback(dir, filename, maxDepth, 0)
+            }
+        } else {
+            // Unix/Linux/Mac: Use find command
+            const excludeDirs = [
+                'node_modules',
+                '.git',
+                '.next',
+                'dist',
+                'build',
+                'coverage',
+                '.cache',
+                'tmp',
+                'temp'
+            ]
+            const pruneConditions = excludeDirs.map((d) => `-path "*/${d}/*" -prune`).join(' -o ')
+            const findCommand = `find "${dir}" -maxdepth ${maxDepth} \\( ${pruneConditions} \\) -o -type f -name "${filename}" -print -quit`
+
+            result = execSync(findCommand, {
+                encoding: 'utf8',
+                stdio: ['pipe', 'pipe', 'pipe'],
+                timeout: 5000
+            }).trim()
+        }
+
+        return result || null
+    } catch (error) {
+        logMCPMessage(`Native OS search failed, using fallback: ${error.message}`)
+        return findFileRecursivelyFallback(dir, filename, maxDepth, 0)
+    }
+}
+
+/**
+ * Fallback JavaScript implementation for file search
+ * @param {string} dir - Directory to search in
+ * @param {string} filename - Filename to search for
+ * @param {number} maxDepth - Maximum depth to search
+ * @param {number} currentDepth - Current recursion depth
+ * @returns {string|null} Full path to the file if found, null otherwise
+ */
+function findFileRecursivelyFallback(dir, filename, maxDepth, currentDepth) {
     if (currentDepth > maxDepth) {
         return null
     }
@@ -502,17 +561,30 @@ function findFileRecursively(dir, filename, maxDepth = 10, currentDepth = 0) {
     try {
         const entries = fs.readdirSync(dir, {withFileTypes: true})
 
-        // Check if file exists in current directory
+        // Check if file exists in current directory first
         for (const entry of entries) {
             if (entry.isFile() && entry.name === filename) {
                 return path.join(dir, entry.name)
             }
         }
 
+        // Skip common directories that are unlikely to contain custom API files
+        const skipDirs = new Set([
+            'node_modules',
+            '.git',
+            '.next',
+            'dist',
+            'build',
+            'coverage',
+            '.cache',
+            'tmp',
+            'temp'
+        ])
+
         // Recursively search subdirectories
         for (const entry of entries) {
-            if (entry.isDirectory()) {
-                const found = findFileRecursively(
+            if (entry.isDirectory() && !skipDirs.has(entry.name)) {
+                const found = findFileRecursivelyFallback(
                     path.join(dir, entry.name),
                     filename,
                     maxDepth,
@@ -524,7 +596,10 @@ function findFileRecursively(dir, filename, maxDepth = 10, currentDepth = 0) {
             }
         }
     } catch (error) {
-        logMCPMessage(`Error searching directory ${dir}: ${error.message}`)
+        // Silently skip directories we don't have permission to read
+        if (error.code !== 'EACCES' && error.code !== 'EPERM') {
+            logMCPMessage(`Error searching directory ${dir}: ${error.message}`)
+        }
     }
 
     return null
