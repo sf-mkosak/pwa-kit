@@ -15,7 +15,6 @@ import {
     Container,
     Grid,
     GridItem,
-    Heading,
     Stack
 } from '@salesforce/retail-react-app/app/components/shared/ui'
 import useNavigation from '@salesforce/retail-react-app/app/hooks/use-navigation'
@@ -41,25 +40,8 @@ import {
 import {useToast} from '@salesforce/retail-react-app/app/hooks/use-toast'
 import LoadingSpinner from '@salesforce/retail-react-app/app/components/loading-spinner'
 import {getConfig} from '@salesforce/pwa-kit-runtime/utils/ssr-config'
-import {APIProvider} from '@vis.gl/react-google-maps'
 import {useMultiship} from '@salesforce/retail-react-app/app/hooks/use-multiship'
-import resolveGoogleCloudAPIKey from '@salesforce/retail-react-app/app/pages/checkout/util/google-key-resolver'
-
-const GoogleAPIProvider = ({children}) => {
-    const {configurations} = useCheckout()
-    const googleCloudAPIKey = resolveGoogleCloudAPIKey(configurations)
-
-    return googleCloudAPIKey ? (
-        <APIProvider apiKey={googleCloudAPIKey}>{children}</APIProvider>
-    ) : (
-        children
-    )
-}
-
-GoogleAPIProvider.propTypes = {
-    googleCloudAPIKey: PropTypes.string,
-    children: PropTypes.node.isRequired
-}
+import {GoogleAPIProvider} from '@salesforce/retail-react-app/app/pages/checkout/util/google-api-provider'
 
 const Checkout = () => {
     const {formatMessage} = useIntl()
@@ -229,7 +211,7 @@ const CheckoutContainer = () => {
     const {data: customer} = useCurrentCustomer()
     const {data: basket} = useCurrentBasket()
     const {formatMessage} = useIntl()
-   // const {configurations} = useCheckout()
+    // const {configurations} = useCheckout()
     const removeItemFromBasketMutation = useShopperBasketsMutation('removeItemFromBasket')
     const toast = useToast()
     const [isDeletingUnavailableItem, setIsDeletingUnavailableItem] = useState(false)
