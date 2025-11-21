@@ -47,6 +47,7 @@ import {
     getSFPaymentsInstrument,
     createPaymentInstrumentBody
 } from '@salesforce/retail-react-app/app/utils/sf-payments-utils'
+import {useCurrentCustomer} from '@salesforce/retail-react-app/app/hooks/use-current-customer'
 
 const SFPaymentsSheet = forwardRef((props, ref) => {
     const {onRequiresPayButtonChange, onCreateOrder, onError} = props
@@ -54,6 +55,7 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
     const formatMessage = intl.formatMessage
     const queryClient = useQueryClient()
     const navigate = useNavigation()
+    const {data: customer} = useCurrentCustomer()
 
     const {data: basket} = useCurrentBasket()
     const isPickupOnly =
@@ -77,6 +79,32 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
             countryCode: basket?.countryCode || countryCode || 'US' // TODO: remove US when parameter made optional
         }
     })
+
+    const stripeAccountId = paymentConfig
+        ? paymentConfig.paymentMethodSetAccounts.find((account) => account.vendor === 'Stripe')
+              .accountId
+        : null
+    const savedPaymentMethods = stripeAccountId
+        ? customer?.paymentInstruments?.map((paymentInstrument) => {
+              return {
+                  accountId: stripeAccountId,
+                  id: paymentInstrument.paymentCard.creditCardToken,
+                  name: 'FAKE NAME',
+                  type: 'card',
+                  last4: paymentInstrument.paymentCard.numberLastDigits,
+                  gatewayTokenId: paymentInstrument.paymentCard.creditCardToken
+              }
+          })
+        : []
+
+    // {
+    //     accountId: 'acct_1S5ogDImuWDWWthS',
+    //     id: 'pm_1SVHeSImuWDWWthSo4GQwao7',
+    //     name: 'Visa **** 4242',
+    //     type: 'card',
+    //     gatewayTokenId: 'pm_1SVHeSImuWDWWthSo4GQwao7',
+    //     last4: '4242'
+    // }
 
     const zoneId = useShopperConfiguration('zoneId')
     const cardCaptureAutomatic = useAutomaticCapture()
@@ -354,7 +382,18 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
                 },
                 options: {
                     useManualCapture: !cardCaptureAutomatic,
-                    returnUrl: `${window.location.protocol}//${window.location.host}/checkout/payment-processing`
+                    returnUrl: `${window.location.protocol}//${window.location.host}/checkout/payment-processing`,
+                    savedPaymentMethods
+                    // [
+                    //     {
+                    //         accountId: 'acct_1S5ogDImuWDWWthS',
+                    //         id: 'pm_1SVHeSImuWDWWthSo4GQwao7',
+                    //         name: 'Visa **** 4242',
+                    //         type: 'card',
+                    //         gatewayTokenId: 'pm_1SVHeSImuWDWWthSo4GQwao7',
+                    //         last4: '4242'
+                    //     }
+                    // ]
                 }
             }
 
