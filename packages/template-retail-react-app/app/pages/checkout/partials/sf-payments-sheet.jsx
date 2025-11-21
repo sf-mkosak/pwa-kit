@@ -81,30 +81,21 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
     })
 
     const stripeAccountId = paymentConfig
-        ? paymentConfig.paymentMethodSetAccounts.find((account) => account.vendor === 'Stripe')
-              .accountId
+        ? paymentConfig.paymentMethodSetAccounts?.find((account) => account.vendor === 'Stripe')
+              ?.accountId
         : null
     const savedPaymentMethods = stripeAccountId
         ? customer?.paymentInstruments?.map((paymentInstrument) => {
               return {
                   accountId: stripeAccountId,
                   id: paymentInstrument.paymentCard.creditCardToken,
-                  name: 'FAKE NAME',
+                  gatewayId: stripeAccountId,
                   type: 'card',
                   last4: paymentInstrument.paymentCard.numberLastDigits,
                   gatewayTokenId: paymentInstrument.paymentCard.creditCardToken
               }
           })
         : []
-
-    // {
-    //     accountId: 'acct_1S5ogDImuWDWWthS',
-    //     id: 'pm_1SVHeSImuWDWWthSo4GQwao7',
-    //     name: 'Visa **** 4242',
-    //     type: 'card',
-    //     gatewayTokenId: 'pm_1SVHeSImuWDWWthSo4GQwao7',
-    //     last4: '4242'
-    // }
 
     const zoneId = useShopperConfiguration('zoneId')
     const cardCaptureAutomatic = useAutomaticCapture()
@@ -369,9 +360,15 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
 
     useEffect(() => {
         if (sfp && metadata && containerElementRef.current && paymentConfig) {
+            const paymentMethodSetAccounts = paymentConfig.paymentMethodSetAccounts.map(
+                (account) => ({
+                    ...account,
+                    gatewayId: account.accountId
+                })
+            )
             const paymentMethodSet = {
                 paymentMethods: paymentConfig.paymentMethods,
-                paymentMethodSetAccounts: paymentConfig.paymentMethodSetAccounts
+                paymentMethodSetAccounts
             }
 
             config.current = {
@@ -384,16 +381,6 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
                     useManualCapture: !cardCaptureAutomatic,
                     returnUrl: `${window.location.protocol}//${window.location.host}/checkout/payment-processing`,
                     savedPaymentMethods
-                    // [
-                    //     {
-                    //         accountId: 'acct_1S5ogDImuWDWWthS',
-                    //         id: 'pm_1SVHeSImuWDWWthSo4GQwao7',
-                    //         name: 'Visa **** 4242',
-                    //         type: 'card',
-                    //         gatewayTokenId: 'pm_1SVHeSImuWDWWthSo4GQwao7',
-                    //         last4: '4242'
-                    //     }
-                    // ]
                 }
             }
 
