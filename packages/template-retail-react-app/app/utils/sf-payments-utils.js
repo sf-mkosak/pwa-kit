@@ -137,7 +137,8 @@ export const createPaymentInstrumentBody = (
     amount,
     paymentMethodType,
     zoneId,
-    shippingPreference
+    shippingPreference,
+    gatewayProperties
 ) => {
     return {
         paymentMethodId: 'Salesforce Payments',
@@ -145,7 +146,8 @@ export const createPaymentInstrumentBody = (
         paymentReferenceRequest: {
             paymentMethodType: paymentMethodType,
             zoneId: zoneId ?? 'default',
-            shippingPreference: shippingPreference
+            shippingPreference: shippingPreference,
+            gatewayProperties: gatewayProperties
         }
     }
 }

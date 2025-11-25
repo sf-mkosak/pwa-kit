@@ -72,6 +72,7 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
     const {currency} = useCurrency()
     const {countryCode} = useSFPaymentsCountry()
     const {sfp, metadata, startConfirming, endConfirming} = useSFPayments()
+    const [savePaymentMethodForFutureUse, setSavePaymentMethodForFutureUse] = useState(false)
 
     const {data: paymentConfig} = usePaymentConfiguration({
         parameters: {
@@ -96,6 +97,7 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
               }
           })
         : []
+    const showSaveForFutureUsageCheckbox = customer?.isRegistered ? true : false
 
     const zoneId = useShopperConfiguration('zoneId')
     const cardCaptureAutomatic = useAutomaticCapture()
@@ -142,6 +144,8 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
         if (evt.detail.requiresPayButton !== undefined && onRequiresPayButtonChange) {
             onRequiresPayButtonChange(evt.detail.requiresPayButton)
         }
+
+        setSavePaymentMethodForFutureUse(evt.detail.savePaymentMethodForFutureUse)
     }
 
     const handlePaymentButtonApprove = async () => {
@@ -231,7 +235,8 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
         const updatedBasketPaymentInstrument = getSFPaymentsInstrument(updatedBasket)
 
         return {
-            id: updatedBasketPaymentInstrument.paymentReference?.paymentReferenceId
+            id: updatedBasketPaymentInstrument.paymentReference?.paymentReferenceId,
+            setup_future_usage: 'on_session' // TODO: resolve based on configuration
         }
     }
 
@@ -242,13 +247,29 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
         // Find SF Payments payment instrument in created order
         const orderPaymentInstrument = getSFPaymentsInstrument(order)
 
+        const paymentMethodAccount = paymentConfig.paymentMethods.find((paymentMethod) => {
+            return paymentMethod.paymentMethodType === paymentMethodType.current
+        })?.accountId
+        const vendor = paymentConfig.paymentMethodSetAccounts.find(
+            (account) => account.accountId === paymentMethodAccount
+        )?.vendor
+        const gatewayProperties = vendor
+            ? {[vendor.toLowerCase()]: {setup_future_usage: 'on_session'}}
+            : null
+
         // Update order payment instrument to create payment
         const updatedOrder = await updatePaymentInstrumentForOrder({
             parameters: {
                 orderNo: order.orderNo,
                 paymentInstrumentId: orderPaymentInstrument.paymentInstrumentId
             },
-            body: createPaymentInstrumentBody(order.orderTotal, paymentMethodType.current, zoneId)
+            body: createPaymentInstrumentBody(
+                order.orderTotal,
+                paymentMethodType.current,
+                zoneId,
+                null,
+                gatewayProperties
+            )
         })
 
         return updatedOrder
@@ -288,7 +309,8 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
             // Track created payment intent
             const paymentIntent = {
                 client_secret: orderPaymentInstrument.paymentReference.clientSecret,
-                id: orderPaymentInstrument.paymentReference.paymentReferenceId
+                id: orderPaymentInstrument.paymentReference.paymentReferenceId,
+                setup_future_usage: 'on_session' // TODO: resolve based on configuration
             }
 
             // Create payment billing details from basket
@@ -380,7 +402,9 @@ const SFPaymentsSheet = forwardRef((props, ref) => {
                 options: {
                     useManualCapture: !cardCaptureAutomatic,
                     returnUrl: `${window.location.protocol}//${window.location.host}/checkout/payment-processing`,
-                    savedPaymentMethods
+                    savedPaymentMethods,
+                    showSaveForFutureUsageCheckbox,
+                    maximumInitialPaymentMethods: 3
                 }
             }
 
