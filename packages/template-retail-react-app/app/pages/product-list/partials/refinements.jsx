@@ -145,7 +145,7 @@ const Refinements = ({
                                                             toggleFilter={toggleFilter}
                                                         />
                                                     </AccordionPanel>
-                                                </>   
+                                                </>
                                             )
                                         }}
                                     </AccordionItem>

@@ -407,7 +407,9 @@ describe('configureRoutes', function () {
         ]
 
         fuzzyCases.forEach(({urlConfig, expectedRes, ignoredRoutes = []}) => {
-            test(`Should return parameterized routes with fuzzyPathMatching based on ${JSON.stringify(urlConfig)} config${
+            test(`Should return parameterized routes with fuzzyPathMatching based on ${JSON.stringify(
+                urlConfig
+            )} config${
                 ignoredRoutes.length ? ` and ignore routes ${ignoredRoutes.join(',')}` : ''
             }`, () => {
                 const config = {
@@ -441,7 +443,7 @@ describe('configureRoutes', function () {
             // Fuzzy matching should produce significantly fewer routes
             expect(fuzzyRoutes.length).toBeLessThan(explicitRoutes.length)
             // With 2 input routes, fuzzy should produce 4 (2 parameterized + 2 fallback)
-            expect(fuzzyRoutes.length).toBe(4)
+            expect(fuzzyRoutes).toHaveLength(4)
         })
 
         test('Should preserve route properties when using fuzzyPathMatching', () => {
