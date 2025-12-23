@@ -118,34 +118,32 @@ const Refinements = ({
                                                 : '1px solid gray.200'
                                         }
                                     >
-                                        {({isExpanded}) => {
-                                            return (
-                                                <>
-                                                    <AccordionButton
-                                                        paddingTop={0}
-                                                        paddingBottom={isExpanded ? 2 : 0}
+                                        {({isExpanded}) => (
+                                            <>
+                                                <AccordionButton
+                                                    paddingTop={0}
+                                                    paddingBottom={isExpanded ? 2 : 0}
+                                                >
+                                                    <Heading
+                                                        as="h2"
+                                                        flex="1"
+                                                        textAlign="left"
+                                                        fontSize="md"
+                                                        fontWeight={600}
                                                     >
-                                                        <Heading
-                                                            as="h2"
-                                                            flex="1"
-                                                            textAlign="left"
-                                                            fontSize="md"
-                                                            fontWeight={600}
-                                                        >
-                                                            {filter.label}
-                                                        </Heading>
-                                                        <AccordionIcon />
-                                                    </AccordionButton>
-                                                    <AccordionPanel paddingLeft={0}>
-                                                        <Values
-                                                            selectedFilters={selectedFiltersArray}
-                                                            filter={filter}
-                                                            toggleFilter={toggleFilter}
-                                                        />
-                                                    </AccordionPanel>
-                                                </>
-                                            )
-                                        }}
+                                                        {filter.label}
+                                                    </Heading>
+                                                    <AccordionIcon />
+                                                </AccordionButton>
+                                                <AccordionPanel paddingLeft={0}>
+                                                    <Values
+                                                        selectedFilters={selectedFiltersArray}
+                                                        filter={filter}
+                                                        toggleFilter={toggleFilter}
+                                                    />
+                                                </AccordionPanel>
+                                            </>
+                                        )}
                                     </AccordionItem>
                                 </Stack>
                             )
