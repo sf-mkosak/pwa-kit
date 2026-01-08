@@ -164,7 +164,7 @@ export class MetricsSender {
             const metricData = {
                 MetricName: metric.name,
                 Value: metric.value || 0,
-                // This value must be a string
+                // AWS SDK expects a Date object
                 Timestamp:
                     metric.timestamp instanceof Date
                         ? metric.timestamp
