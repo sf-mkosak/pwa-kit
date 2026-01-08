@@ -310,7 +310,7 @@ describe('SSRServer Lambda integration', () => {
             app.metrics._CW = {
                 putMetricData: (params, callback) => {
                     metrics.push(params)
-                    callback(null)
+                    return Promise.resolve()
                 }
             }
             const metricSent = (name) =>
