@@ -308,7 +308,7 @@ describe('SSRServer Lambda integration', () => {
             // track them.
             const metrics = []
             app.metrics._CW = {
-                putMetricData: (params, callback) => {
+                putMetricData: (params) => {
                     metrics.push(params)
                     return Promise.resolve()
                 }
