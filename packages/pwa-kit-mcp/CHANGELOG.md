@@ -1,3 +1,5 @@
+## 0.5.0-preview.1 (Feb 09, 2026)
+
 ## 0.5.0-preview.0 (Feb 06, 2026)
 
 - Retired the pwakit_create_component tool [#3437](https://github.com/SalesforceCommerceCloud/pwa-kit/issues/3437)

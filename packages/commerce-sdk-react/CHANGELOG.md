@@ -1,3 +1,5 @@
+## v5.0.0-preview.1 (Feb 09, 2026)
+
 ## v5.0.0-preview.0 (Feb 06, 2026)
 - Upgrade to commerce-sdk-isomorphic v5.0.0 and introduce Payment Instrument SCAPI integration [#3552](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3552)
 - [Bugfix] Ensure code_verifier can be optional in resetPassword call [#3567](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3567)
