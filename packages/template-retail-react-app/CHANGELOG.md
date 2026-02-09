@@ -1,3 +1,6 @@
+## v9.0.0-preview.1 (Feb 09, 2026)
+- [Bugfix] 1CC Bug Fixes [#3638](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3638)
+
 ## v9.0.0-preview.0 (Feb 06, 2026)
 - [Feature] One Click Checkout [#3552](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3552)
 - [Feature] Add `fuzzyPathMatching` to reduce computational overhead of route generation at time of application load [#3530](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3530)
