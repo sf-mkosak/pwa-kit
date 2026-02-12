@@ -1,3 +1,4 @@
+## v3.16.0 (Feb 12, 2026)
 ## v3.16.0-preview.2 (Feb 12, 2026)
 ## v3.16.0-preview.1 (Feb 09, 2026)
 - Updated the SLAS private client proxy to enable customizing the proxy response body [#3662] https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3662/
