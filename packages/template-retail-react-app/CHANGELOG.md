@@ -10,9 +10,7 @@
 - [Feature] Add translations for text in 1CC [#3703](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3703)
 
 ## v9.0.0 (Feb 12, 2026)
-- [Feature] One Click Checkout [#3552](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3552)
-  - When shoppers use passwordless OTP login with one-click checkout, the system saves their shipping and payment information for faster checkout in the future.
-  - Security safeguards required: (1) Captcha - Protects the passwordless login from bots. (2) OTP for Email Changes - Verifies identity before an email update, prevents accidental account lockouts from typos, and prevents unauthorized access to saved payment methods.
+- [Feature] One Click Checkout (in Developer Preview) [#3552](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3552)
 - [Feature] Add `fuzzyPathMatching` to reduce computational overhead of route generation at time of application load [#3530](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3530)
 - [Bugfix] Fix Passwordless Login landingPath, Reset Password landingPath, and Social Login redirectUri value in config not being used [#3560](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3560)
 - [Feature] PWA Integration with OMS
