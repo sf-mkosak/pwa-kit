@@ -56,7 +56,7 @@ This document describes how **Storefront Next–style** MRT Data Store usage map
 
 - **`template-mrt-reference-app`** — still the **low-level** example: imports `@salesforce/pwa-kit-runtime/utils/ssr-server/data-store`, exposes `/data-store/:key`, returns `{ dataStore: false }` when `isDataStoreAvailable()` is false (typical local dev without MRT env).
 - **`template-retail-react-app`** — optional customer-facing usage of `getCustomSitePreferences` / docs; not required for the runtime wiring above.
-- **Jest:** `pwa-kit-runtime`, `pwa-kit-react-sdk`, and `template-mrt-reference-app` use **`moduleNameMapper`** for `@salesforce/mrt-utilities/middleware` → ESM build slice and **`transformIgnorePatterns`** so Jest can compile mrt-utilities (published CJS entry can still be invalid in plain Node `require`; SSR bundles resolve ESM via webpack).
+- **Jest:** `pwa-kit-runtime`, `pwa-kit-react-sdk`, `pwa-kit-dev`, and `template-mrt-reference-app` use **`moduleNameMapper`** for `@salesforce/mrt-utilities/middleware` → ESM build slice and **`transformIgnorePatterns`** so Jest can compile mrt-utilities (published CJS entry can still be invalid in plain Node `require`; SSR bundles resolve ESM via webpack). **`pwa-kit-dev`** needs this because tests load **`pwa-kit-runtime` `dist`**, which `require()`s the middleware entry.
 
 ---
 
