@@ -53,7 +53,9 @@ describe('ssr-global-preferences', () => {
     describe('server', () => {
         describe('buildCustomGlobalPreferencesDataStoreKey', () => {
             test('returns fixed global key', () => {
-                expect(buildCustomGlobalPreferencesDataStoreKey()).toBe(CUSTOM_GLOBAL_PREFERENCES_DATA_STORE_KEY)
+                expect(buildCustomGlobalPreferencesDataStoreKey()).toBe(
+                    CUSTOM_GLOBAL_PREFERENCES_DATA_STORE_KEY
+                )
             })
         })
 
@@ -107,7 +109,9 @@ describe('ssr-global-preferences', () => {
             test('rethrows unexpected errors from getEntry', async () => {
                 const store = DataStore.getDataStore()
                 jest.spyOn(store, 'getEntry').mockRejectedValue(new Error('unexpected'))
-                await expect(resolveCustomGlobalPreferencesForRequest()).rejects.toThrow('unexpected')
+                await expect(resolveCustomGlobalPreferencesForRequest()).rejects.toThrow(
+                    'unexpected'
+                )
                 store.getEntry.mockRestore()
             })
         })

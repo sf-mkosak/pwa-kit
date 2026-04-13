@@ -5,10 +5,7 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import {
-    DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY,
-    DATA_STORE_WINDOW_GLOBAL
-} from './constants'
+import {DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY, DATA_STORE_WINDOW_GLOBAL} from './constants'
 
 /**
  * Returns custom global preferences serialized during SSR (`#mobify-data` → `window`).

@@ -52,12 +52,14 @@ describe('ssr-site-preferences', () => {
     describe('server', () => {
         describe('buildCustomSitePreferencesDataStoreKey', () => {
             test('returns null for empty site id', () => {
-                expect(buildCustomSitePreferencesDataStoreKey()).toBe(null)
-                expect(buildCustomSitePreferencesDataStoreKey('')).toBe(null)
+                expect(buildCustomSitePreferencesDataStoreKey()).toBeNull()
+                expect(buildCustomSitePreferencesDataStoreKey('')).toBeNull()
             })
 
             test('returns site-scoped key', () => {
-                expect(buildCustomSitePreferencesDataStoreKey('RefArch')).toBe('RefArch-custom-site-preferences')
+                expect(buildCustomSitePreferencesDataStoreKey('RefArch')).toBe(
+                    'RefArch-custom-site-preferences'
+                )
             })
         })
 
@@ -87,39 +89,51 @@ describe('ssr-site-preferences', () => {
 
             test('returns empty object when data store unavailable', async () => {
                 delete process.env.AWS_REGION
-                await expect(resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})).resolves.toEqual({})
+                await expect(
+                    resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})
+                ).resolves.toEqual({})
             })
 
             test('returns value object from Data Store', async () => {
                 mockSend.mockResolvedValue({Item: {value: {flag: true}}})
-                await expect(resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})).resolves.toEqual({
+                await expect(
+                    resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})
+                ).resolves.toEqual({
                     flag: true
                 })
             })
 
             test('returns empty object on not found', async () => {
                 mockSend.mockResolvedValue({})
-                await expect(resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})).resolves.toEqual({})
+                await expect(
+                    resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})
+                ).resolves.toEqual({})
             })
 
             test('returns empty object on service error', async () => {
                 mockSend.mockRejectedValue(new Error('throttle'))
-                await expect(resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})).resolves.toEqual({})
+                await expect(
+                    resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})
+                ).resolves.toEqual({})
             })
 
             test('returns empty object when stored value is not a plain object', async () => {
                 mockSend.mockResolvedValue({Item: {value: [1, 2]}})
-                await expect(resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})).resolves.toEqual({})
+                await expect(
+                    resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})
+                ).resolves.toEqual({})
                 mockSend.mockResolvedValue({Item: {value: 'not-an-object'}})
-                await expect(resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})).resolves.toEqual({})
+                await expect(
+                    resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})
+                ).resolves.toEqual({})
             })
 
             test('rethrows unexpected errors from getEntry', async () => {
                 const store = DataStore.getDataStore()
                 jest.spyOn(store, 'getEntry').mockRejectedValue(new Error('unexpected'))
-                await expect(resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})).rejects.toThrow(
-                    'unexpected'
-                )
+                await expect(
+                    resolveCustomSitePreferencesForRequest({siteId: 'RefArch'})
+                ).rejects.toThrow('unexpected')
                 store.getEntry.mockRestore()
             })
         })

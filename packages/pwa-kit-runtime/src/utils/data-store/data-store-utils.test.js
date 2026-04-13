@@ -5,11 +5,7 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import {
-    DataStore,
-    DataStoreNotFoundError,
-    DataStoreServiceError
-} from '../ssr-server/data-store'
+import {DataStore, DataStoreNotFoundError, DataStoreServiceError} from '../ssr-server/data-store'
 import {getPlainObjectForDataStoreKey} from './data-store-utils'
 
 const baseOptions = () => ({
@@ -100,7 +96,9 @@ describe('data-store-utils', () => {
 
         test('returns {} when getEntry throws DataStoreServiceError', async () => {
             const store = DataStore.getDataStore()
-            jest.spyOn(store, 'getEntry').mockRejectedValue(new DataStoreServiceError('unavailable'))
+            jest.spyOn(store, 'getEntry').mockRejectedValue(
+                new DataStoreServiceError('unavailable')
+            )
             await expect(
                 getPlainObjectForDataStoreKey({...baseOptions(), dataStoreKey: 'my-key'})
             ).resolves.toEqual({})
