@@ -1,4 +1,9 @@
 ## v3.18.0-dev (Mar 20, 2026)
+- Delegate `utils/ssr-server/data-store` to **`@salesforce/mrt-utilities`** (re-export `DataStore` and error classes from `@salesforce/mrt-utilities/middleware`). Remove direct `@aws-sdk/client-dynamodb` and `@aws-sdk/lib-dynamodb` dependencies from this package (still transitive via mrt-utilities).
+- Add `getCustomGlobalPreferences()` from **`utils/data-store/ssr-global-preferences`** and shared DAL helpers under **`utils/data-store/`** (`constants`, `context`, `data-store-utils` with `getPlainObjectForDataStoreKey`, site/global resolvers). Client reads `window.__MRT_DATA_STORE__.customGlobalPreferences`. Data Store key for global preferences: `custom-global-preferences` (confirm with MRT).
+- Add `getCustomSitePreferences()` from **`utils/data-store/ssr-site-preferences`** and SSR serialization under `window.__MRT_DATA_STORE__.customSitePreferences` via the React rendering pipeline. Data Store key pattern: `<siteId>-custom-site-preferences` (confirm with MRT).
+- **`utils/data-store/context`:** rename `runWithDalSsrBootstrap` → **`runWithMrtDataStoreContext`** and `getDalSsrBootstrapFromContext` → **`getMrtDataStoreFromContext`** (re-exported from **`utils/ssr-server`**).
+- Add `DataStore` test hooks `_testDocumentClient` and `_testLogMRTError` aligned with `@salesforce/mrt-utilities`.
 - Add additional logging and error handling for SLAS error handling [#3750](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3750)
 
 ## v3.17.1 (Mar 20, 2026)

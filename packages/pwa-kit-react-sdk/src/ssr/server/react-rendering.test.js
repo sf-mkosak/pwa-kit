@@ -17,6 +17,11 @@ import {parse} from 'node-html-parser'
 import {initializeServerTracing, shutdownServerTracing} from './opentelemetry-server'
 import path from 'path'
 import {isRemote} from '@salesforce/pwa-kit-runtime/utils/ssr-server'
+import {
+    DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY,
+    DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY,
+    DATA_STORE_WINDOW_GLOBAL
+} from '@salesforce/pwa-kit-runtime/utils/data-store/constants'
 import {getAppConfig} from '../universal/compatibility'
 import {randomUUID} from 'crypto'
 import {getLocationSearch} from './react-rendering'
@@ -823,6 +828,19 @@ describe('Additional branch coverage for react-rendering', () => {
         const res = await request(app).get('/render-throws-error/')
         const data = JSON.parse(parse(res.text).querySelector('#mobify-data').innerHTML)
         expect(typeof data.__ERROR__.stack).toBe('string')
+    })
+
+    test('includes serialized custom site and global preferences in #mobify-data', async () => {
+        const app = RemoteServerFactory._createApp(opts())
+        app.get('/*', render)
+        const res = await request(app).get('/pwa/')
+        expect(res.statusCode).toBe(200)
+        const data = JSON.parse(parse(res.text).querySelector('#mobify-data').innerHTML)
+        expect(data).toHaveProperty(DATA_STORE_WINDOW_GLOBAL)
+        expect(data[DATA_STORE_WINDOW_GLOBAL]).toEqual({
+            [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: {},
+            [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: {}
+        })
     })
 
     test('handles pretty print mode with mobify_pretty', async () => {

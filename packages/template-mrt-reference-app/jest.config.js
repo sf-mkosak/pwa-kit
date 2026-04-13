@@ -4,10 +4,31 @@
  * SPDX-License-Identifier: BSD-3-Clause
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+const path = require('path')
 const base = require('@salesforce/pwa-kit-dev/configs/jest/jest.config.js')
+
+const mrtMiddlewareDataStore = path.join(
+    __dirname,
+    '..',
+    'pwa-kit-runtime',
+    'node_modules',
+    '@salesforce',
+    'mrt-utilities',
+    'dist',
+    'esm',
+    'middleware',
+    'data-store.js'
+)
 
 module.exports = {
     ...base,
+    moduleNameMapper: {
+        ...base.moduleNameMapper,
+        '^@salesforce/mrt-utilities/middleware$': mrtMiddlewareDataStore
+    },
+    transformIgnorePatterns: [
+        'node_modules/(?!(@salesforce/mrt-utilities|jsdom/lib/jsdom/browser/resources/resource-loader))'
+    ],
     coverageThreshold: {
         global: {
             branches: 50,
