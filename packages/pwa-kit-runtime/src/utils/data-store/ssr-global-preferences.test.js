@@ -15,7 +15,7 @@ import {
 import {getCustomGlobalPreferences} from './ssr-global-preferences.client'
 import {
     buildCustomGlobalPreferencesDataStoreKey,
-    resolveCustomGlobalPreferencesForRequest
+    getCustomGlobalPreferences as fetchCustomGlobalPreferencesForSsr
 } from './ssr-global-preferences.server'
 
 describe('ssr-global-preferences', () => {
@@ -59,7 +59,7 @@ describe('ssr-global-preferences', () => {
             })
         })
 
-        describe('resolveCustomGlobalPreferencesForRequest', () => {
+        describe('getCustomGlobalPreferences', () => {
             const originalEnv = {...process.env}
             let mockSend
 
@@ -81,37 +81,35 @@ describe('ssr-global-preferences', () => {
 
             test('returns empty object when data store unavailable', async () => {
                 delete process.env.AWS_REGION
-                await expect(resolveCustomGlobalPreferencesForRequest()).resolves.toEqual({})
+                await expect(fetchCustomGlobalPreferencesForSsr()).resolves.toEqual({})
             })
 
             test('returns value object from Data Store', async () => {
                 mockSend.mockResolvedValue({Item: {value: {orgFlag: true}}})
-                await expect(resolveCustomGlobalPreferencesForRequest()).resolves.toEqual({
+                await expect(fetchCustomGlobalPreferencesForSsr()).resolves.toEqual({
                     orgFlag: true
                 })
             })
 
             test('returns empty object on not found', async () => {
                 mockSend.mockResolvedValue({})
-                await expect(resolveCustomGlobalPreferencesForRequest()).resolves.toEqual({})
+                await expect(fetchCustomGlobalPreferencesForSsr()).resolves.toEqual({})
             })
 
             test('returns empty object on service error', async () => {
                 mockSend.mockRejectedValue(new Error('throttle'))
-                await expect(resolveCustomGlobalPreferencesForRequest()).resolves.toEqual({})
+                await expect(fetchCustomGlobalPreferencesForSsr()).resolves.toEqual({})
             })
 
             test('returns empty object when stored value is not a plain object', async () => {
                 mockSend.mockResolvedValue({Item: {value: [1, 2]}})
-                await expect(resolveCustomGlobalPreferencesForRequest()).resolves.toEqual({})
+                await expect(fetchCustomGlobalPreferencesForSsr()).resolves.toEqual({})
             })
 
             test('rethrows unexpected errors from getEntry', async () => {
                 const store = DataStore.getDataStore()
                 jest.spyOn(store, 'getEntry').mockRejectedValue(new Error('unexpected'))
-                await expect(resolveCustomGlobalPreferencesForRequest()).rejects.toThrow(
-                    'unexpected'
-                )
+                await expect(fetchCustomGlobalPreferencesForSsr()).rejects.toThrow('unexpected')
                 store.getEntry.mockRestore()
             })
         })

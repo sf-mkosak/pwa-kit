@@ -26,9 +26,9 @@ import {
     DATA_STORE_WINDOW_GLOBAL
 } from '@salesforce/pwa-kit-runtime/utils/data-store/constants'
 import {
-    resolveCustomGlobalPreferencesForRequest,
-    resolveCustomSitePreferencesForRequest,
-    runWithMrtDataStoreContext
+    getCustomGlobalPreferences,
+    getCustomSitePreferences,
+    isMrtDataStoreEnabled
 } from '@salesforce/pwa-kit-runtime/utils/ssr-server'
 import {getConfig} from '@salesforce/pwa-kit-runtime/utils/ssr-config'
 import {NO_CACHE} from '@salesforce/pwa-kit-runtime/ssr/server/constants'
@@ -146,147 +146,148 @@ const performRender = async (req, res, next) => {
 
     AppConfig.restore(res.locals)
 
-    // MRT Data Store: site id is set on `res.locals` by `AppConfig.restore` above; fetch both
-    // payloads in parallel for `__MRT_DATA_STORE__` / server-side getters during this render.
-    const [customSitePreferences, customGlobalPreferences] = await Promise.all([
-        resolveCustomSitePreferencesForRequest({
-            siteId: res.locals.site?.id
-        }),
-        resolveCustomGlobalPreferencesForRequest()
-    ])
+    // MRT Data Store (opt-in): when disabled, skip preference resolution and omit `__MRT_DATA_STORE__` from
+    // `#mobify-data`. Enable via `app.mrtDataStore.enabled` or `PWAKIT_MRT_DATA_STORE_ENABLED=true`.
+    // When enabled, data comes from the real MRT Data Store when `AWS_REGION`, `MOBIFY_PROPERTY_ID`, and
+    // `DEPLOY_TARGET` are set; otherwise local dev may use `@salesforce/pwa-kit-dev` (see `getPlainObjectForDataStoreKey`).
+    const mrtDataStoreEnabled = isMrtDataStoreEnabled(config)
+    let customSitePreferences = {}
+    let customGlobalPreferences = {}
+    if (mrtDataStoreEnabled) {
+        ;[customSitePreferences, customGlobalPreferences] = await Promise.all([
+            getCustomSitePreferences({
+                siteId: res.locals.site?.id
+            }),
+            getCustomGlobalPreferences()
+        ])
+    }
 
-    // Bind resolved prefs with `runWithMrtDataStoreContext` so `getCustomSitePreferences()` /
-    // `getCustomGlobalPreferences()` (no `req`/`res` args) see the right objects under concurrency.
-    return runWithMrtDataStoreContext(
-        {customSitePreferences, customGlobalPreferences},
-        async () => {
-            const routes = getRoutes(res.locals)
-            const WrappedApp = routeComponent(App, false, res.locals)
+    const routes = getRoutes(res.locals)
+    const WrappedApp = routeComponent(App, false, res.locals)
 
-            const [pathname] = req.originalUrl.split('?')
+    const [pathname] = req.originalUrl.split('?')
 
-            const location = {
-                pathname,
-                search: getLocationSearch(req, {
-                    interpretPlusSignAsSpace: config?.app?.url?.interpretPlusSignAsSpace
-                })
-            }
+    const location = {
+        pathname,
+        search: getLocationSearch(req, {
+            interpretPlusSignAsSpace: config?.app?.url?.interpretPlusSignAsSpace
+        })
+    }
 
-            // Step 1 - Find the match.
-            res.__performanceTimer.mark(PERFORMANCE_MARKS.routeMatching, 'start')
-            let route
-            let match
+    // Step 1 - Find the match.
+    res.__performanceTimer.mark(PERFORMANCE_MARKS.routeMatching, 'start')
+    let route
+    let match
 
-            routes.some((_route) => {
-                const _match = matchPath(req.path, _route)
-                if (_match) {
-                    match = _match
-                    route = _route
-                }
-                return !!match
-            })
-            res.__performanceTimer.mark(PERFORMANCE_MARKS.routeMatching, 'end')
-
-            // Step 2 - Get the component
-            res.__performanceTimer.mark(PERFORMANCE_MARKS.loadComponent, 'start')
-            const component = await route.component.getComponent()
-            res.__performanceTimer.mark(PERFORMANCE_MARKS.loadComponent, 'end')
-
-            // Step 3 - Init the app state
-            const props = {
-                error: null,
-                appState: {},
-                routerContext: {},
-                req,
-                res,
-                App: WrappedApp,
-                routes,
-                location
-            }
-            let appJSX = <OuterApp {...props} />
-
-            let appState, appStateError
-
-            if (component === Throw404) {
-                appState = {}
-                appStateError = new errors.HTTPNotFound('Not found')
-            } else {
-                res.__performanceTimer.mark(PERFORMANCE_MARKS.fetchStrategies, 'start')
-                const ret = await AppConfig.initAppState({
-                    App: WrappedApp,
-                    component,
-                    match,
-                    route,
-                    req,
-                    res,
-                    location,
-                    appJSX
-                })
-                appState = {
-                    ...ret.appState,
-                    __STATE_MANAGEMENT_LIBRARY: AppConfig.freeze(res.locals)
-                }
-                appStateError = ret.error
-                res.__performanceTimer.mark(PERFORMANCE_MARKS.fetchStrategies, 'end')
-            }
-            res.__performanceTimer.mark(PERFORMANCE_MARKS.renderToString, 'start')
-            appJSX = React.cloneElement(appJSX, {error: appStateError, appState})
-
-            // Step 4 - Render the App
-            let renderResult
-            try {
-                renderResult = renderApp({
-                    App: WrappedApp,
-                    appState,
-                    appStateError: appStateError && logAndFormatError(appStateError),
-                    routes,
-                    req,
-                    res,
-                    location,
-                    config,
-                    appJSX,
-                    customSitePreferences,
-                    customGlobalPreferences
-                })
-            } catch (e) {
-                // This is an unrecoverable error.
-                // (errors handled by the AppErrorBoundary are considered recoverable)
-                // Here, we use Express's convention to invoke error middleware.
-                // Note, we don't have an error handling middleware yet! This is calling the
-                // default error handling middleware provided by Express
-                res.__performanceTimer.cleanup()
-                shutdownServerTracing()
-                return next(e)
-            }
-
-            // Step 5 - Determine what is going to happen, redirect, or send html with
-            // the correct status code.
-            const {html, routerContext, error} = renderResult
-            const redirectUrl = routerContext.url
-            const status = (error && error.status) || res.statusCode
-            res.__performanceTimer.mark(PERFORMANCE_MARKS.renderToString, 'end')
-            res.__performanceTimer.mark(PERFORMANCE_MARKS.total, 'end')
-            res.__performanceTimer.log()
-
-            if (shouldTrackPerformance(req)) {
-                res.setHeader('Server-Timing', res.__performanceTimer.buildServerTimingHeader())
-                // Override cache-control header to no caching when __server_timing is used
-                // This happens after React rendering is complete, ensuring it overrides any
-                // cache headers set by individual page components
-                res.set('Cache-Control', NO_CACHE)
-            }
-
-            // Cleanup performance timer and OpenTelemetry tracing after response is sent
-            res.__performanceTimer.cleanup()
-            shutdownServerTracing()
-
-            if (redirectUrl) {
-                res.redirect(routerContext.status || 302, redirectUrl)
-            } else {
-                res.status(status).send(html)
-            }
+    routes.some((_route) => {
+        const _match = matchPath(req.path, _route)
+        if (_match) {
+            match = _match
+            route = _route
         }
-    )
+        return !!match
+    })
+    res.__performanceTimer.mark(PERFORMANCE_MARKS.routeMatching, 'end')
+
+    // Step 2 - Get the component
+    res.__performanceTimer.mark(PERFORMANCE_MARKS.loadComponent, 'start')
+    const component = await route.component.getComponent()
+    res.__performanceTimer.mark(PERFORMANCE_MARKS.loadComponent, 'end')
+
+    // Step 3 - Init the app state
+    const props = {
+        error: null,
+        appState: {},
+        routerContext: {},
+        req,
+        res,
+        App: WrappedApp,
+        routes,
+        location
+    }
+    let appJSX = <OuterApp {...props} />
+
+    let appState, appStateError
+
+    if (component === Throw404) {
+        appState = {}
+        appStateError = new errors.HTTPNotFound('Not found')
+    } else {
+        res.__performanceTimer.mark(PERFORMANCE_MARKS.fetchStrategies, 'start')
+        const ret = await AppConfig.initAppState({
+            App: WrappedApp,
+            component,
+            match,
+            route,
+            req,
+            res,
+            location,
+            appJSX
+        })
+        appState = {
+            ...ret.appState,
+            __STATE_MANAGEMENT_LIBRARY: AppConfig.freeze(res.locals)
+        }
+        appStateError = ret.error
+        res.__performanceTimer.mark(PERFORMANCE_MARKS.fetchStrategies, 'end')
+    }
+    res.__performanceTimer.mark(PERFORMANCE_MARKS.renderToString, 'start')
+    appJSX = React.cloneElement(appJSX, {error: appStateError, appState})
+
+    // Step 4 - Render the App
+    let renderResult
+    try {
+        renderResult = renderApp({
+            App: WrappedApp,
+            appState,
+            appStateError: appStateError && logAndFormatError(appStateError),
+            routes,
+            req,
+            res,
+            location,
+            config,
+            appJSX,
+            customSitePreferences,
+            customGlobalPreferences,
+            mrtDataStoreBootstrapEnabled: mrtDataStoreEnabled
+        })
+    } catch (e) {
+        // This is an unrecoverable error.
+        // (errors handled by the AppErrorBoundary are considered recoverable)
+        // Here, we use Express's convention to invoke error middleware.
+        // Note, we don't have an error handling middleware yet! This is calling the
+        // default error handling middleware provided by Express
+        res.__performanceTimer.cleanup()
+        shutdownServerTracing()
+        return next(e)
+    }
+
+    // Step 5 - Determine what is going to happen, redirect, or send html with
+    // the correct status code.
+    const {html, routerContext, error} = renderResult
+    const redirectUrl = routerContext.url
+    const status = (error && error.status) || res.statusCode
+    res.__performanceTimer.mark(PERFORMANCE_MARKS.renderToString, 'end')
+    res.__performanceTimer.mark(PERFORMANCE_MARKS.total, 'end')
+    res.__performanceTimer.log()
+
+    if (shouldTrackPerformance(req)) {
+        res.setHeader('Server-Timing', res.__performanceTimer.buildServerTimingHeader())
+        // Override cache-control header to no caching when __server_timing is used
+        // This happens after React rendering is complete, ensuring it overrides any
+        // cache headers set by individual page components
+        res.set('Cache-Control', NO_CACHE)
+    }
+
+    // Cleanup performance timer and OpenTelemetry tracing after response is sent
+    res.__performanceTimer.cleanup()
+    shutdownServerTracing()
+
+    if (redirectUrl) {
+        res.redirect(routerContext.status || 302, redirectUrl)
+    } else {
+        res.status(status).send(html)
+    }
 }
 
 export const render = (req, res, next) => {
@@ -341,7 +342,8 @@ const renderApp = (args) => {
         appState,
         config,
         customSitePreferences,
-        customGlobalPreferences
+        customGlobalPreferences,
+        mrtDataStoreBootstrapEnabled = false
     } = args
     const extractor = new ChunkExtractor({statsFile: BUNDLES_PATH, publicPath: getAssetUrl()})
 
@@ -406,14 +408,17 @@ const renderApp = (args) => {
         __CONFIG__: config,
         __PRELOADED_STATE__: appState,
         __ERROR__: error,
-        [DATA_STORE_WINDOW_GLOBAL]: {
-            [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: customSitePreferences ?? {},
-            [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: customGlobalPreferences ?? {}
-        },
         __MRT_ENV_BASE_PATH__: process.env.MRT_ENV_BASE_PATH || '',
         // `window.Progressive` has a long history at Mobify and some
         // client-side code depends on it. Maintain its name out of tradition.
         Progressive: getWindowProgressive(req, res)
+    }
+
+    if (mrtDataStoreBootstrapEnabled) {
+        windowGlobals[DATA_STORE_WINDOW_GLOBAL] = {
+            [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: customSitePreferences ?? {},
+            [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: customGlobalPreferences ?? {}
+        }
     }
 
     const scripts = [

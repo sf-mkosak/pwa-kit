@@ -20,11 +20,23 @@ const mrtMiddlewareDataStore = path.join(
     'data-store.js'
 )
 
+const pwaKitDevLocalMrtDataStore = path.join(
+    __dirname,
+    '..',
+    'pwa-kit-dev',
+    'src',
+    'utils',
+    'mrt-data-store-local-provider.js'
+)
+
 module.exports = {
     ...base,
     moduleNameMapper: {
         ...base.moduleNameMapper,
-        '^@salesforce/mrt-utilities/middleware$': mrtMiddlewareDataStore
+        '^@salesforce/mrt-utilities/middleware$': mrtMiddlewareDataStore,
+        '^@salesforce/pwa-kit-dev/dist/utils/mrt-data-store-local-provider\\.js$':
+            pwaKitDevLocalMrtDataStore,
+        '^@salesforce/pwa-kit-dev/utils/mrt-data-store-local-provider\\.js$': pwaKitDevLocalMrtDataStore
     },
     transformIgnorePatterns: [
         'node_modules/(?!(@salesforce/mrt-utilities|jsdom/lib/jsdom/browser/resources/resource-loader))'

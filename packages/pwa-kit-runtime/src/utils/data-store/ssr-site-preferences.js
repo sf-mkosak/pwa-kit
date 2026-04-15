@@ -5,7 +5,7 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-// Conditional export: server uses AsyncLocalStorage during SSR; client reads window global.
+// Conditional export: server bundle fetches from the Data Store; client reads `window.__MRT_DATA_STORE__`.
 /* global WEBPACK_TARGET */
 
 /* istanbul ignore next */

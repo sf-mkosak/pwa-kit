@@ -6,15 +6,7 @@
  */
 
 import {CUSTOM_GLOBAL_PREFERENCES_DATA_STORE_KEY} from './constants'
-import {getMrtDataStoreFromContext} from './context'
 import {getPlainObjectForDataStoreKey} from './data-store-utils'
-
-/**
- * @returns {Record<string, unknown>}
- */
-export function getCustomGlobalPreferencesFromContext() {
-    return getMrtDataStoreFromContext().customGlobalPreferences
-}
 
 /**
  * Data Store key for custom global preferences (fixed; not site-scoped).
@@ -25,25 +17,15 @@ export function buildCustomGlobalPreferencesDataStoreKey() {
 }
 
 /**
- * Load custom global preferences from the MRT Data Store for SSR.
+ * Fetch custom global preferences from the MRT Data Store for SSR (server-only async API).
  * Returns `{}` when the store is unavailable, the key is missing, or the value is not a plain object.
  *
  * @returns {Promise<Record<string, unknown>>}
  */
-export async function resolveCustomGlobalPreferencesForRequest() {
+export async function getCustomGlobalPreferences() {
     return getPlainObjectForDataStoreKey({
-        dataStoreKey: CUSTOM_GLOBAL_PREFERENCES_DATA_STORE_KEY,
+        dataStoreKey: buildCustomGlobalPreferencesDataStoreKey(),
         logNamespace: 'custom-global-preferences',
         serviceErrorMessage: 'Custom global preferences Data Store request failed'
     })
-}
-
-/**
- * Returns custom global preferences for the current SSR request.
- * Only populated inside `runWithMrtDataStoreContext` (during React SSR).
- *
- * @returns {Record<string, unknown>}
- */
-export function getCustomGlobalPreferences() {
-    return getCustomGlobalPreferencesFromContext()
 }

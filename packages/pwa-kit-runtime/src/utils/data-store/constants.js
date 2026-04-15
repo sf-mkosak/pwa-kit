@@ -11,7 +11,10 @@
  * and matching properties under `DATA_STORE_WINDOW_GLOBAL`.
  */
 
-/** Single `window` / `#mobify-data` key for all SSR-serialized Data Store bootstrap JSON. */
+/**
+ * Single `window` / `#mobify-data` key for SSR-serialized Data Store bootstrap JSON.
+ * Omitted entirely when `isMrtDataStoreEnabled` is false (not serialized as `{}`).
+ */
 export const DATA_STORE_WINDOW_GLOBAL = '__MRT_DATA_STORE__'
 
 /**
