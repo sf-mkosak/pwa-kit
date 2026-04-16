@@ -8,7 +8,7 @@
 const path = require('path')
 const base = require('internal-lib-build/configs/jest/jest.config')
 
-// pwa-kit-runtime re-exports DataStore from @salesforce/mrt-utilities; Jest loads compiled
+// pwa-kit-runtime re-exports DataStore from @salesforce/mrt-utilities/data-store; Jest loads compiled
 // runtime dist which uses require(). Map to compiled ESM data-store only (see pwa-kit-runtime jest.config).
 const mrtMiddlewareDataStore = path.join(
     __dirname,
@@ -36,7 +36,7 @@ module.exports = {
     ...base,
     moduleNameMapper: {
         ...base.moduleNameMapper,
-        '^@salesforce/mrt-utilities/middleware$': mrtMiddlewareDataStore,
+        '^@salesforce/mrt-utilities/data-store$': mrtMiddlewareDataStore,
         '^@salesforce/pwa-kit-dev/dist/utils/mrt-data-store-local-provider\\.js$':
             pwaKitDevLocalMrtDataStore,
         '^@salesforce/pwa-kit-dev/utils/mrt-data-store-local-provider\\.js$':

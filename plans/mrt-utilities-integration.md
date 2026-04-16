@@ -37,7 +37,7 @@ This document describes how **Storefront Next–style** MRT Data Store usage map
 
 | Area | Implementation |
 |------|------------------|
-| **Data Store I/O** | [`utils/ssr-server/data-store.js`](../packages/pwa-kit-runtime/src/utils/ssr-server/data-store.js) **re-exports** `DataStore`, `DataStoreNotFoundError`, `DataStoreServiceError`, `DataStoreUnavailableError` from `@salesforce/mrt-utilities/middleware`. No duplicate DynamoDB logic in pwa-kit. |
+| **Data Store I/O** | [`utils/ssr-server/data-store.js`](../packages/pwa-kit-runtime/src/utils/ssr-server/data-store.js) **re-exports** `DataStore`, `DataStoreNotFoundError`, `DataStoreServiceError`, `DataStoreUnavailableError` from **`@salesforce/mrt-utilities/data-store`**. Pin **`@salesforce/mrt-utilities`** to a release that exposes **`exports["./data-store"]`**. No duplicate DynamoDB logic in pwa-kit. |
 | **Shared fetch helper** | [`utils/data-store/data-store-utils.js`](../packages/pwa-kit-runtime/src/utils/data-store/data-store-utils.js) — **`getPlainObjectForDataStoreKey`** (null key / unavailable real store → optional **local dev** in-memory provider via [`local-dev-provider-loader.js`](../packages/pwa-kit-runtime/src/utils/data-store/local-dev-provider-loader.js); else `{}`; not found / service error → `{}`; plain object pass-through; unexpected errors rethrown). Unit tests: `data-store-utils.test.js`, `local-dev-provider-loader.test.js`. |
 | **Site prefs** | `ssr-site-preferences.js` → server: **`getCustomSitePreferences`** + `buildCustomSitePreferencesDataStoreKey`; client: **`getCustomSitePreferences`** reads nested site key from `__MRT_DATA_STORE__`. Tests: `ssr-site-preferences.test.js` (client + server suites). |
 | **Global prefs** | `ssr-global-preferences.js` — same split for org-wide key `custom-global-preferences`. Tests: `ssr-global-preferences.test.js`. |
@@ -55,7 +55,7 @@ This document describes how **Storefront Next–style** MRT Data Store usage map
 
 - **`template-mrt-reference-app`** — still the **low-level** example: imports `@salesforce/pwa-kit-runtime/utils/ssr-server/data-store`, exposes `/data-store/:key`, returns `{ dataStore: false }` when `isDataStoreAvailable()` is false (typical local dev without MRT env).
 - **`template-retail-react-app`** — optional customer-facing usage of `getCustomSitePreferences` / docs; not required for the runtime wiring above.
-- **Jest:** `pwa-kit-runtime`, `pwa-kit-react-sdk`, `pwa-kit-dev`, and `template-mrt-reference-app` use **`moduleNameMapper`** for `@salesforce/mrt-utilities/middleware` → ESM build slice and **`transformIgnorePatterns`** so Jest can compile mrt-utilities (published CJS entry can still be invalid in plain Node `require`; SSR bundles resolve ESM via webpack). **`pwa-kit-dev`** needs this because tests load **`pwa-kit-runtime` `dist`**, which `require()`s the middleware entry.
+- **Jest:** `pwa-kit-runtime`, `pwa-kit-react-sdk`, `pwa-kit-dev`, and `template-mrt-reference-app` use **`moduleNameMapper`** for **`@salesforce/mrt-utilities/data-store`** and legacy **`@salesforce/mrt-utilities/middleware`** → ESM Data Store slice and **`transformIgnorePatterns`** so Jest can compile mrt-utilities (published CJS entry can still be invalid in plain Node `require`; SSR bundles resolve ESM via webpack). **`pwa-kit-dev`** needs this because tests load **`pwa-kit-runtime` `dist`**, which `require()`s the resolved entry.
 
 ---
 

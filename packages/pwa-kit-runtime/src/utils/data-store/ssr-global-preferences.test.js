@@ -6,6 +6,7 @@
  */
 
 import {DataStore} from '../ssr-server/data-store'
+import {resetDataStoreProviderCacheForTests} from './data-store-utils'
 import {
     CUSTOM_GLOBAL_PREFERENCES_DATA_STORE_KEY,
     DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY,
@@ -64,6 +65,7 @@ describe('ssr-global-preferences', () => {
             let mockSend
 
             beforeEach(() => {
+                resetDataStoreProviderCacheForTests()
                 process.env.AWS_REGION = 'us-east-1'
                 process.env.MOBIFY_PROPERTY_ID = 'proj'
                 process.env.DEPLOY_TARGET = 'production'
@@ -77,6 +79,7 @@ describe('ssr-global-preferences', () => {
                 process.env = originalEnv
                 DataStore._instance = null
                 DataStore._testDocumentClient = null
+                resetDataStoreProviderCacheForTests()
             })
 
             test('returns empty object when data store unavailable', async () => {

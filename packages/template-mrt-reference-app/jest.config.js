@@ -33,7 +33,7 @@ module.exports = {
     ...base,
     moduleNameMapper: {
         ...base.moduleNameMapper,
-        '^@salesforce/mrt-utilities/middleware$': mrtMiddlewareDataStore,
+        '^@salesforce/mrt-utilities/data-store$': mrtMiddlewareDataStore,
         '^@salesforce/pwa-kit-dev/dist/utils/mrt-data-store-local-provider\\.js$':
             pwaKitDevLocalMrtDataStore,
         '^@salesforce/pwa-kit-dev/utils/mrt-data-store-local-provider\\.js$': pwaKitDevLocalMrtDataStore

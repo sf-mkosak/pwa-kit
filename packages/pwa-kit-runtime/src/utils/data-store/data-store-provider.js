@@ -14,7 +14,10 @@
 
 import createLogger from '../logger-factory'
 import {DataStore} from '../ssr-server/data-store'
-import {isMrtDataStoreLocalProviderAllowed, loadLocalMrtDataStoreProvider} from './local-dev-provider-loader'
+import {
+    isMrtDataStoreLocalProviderAllowed,
+    loadLocalMrtDataStoreProvider
+} from './local-dev-provider-loader'
 
 const logger = createLogger({packageName: 'pwa-kit-runtime'})
 

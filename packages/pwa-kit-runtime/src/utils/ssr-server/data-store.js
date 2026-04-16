@@ -10,4 +10,4 @@ export {
     DataStoreNotFoundError,
     DataStoreServiceError,
     DataStoreUnavailableError
-} from '@salesforce/mrt-utilities/middleware'
+} from '@salesforce/mrt-utilities/data-store'

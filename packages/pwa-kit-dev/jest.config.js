@@ -8,8 +8,9 @@
 const path = require('path')
 const base = require('internal-lib-build/configs/jest/jest.config')
 
-// Tests import @salesforce/pwa-kit-runtime dist, which requires @salesforce/mrt-utilities/middleware.
-// Published CJS middleware entry can contain ESM syntax; map to the compiled ESM slice (same as pwa-kit-runtime / react-sdk Jest).
+// Tests import @salesforce/pwa-kit-runtime dist, which requires @salesforce/mrt-utilities/data-store
+// (or legacy middleware). Published CJS entries can contain ESM syntax; map to the compiled ESM
+// DataStore slice (same as pwa-kit-runtime / react-sdk Jest).
 const mrtMiddlewareDataStore = path.join(
     __dirname,
     '..',
@@ -29,7 +30,7 @@ module.exports = {
         ...base.moduleNameMapper,
         '^@h4ad/serverless-adapter/lib/(.*)$':
             '<rootDir>/node_modules/@h4ad/serverless-adapter/lib/$1/index.cjs',
-        '^@salesforce/mrt-utilities/middleware$': mrtMiddlewareDataStore
+        '^@salesforce/mrt-utilities/data-store$': mrtMiddlewareDataStore
     },
     transformIgnorePatterns: [
         'node_modules/(?!(@salesforce/mrt-utilities|jsdom/lib/jsdom/browser/resources/resource-loader))'

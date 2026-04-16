@@ -6,6 +6,7 @@
  */
 
 import {DataStore} from '../ssr-server/data-store'
+import {resetDataStoreProviderCacheForTests} from './data-store-utils'
 import {
     DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY,
     DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY,
@@ -68,6 +69,7 @@ describe('ssr-site-preferences', () => {
             let mockSend
 
             beforeEach(() => {
+                resetDataStoreProviderCacheForTests()
                 process.env.AWS_REGION = 'us-east-1'
                 process.env.MOBIFY_PROPERTY_ID = 'proj'
                 process.env.DEPLOY_TARGET = 'production'
@@ -81,6 +83,7 @@ describe('ssr-site-preferences', () => {
                 process.env = originalEnv
                 DataStore._instance = null
                 DataStore._testDocumentClient = null
+                resetDataStoreProviderCacheForTests()
             })
 
             test('returns empty object when site id missing', async () => {

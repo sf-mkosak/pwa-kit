@@ -15,6 +15,8 @@ module.exports = {
         ...base.moduleNameMapper,
         '^@h4ad/serverless-adapter/lib/(.*)$':
             '<rootDir>/node_modules/@h4ad/serverless-adapter/lib/$1/index.cjs',
+        '^@salesforce/mrt-utilities/data-store$':
+            '<rootDir>/node_modules/@salesforce/mrt-utilities/dist/esm/middleware/data-store.js',
         '^@salesforce/mrt-utilities/middleware$':
             '<rootDir>/node_modules/@salesforce/mrt-utilities/dist/esm/middleware/data-store.js',
         '^@salesforce/pwa-kit-dev/dist/utils/mrt-data-store-local-provider\\.js$':
