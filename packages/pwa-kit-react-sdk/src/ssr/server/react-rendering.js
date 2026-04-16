@@ -28,6 +28,7 @@ import {
 import {
     getCustomGlobalPreferences,
     getCustomSitePreferences,
+    initializeDataStore,
     isMrtDataStoreEnabled
 } from '@salesforce/pwa-kit-runtime/utils/ssr-server'
 import {getConfig} from '@salesforce/pwa-kit-runtime/utils/ssr-config'
@@ -148,12 +149,12 @@ const performRender = async (req, res, next) => {
 
     // MRT Data Store (opt-in): when disabled, skip preference resolution and omit `__MRT_DATA_STORE__` from
     // `#mobify-data`. Enable via `app.mrtDataStore.enabled` or `PWAKIT_MRT_DATA_STORE_ENABLED=true`.
-    // When enabled, data comes from the real MRT Data Store when `AWS_REGION`, `MOBIFY_PROPERTY_ID`, and
-    // `DEPLOY_TARGET` are set; otherwise local dev may use `@salesforce/pwa-kit-dev` (see `getPlainObjectForDataStoreKey`).
+    // When enabled, `initializeDataStore` from runtime mirrors the storefront-next flow (provider once, then keys).
     const mrtDataStoreEnabled = isMrtDataStoreEnabled(config)
     let customSitePreferences = {}
     let customGlobalPreferences = {}
     if (mrtDataStoreEnabled) {
+        await initializeDataStore()
         ;[customSitePreferences, customGlobalPreferences] = await Promise.all([
             getCustomSitePreferences({
                 siteId: res.locals.site?.id
@@ -249,7 +250,7 @@ const performRender = async (req, res, next) => {
             appJSX,
             customSitePreferences,
             customGlobalPreferences,
-            mrtDataStoreBootstrapEnabled: mrtDataStoreEnabled
+            mrtDataStoreEnabled
         })
     } catch (e) {
         // This is an unrecoverable error.
@@ -343,7 +344,7 @@ const renderApp = (args) => {
         config,
         customSitePreferences,
         customGlobalPreferences,
-        mrtDataStoreBootstrapEnabled = false
+        mrtDataStoreEnabled = false
     } = args
     const extractor = new ChunkExtractor({statsFile: BUNDLES_PATH, publicPath: getAssetUrl()})
 
@@ -414,7 +415,7 @@ const renderApp = (args) => {
         Progressive: getWindowProgressive(req, res)
     }
 
-    if (mrtDataStoreBootstrapEnabled) {
+    if (mrtDataStoreEnabled) {
         windowGlobals[DATA_STORE_WINDOW_GLOBAL] = {
             [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: customSitePreferences ?? {},
             [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: customGlobalPreferences ?? {}

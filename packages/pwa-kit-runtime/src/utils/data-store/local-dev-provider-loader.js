@@ -6,23 +6,16 @@
  */
 
 /**
- * Dev-only in-memory Data Store (`@salesforce/pwa-kit-dev`). **`getPlainObjectForDataStoreKey`** calls
- * **`tryFetchPlainObjectFromLocalMrtDataStore`** when **`hasMrtEnvironment()`** is false (incomplete MRT env)
- * and **`isMrtDataStoreLocalProviderAllowed()`** allows the local provider.
+ * Loads the dev-only in-memory Data Store from **`@salesforce/pwa-kit-dev`**.
+ * **`getDataStore`** in **`data-store-provider.js`** calls this once when resolving
+ * the non-MRT path (result is cached on the provider promise, not here).
  */
-
-import createLogger from '../logger-factory'
-
-const logger = createLogger({packageName: 'pwa-kit-runtime'})
 
 /** Workspace / linked installs use `dist/`; published `pwa-kit-dev` tarball root matches `dist/` contents. */
 const LOCAL_PROVIDER_SPECIFIERS = [
     '@salesforce/pwa-kit-dev/dist/utils/mrt-data-store-local-provider.js',
     '@salesforce/pwa-kit-dev/utils/mrt-data-store-local-provider.js'
 ]
-
-/** @type {Promise<{ getEntry: (key: string) => Promise<{ value?: unknown } | null> }> | null} */
-let cachedLocalProviderPromise = null
 
 /**
  * @returns {Promise<{ createLocalMrtDataStoreProvider?: (...args: unknown[]) => unknown }>}
@@ -41,12 +34,13 @@ async function importLocalMrtDataStoreProviderModule() {
 
 /**
  * Whether the in-memory local MRT Data Store provider may be used (no DynamoDB).
- * Not used when the real Data Store is available.
  *
  * Allowed when:
  * - `PWAKIT_MRT_DATA_STORE_ALLOW_LOCAL=true`, or
  * - `CI=true` (e.g. automated tests), or
  * - `NODE_ENV` is not `production`.
+ *
+ * @returns {boolean}
  */
 export function isMrtDataStoreLocalProviderAllowed() {
     if (process.env.PWAKIT_MRT_DATA_STORE_ALLOW_LOCAL === 'true') {
@@ -59,50 +53,15 @@ export function isMrtDataStoreLocalProviderAllowed() {
 }
 
 /**
- * Reset cached local provider (for tests).
- */
-export function resetLocalMrtDataStoreProviderCacheForTests() {
-    cachedLocalProviderPromise = null
-}
-
-/**
- * Load plain object from the dev-only local provider, or `null` if unavailable / skipped.
+ * Instantiate the local MRT Data Store provider (dynamic import of **`@salesforce/pwa-kit-dev`**).
+ * Caller must ensure **`isMrtDataStoreLocalProviderAllowed()`** is true if this should succeed in production.
  *
- * @param {string} dataStoreKey
- * @param {string} logNamespace
- * @returns {Promise<Record<string, unknown> | null>}
+ * @returns {Promise<{ getEntry: (key: string) => Promise<{ value?: unknown } | null> }>}
  */
-export async function tryFetchPlainObjectFromLocalMrtDataStore(dataStoreKey, logNamespace) {
-    if (!isMrtDataStoreLocalProviderAllowed()) {
-        return null
+export async function loadLocalMrtDataStoreProvider() {
+    const mod = await importLocalMrtDataStoreProviderModule()
+    if (typeof mod.createLocalMrtDataStoreProvider !== 'function') {
+        throw new Error('createLocalMrtDataStoreProvider export missing')
     }
-
-    try {
-        if (!cachedLocalProviderPromise) {
-            cachedLocalProviderPromise = (async () => {
-                const mod = await importLocalMrtDataStoreProviderModule()
-                if (typeof mod.createLocalMrtDataStoreProvider !== 'function') {
-                    throw new Error('createLocalMrtDataStoreProvider export missing')
-                }
-                return mod.createLocalMrtDataStoreProvider()
-            })()
-        }
-        const provider = await cachedLocalProviderPromise
-        const entry = await provider.getEntry(dataStoreKey)
-        const value = entry?.value
-        if (value && typeof value === 'object' && !Array.isArray(value)) {
-            return value
-        }
-        return {}
-    } catch (error) {
-        cachedLocalProviderPromise = null
-        logger.warn('Local MRT Data Store provider could not be loaded or used.', {
-            namespace: logNamespace,
-            key: dataStoreKey,
-            message:
-                'Add @salesforce/pwa-kit-dev (devDependency), run its build, or set MRT env vars for the real Data Store.',
-            error
-        })
-        return null
-    }
+    return mod.createLocalMrtDataStoreProvider()
 }

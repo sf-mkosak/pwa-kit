@@ -7,11 +7,13 @@
 
 import {DataStore, DataStoreNotFoundError, DataStoreServiceError} from '../ssr-server/data-store'
 import {DATA_STORE_WINDOW_GLOBAL} from './constants'
-import {resetLocalMrtDataStoreProviderCacheForTests} from './local-dev-provider-loader'
 import {
+    getDataStore,
     getPlainObjectForDataStoreKey,
     hasMrtEnvironment,
+    initializeDataStore,
     isMrtDataStoreEnabled,
+    resetDataStoreProviderCacheForTests,
     warnIfMrtDataStoreBootstrapMissing
 } from './data-store-utils'
 
@@ -104,12 +106,45 @@ describe('data-store-utils', () => {
         })
     })
 
+    describe('getDataStore / initializeDataStore', () => {
+        const originalEnv = {...process.env}
+
+        beforeEach(() => {
+            resetDataStoreProviderCacheForTests()
+        })
+
+        afterEach(() => {
+            resetDataStoreProviderCacheForTests()
+            process.env = {...originalEnv}
+        })
+
+        it('returns the same provider when awaited twice (cached)', async () => {
+            delete process.env.AWS_REGION
+            delete process.env.MOBIFY_PROPERTY_ID
+            delete process.env.DEPLOY_TARGET
+            process.env.NODE_ENV = 'test'
+            const first = await getDataStore()
+            const second = await getDataStore()
+            expect(first).toBe(second)
+        })
+
+        it('initializeDataStore warms the same cached provider', async () => {
+            delete process.env.AWS_REGION
+            delete process.env.MOBIFY_PROPERTY_ID
+            delete process.env.DEPLOY_TARGET
+            process.env.NODE_ENV = 'test'
+            await initializeDataStore()
+            const afterInit = await getDataStore()
+            expect(afterInit).toBe(await getDataStore())
+        })
+    })
+
     describe('getPlainObjectForDataStoreKey', () => {
         const originalEnv = {...process.env}
         let mockSend
 
         beforeEach(() => {
-            resetLocalMrtDataStoreProviderCacheForTests()
+            resetDataStoreProviderCacheForTests()
             process.env.AWS_REGION = 'us-east-1'
             process.env.MOBIFY_PROPERTY_ID = 'proj'
             process.env.DEPLOY_TARGET = 'production'
@@ -120,7 +155,7 @@ describe('data-store-utils', () => {
         })
 
         afterEach(() => {
-            resetLocalMrtDataStoreProviderCacheForTests()
+            resetDataStoreProviderCacheForTests()
             process.env = originalEnv
             DataStore._instance = null
             DataStore._testDocumentClient = null

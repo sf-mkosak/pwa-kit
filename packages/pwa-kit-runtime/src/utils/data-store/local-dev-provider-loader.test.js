@@ -7,8 +7,7 @@
 
 import {
     isMrtDataStoreLocalProviderAllowed,
-    resetLocalMrtDataStoreProviderCacheForTests,
-    tryFetchPlainObjectFromLocalMrtDataStore
+    loadLocalMrtDataStoreProvider
 } from './local-dev-provider-loader'
 
 describe('local-dev-provider-loader', () => {
@@ -16,7 +15,6 @@ describe('local-dev-provider-loader', () => {
 
     afterEach(() => {
         process.env = {...originalEnv}
-        resetLocalMrtDataStoreProviderCacheForTests()
     })
 
     describe('isMrtDataStoreLocalProviderAllowed', () => {
@@ -48,29 +46,19 @@ describe('local-dev-provider-loader', () => {
         })
     })
 
-    describe('tryFetchPlainObjectFromLocalMrtDataStore', () => {
+    describe('loadLocalMrtDataStoreProvider', () => {
         beforeEach(() => {
             process.env.NODE_ENV = 'test'
             delete process.env.PWAKIT_MRT_DATA_STORE_ALLOW_LOCAL
             delete process.env.CI
         })
 
-        it('returns null when local provider is not allowed', async () => {
-            process.env.NODE_ENV = 'production'
-            delete process.env.CI
-            delete process.env.PWAKIT_MRT_DATA_STORE_ALLOW_LOCAL
-            await expect(
-                tryFetchPlainObjectFromLocalMrtDataStore('any-key', 'test-ns')
-            ).resolves.toBeNull()
-        })
-
-        it('returns object from PWAKIT_MRT_DATA_STORE_DEFAULTS via real dev provider', async () => {
+        it('returns a provider with getEntry from PWAKIT_MRT_DATA_STORE_DEFAULTS', async () => {
             process.env.PWAKIT_MRT_DATA_STORE_DEFAULTS = JSON.stringify({
                 'dal-key-one': {flag: true}
             })
-            await expect(
-                tryFetchPlainObjectFromLocalMrtDataStore('dal-key-one', 'test-ns')
-            ).resolves.toEqual({flag: true})
+            const provider = await loadLocalMrtDataStoreProvider()
+            await expect(provider.getEntry('dal-key-one')).resolves.toEqual({value: {flag: true}})
         })
     })
 })
