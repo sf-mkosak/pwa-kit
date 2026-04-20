@@ -831,16 +831,48 @@ describe('Additional branch coverage for react-rendering', () => {
     })
 
     test('includes serialized custom site and global preferences in #mobify-data', async () => {
-        const app = RemoteServerFactory._createApp(opts())
-        app.get('/*', render)
-        const res = await request(app).get('/pwa/')
-        expect(res.statusCode).toBe(200)
-        const data = JSON.parse(parse(res.text).querySelector('#mobify-data').innerHTML)
-        expect(data).toHaveProperty(DATA_STORE_WINDOW_GLOBAL)
-        expect(data[DATA_STORE_WINDOW_GLOBAL]).toEqual({
-            [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: {},
-            [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: {}
-        })
+        // Test fixtures do not set `config.app.mrtDataStore.enabled`; opt in via env so SSR
+        // serializes `__MRT_DATA_STORE__` (empty prefs without a real Data Store in this harness).
+        const prevEnabled = process.env.PWAKIT_MRT_DATA_STORE_ENABLED
+        process.env.PWAKIT_MRT_DATA_STORE_ENABLED = 'true'
+        try {
+            const app = RemoteServerFactory._createApp(opts())
+            app.get('/*', render)
+            const res = await request(app).get('/pwa/')
+            expect(res.statusCode).toBe(200)
+            const data = JSON.parse(parse(res.text).querySelector('#mobify-data').innerHTML)
+            expect(data).toHaveProperty(DATA_STORE_WINDOW_GLOBAL)
+            expect(data[DATA_STORE_WINDOW_GLOBAL]).toEqual({
+                [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: {},
+                [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: {}
+            })
+        } finally {
+            if (prevEnabled === undefined) {
+                delete process.env.PWAKIT_MRT_DATA_STORE_ENABLED
+            } else {
+                process.env.PWAKIT_MRT_DATA_STORE_ENABLED = prevEnabled
+            }
+        }
+    })
+
+    test('does not include DATA_STORE_WINDOW_GLOBAL in #mobify-data when MRT Data Store bootstrap is disabled (default)', async () => {
+        const prevEnabled = process.env.PWAKIT_MRT_DATA_STORE_ENABLED
+        // Default harness config has no `app.mrtDataStore.enabled`; ensure env does not force it on.
+        delete process.env.PWAKIT_MRT_DATA_STORE_ENABLED
+        try {
+            const app = RemoteServerFactory._createApp(opts())
+            app.get('/*', render)
+            const res = await request(app).get('/pwa/')
+            expect(res.statusCode).toBe(200)
+            const data = JSON.parse(parse(res.text).querySelector('#mobify-data').innerHTML)
+            expect(data).not.toHaveProperty(DATA_STORE_WINDOW_GLOBAL)
+        } finally {
+            if (prevEnabled === undefined) {
+                delete process.env.PWAKIT_MRT_DATA_STORE_ENABLED
+            } else {
+                process.env.PWAKIT_MRT_DATA_STORE_ENABLED = prevEnabled
+            }
+        }
     })
 
     test('handles pretty print mode with mobify_pretty', async () => {
