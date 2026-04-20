@@ -28,12 +28,10 @@ export const DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY = 'customGlobalPreferen
 
 /**
  * DAL / Data Store key suffix; full key is `<siteId>${CUSTOM_SITE_PREFERENCES_KEY_SUFFIX}`.
- * Confirm with MRT.
  */
 export const CUSTOM_SITE_PREFERENCES_KEY_SUFFIX = '-custom-site-preferences'
 
 /**
  * Full DAL / Data Store key for org/global custom preferences (no site id prefix).
- * Confirm with MRT.
  */
 export const CUSTOM_GLOBAL_PREFERENCES_DATA_STORE_KEY = 'custom-global-preferences'
