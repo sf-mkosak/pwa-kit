@@ -13,7 +13,7 @@
  */
 
 import createLogger from '../logger-factory'
-import {DataStore} from '../ssr-server/data-store'
+import {DataStore, DataStoreNotFoundError} from '../ssr-server/data-store'
 import {
     isMrtDataStoreLocalProviderAllowed,
     loadLocalMrtDataStoreProvider
@@ -53,9 +53,35 @@ function createMrtDataStoreProvider() {
         async getEntry(key) {
             const store = DataStore.getDataStore()
             if (!store.isDataStoreAvailable()) {
+                logger.warn('MRT Data Store client is not available; entry cannot be loaded.', {
+                    namespace: 'data-store-provider',
+                    additionalProperties: {key}
+                })
                 return null
             }
-            return store.getEntry(key)
+            try {
+                const entry = await store.getEntry(key)
+                const value = entry?.value
+                if (value && typeof value === 'object' && !Array.isArray(value)) {
+                    return entry
+                }
+                logger.warn(
+                    'MRT Data Store has no usable plain-object value for this key (missing entry, wrong shape, or empty).',
+                    {
+                        namespace: 'data-store-provider',
+                        additionalProperties: {key, hasEntry: entry != null}
+                    }
+                )
+                return entry
+            } catch (error) {
+                if (error instanceof DataStoreNotFoundError) {
+                    logger.warn('MRT Data Store entry not found for key.', {
+                        namespace: 'data-store-provider',
+                        additionalProperties: {key}
+                    })
+                }
+                throw error
+            }
         }
     }
 }

@@ -227,11 +227,18 @@ describe('data-store-utils', () => {
         })
 
         test('returns {} when MRT env is complete but Data Store is not available', async () => {
+            const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
             const store = DataStore.getDataStore()
             jest.spyOn(store, 'isDataStoreAvailable').mockReturnValue(false)
             await expect(
                 getPlainObjectForDataStoreKey({...baseOptions(), dataStoreKey: 'my-key'})
             ).resolves.toEqual({})
+            expect(warn).toHaveBeenCalledWith(
+                expect.stringMatching(
+                    /data-store-provider WARN.*MRT Data Store client is not available/
+                )
+            )
+            warn.mockRestore()
             store.isDataStoreAvailable.mockRestore()
         })
 
@@ -243,10 +250,16 @@ describe('data-store-utils', () => {
         })
 
         test('returns {} when entry is not found', async () => {
+            const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
             mockSend.mockResolvedValue({})
             await expect(
                 getPlainObjectForDataStoreKey({...baseOptions(), dataStoreKey: 'missing'})
             ).resolves.toEqual({})
+            expect(warn).toHaveBeenCalledTimes(1)
+            expect(String(warn.mock.calls[0][0])).toMatch(
+                /data-store-provider WARN.*MRT Data Store (entry not found|has no usable plain-object value)/
+            )
+            warn.mockRestore()
         })
 
         test('returns {} on DataStoreServiceError (e.g. DynamoDB failure)', async () => {
@@ -257,6 +270,7 @@ describe('data-store-utils', () => {
         })
 
         test('returns {} when stored value is not a plain object', async () => {
+            const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
             mockSend.mockResolvedValue({Item: {value: [1, 2]}})
             await expect(
                 getPlainObjectForDataStoreKey({...baseOptions(), dataStoreKey: 'my-key'})
@@ -265,14 +279,25 @@ describe('data-store-utils', () => {
             await expect(
                 getPlainObjectForDataStoreKey({...baseOptions(), dataStoreKey: 'my-key'})
             ).resolves.toEqual({})
+            expect(
+                warn.mock.calls.filter((call) =>
+                    String(call[0]).includes('MRT Data Store has no usable plain-object value')
+                )
+            ).toHaveLength(2)
+            warn.mockRestore()
         })
 
         test('returns {} when getEntry throws DataStoreNotFoundError', async () => {
+            const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
             const store = DataStore.getDataStore()
             jest.spyOn(store, 'getEntry').mockRejectedValue(new DataStoreNotFoundError('gone'))
             await expect(
                 getPlainObjectForDataStoreKey({...baseOptions(), dataStoreKey: 'my-key'})
             ).resolves.toEqual({})
+            expect(warn).toHaveBeenCalledWith(
+                expect.stringMatching(/data-store-provider WARN.*MRT Data Store entry not found/)
+            )
+            warn.mockRestore()
             store.getEntry.mockRestore()
         })
 
