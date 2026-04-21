@@ -154,13 +154,17 @@ const performRender = async (req, res, next) => {
     let customSitePreferences = {}
     let customGlobalPreferences = {}
     if (mrtDataStoreEnabled) {
+        res.__performanceTimer.mark(PERFORMANCE_MARKS.dataStoreInitialize, 'start')
         await initializeDataStore()
+        res.__performanceTimer.mark(PERFORMANCE_MARKS.dataStoreInitialize, 'end')
+        res.__performanceTimer.mark(PERFORMANCE_MARKS.dataStoreFetch, 'start')
         ;[customSitePreferences, customGlobalPreferences] = await Promise.all([
             getCustomSitePreferences({
                 siteId: res.locals.site?.id
             }),
             getCustomGlobalPreferences()
         ])
+        res.__performanceTimer.mark(PERFORMANCE_MARKS.dataStoreFetch, 'end')
     }
 
     const routes = getRoutes(res.locals)
