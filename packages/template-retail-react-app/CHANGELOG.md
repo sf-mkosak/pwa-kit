@@ -1,3 +1,5 @@
+## v10.1.0-dev (May 07, 2026)
+
 ## v10.0.0 (May 07, 2026)
 - Update MRT Data Store configuration comments and README to use the unprefixed environment variable names actually consumed by `@salesforce/mrt-utilities` (`MRT_DATA_STORE_DEFAULTS`, `MRT_DATA_STORE_WARN_ON_MISSING`). [#3811](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3811) [#3823](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3823)
 - Add opt-in `app.mrtDataStore.enabled` to `config/default.js` (default `false`). Set to `true` or use `PWAKIT_MRT_DATA_STORE_ENABLED=true` to resolve MRT Data Store custom preferences during SSR. Local defaults without DynamoDB: `MRT_DATA_STORE_DEFAULTS` (see `config/default.js` comments). [#3787](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3787)
