@@ -1,6 +1,4 @@
-## v3.18.0-preview.2 (May 07, 2026)
-## v3.18.0-preview.1 (May 04, 2026)
-## v3.18.0-preview.0 (May 01, 2026)
+## v3.18.0 (May 07, 2026)
 - Update `@salesforce/pwa-kit-runtime` dependency which simplified data store implementation [#3811](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3811)
 - When the real Data Store is unavailable, SSR can use `@salesforce/pwa-kit-dev`’s in-memory local provider (`PWAKIT_MRT_DATA_STORE_DEFAULTS`, etc.; see runtime `local-dev-provider-loader`). [#3787](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3787)
 - MRT Data Store bootstrap is **opt-in** (`isMrtDataStoreEnabled` in `@salesforce/pwa-kit-runtime`): set `app.mrtDataStore.enabled` to `true` and/or `PWAKIT_MRT_DATA_STORE_ENABLED=true` (recognized falsey strings force off). When disabled, `__MRT_DATA_STORE__` is omitted from `#mobify-data` (not empty objects). [#3787](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3787)
