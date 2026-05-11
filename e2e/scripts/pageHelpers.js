@@ -318,7 +318,7 @@ export const validateWishlist = async ({page, a11y = {}}) => {
  *
  * @return {Boolean} - denotes whether or not login was successful
  */
-export const loginShopper = async ({page, userCredentials}) => {
+export const loginShopper = async ({page, userCredentials, allowFallback = true}) => {
     try {
         await page.goto(config.RETAIL_APP_HOME + '/login')
         await answerConsentTrackingForm(page)
@@ -345,6 +345,8 @@ export const loginShopper = async ({page, userCredentials}) => {
         await expect(page.getByText(userCredentials.email)).toBeVisible()
         return true
     } catch (error) {
+        console.error('[e2e] loginShopper failed:', error.message)
+        if (!allowFallback) throw error
         return false
     }
 }
