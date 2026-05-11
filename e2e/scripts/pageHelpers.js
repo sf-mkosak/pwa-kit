@@ -38,9 +38,7 @@ export const answerConsentTrackingForm = async (page, dnt = false) => {
     }
 
     const ariaLabel = dnt ? 'Decline tracking' : 'Accept tracking'
-    const button = page
-        .locator(`button[aria-label="${ariaLabel}"]`)
-        .and(page.locator(':visible'))
+    const button = page.locator(`button[aria-label="${ariaLabel}"]`).and(page.locator(':visible'))
     await button.first().click()
 
     await consentForm.waitFor({state: 'hidden', timeout: 10000})
