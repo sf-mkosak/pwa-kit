@@ -45,24 +45,29 @@ async function clearCartAndWishlist(page) {
     const orgId = config.RETAIL_APP_HOME_ORGANIZATION_ID
     const headers = {Authorization: `Bearer ${session.accessToken}`}
 
-    // 1. Active basket -> delete
-    const basketRes = await safeRequest('GET baskets', () =>
+    // 1. Active baskets -> delete
+    // shopper-baskets has no list endpoint, so list via shopper-customers
+    // (works for guest and registered customers since SLAS issues a
+    // customer_id for both).
+    const basketsRes = await safeRequest('GET customer baskets', () =>
         page.request.get(
-            `${baseUrl}/checkout/shopper-baskets/v1/organizations/${orgId}/baskets?siteId=${siteId}`,
+            `${baseUrl}/customer/shopper-customers/v1/organizations/${orgId}/customers/${session.customerId}/baskets?siteId=${siteId}`,
             {headers}
         )
     )
-    if (basketRes?.ok()) {
-        const body = await safeRequest('parse baskets', () => basketRes.json())
-        const basketId = body?.baskets?.[0]?.basketId || body?.basketId
-        if (basketId) {
-            await safeRequest('DELETE basket', () =>
-                page.request.delete(
-                    `${baseUrl}/checkout/shopper-baskets/v1/organizations/${orgId}/baskets/${basketId}?siteId=${siteId}`,
-                    {headers}
+    if (basketsRes?.ok()) {
+        const body = await safeRequest('parse customer baskets', () => basketsRes.json())
+        const basketIds = (body?.baskets ?? []).map((b) => b?.basketId).filter(Boolean)
+        await Promise.all(
+            basketIds.map((basketId) =>
+                safeRequest(`DELETE basket ${basketId}`, () =>
+                    page.request.delete(
+                        `${baseUrl}/checkout/shopper-baskets/v1/organizations/${orgId}/baskets/${basketId}?siteId=${siteId}`,
+                        {headers}
+                    )
                 )
             )
-        }
+        )
     }
 
     // 2. Wishlist items -> delete each

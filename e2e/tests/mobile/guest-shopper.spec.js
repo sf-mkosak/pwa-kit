@@ -129,6 +129,10 @@ test('Guest shopper can edit product item in cart', async ({page}) => {
  * Test that guest shoppers can add product bundle to cart and successfully checkout
  */
 test('Guest shopper can checkout product bundle', async ({page}) => {
+    // PLP/PDP and bundle render are noticeably slower on mobile-chrome and
+    // the default 60s test budget is regularly insufficient.
+    test.setTimeout(120000)
+
     await searchProduct({page, query: 'bundle', isMobile: true})
 
     await page
@@ -139,9 +143,13 @@ test('Guest shopper can checkout product bundle', async ({page}) => {
 
     await page.waitForLoadState()
 
-    await expect(page.getByRole('heading', {name: /Turquoise Jewelry Bundle/i})).toBeVisible()
+    await expect(page.getByRole('heading', {name: /Turquoise Jewelry Bundle/i})).toBeVisible({
+        timeout: 30000
+    })
 
-    await page.getByRole('button', {name: /Add Bundle to Cart/i}).click()
+    const addBundleToCart = page.getByRole('button', {name: /Add Bundle to Cart/i})
+    await expect(addBundleToCart).toBeEnabled({timeout: 30000})
+    await addBundleToCart.click()
 
     const addedToCartModal = page.getByText(/1 item added to cart/i)
     await addedToCartModal.waitFor()
