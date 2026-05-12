@@ -5,7 +5,7 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import React from 'react'
-import MaintenanceError from '@salesforce/retail-react-app/app/components/_maintenance-error/index'
+import MaintenanceError from '@salesforce/retail-react-app/app/components/maintenance-error/index'
 import {getRouterBasePath} from '@salesforce/pwa-kit-react-sdk/ssr/universal/utils'
 // !!! ----- WARNING ----- WARNING ----- WARNING ----- !!!
 // Tests use render instead of renderWithProviders because

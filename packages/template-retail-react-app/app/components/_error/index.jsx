@@ -19,7 +19,7 @@ import {
 
 import {BrandLogo, FileIcon} from '@salesforce/retail-react-app/app/components/icons'
 import {getRouterBasePath} from '@salesforce/pwa-kit-react-sdk/ssr/universal/utils'
-import MaintenanceError from '@salesforce/retail-react-app/app/components/_maintenance-error'
+import MaintenanceError from '@salesforce/retail-react-app/app/components/maintenance-error'
 
 // <Error> is rendered when:
 //
