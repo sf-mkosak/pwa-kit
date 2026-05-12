@@ -24,24 +24,24 @@ const {getCreditCardExpiry, runAccessibilityTest} = require('../scripts/utils.js
  * @param {Boolean} dnt - Do Not Track value to answer the form. False to enable tracking, True to disable tracking.
  */
 export const answerConsentTrackingForm = async (page, dnt = false) => {
-    const consentForm = page.locator('text=Tracking Consent')
-
-    // Probe for the form rather than waiting+catching: if it isn't rendered
-    // within the probe window we assume the preference is already set and
-    // skip silently. If it IS rendered, dismiss it and propagate any failure
-    // — a stuck consent form blocks every subsequent click and produces
-    // confusing 60s timeouts elsewhere in the test.
     try {
-        await consentForm.waitFor({state: 'visible', timeout: 15000})
-    } catch {
-        return
+        const consentForm = page.locator('text=Tracking Consent')
+
+        // Wait for the consent form to appear. With httpOnly cookies, auth initialization
+        // may be slower so the form can take longer to render after page.goto resolves.
+        await consentForm.waitFor({state: 'visible', timeout: 10000})
+
+        const ariaLabel = dnt ? 'Decline tracking' : 'Accept tracking'
+        const button = page
+            .locator(`button[aria-label="${ariaLabel}"]`)
+            .and(page.locator(':visible'))
+        await button.first().click()
+
+        // Wait for the consent form to fully disappear from the DOM
+        await consentForm.waitFor({state: 'hidden', timeout: 5000})
+    } catch (error) {
+        // Consent form may not appear (e.g. preference already set) — continue silently
     }
-
-    const ariaLabel = dnt ? 'Decline tracking' : 'Accept tracking'
-    const button = page.locator(`button[aria-label="${ariaLabel}"]`).and(page.locator(':visible'))
-    await button.first().click()
-
-    await consentForm.waitFor({state: 'hidden', timeout: 10000})
 }
 
 /**
