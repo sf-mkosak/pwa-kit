@@ -25,6 +25,7 @@ import {getRuntime} from '@salesforce/pwa-kit-runtime/ssr/server/express'
 import {defaultPwaKitSecurityHeaders} from '@salesforce/pwa-kit-runtime/utils/middleware'
 import {getConfig} from '@salesforce/pwa-kit-runtime/utils/ssr-config'
 import {getAppOrigin} from '@salesforce/pwa-kit-react-sdk/utils/url'
+import logger from '@salesforce/pwa-kit-runtime/utils/logger-instance'
 
 const config = getConfig()
 
@@ -494,6 +495,10 @@ const {handler} = runtime.createHandler(options, (app) => {
             res.setHeader('Content-Type', 'text/html')
             res.send(html)
         } catch (error) {
+            logger.error('Failed to fetch maintenance page', {
+                namespace: 'maintenance-page',
+                additionalProperties: {error}
+            })
             res.status(502).json({
                 error: 'Failed to fetch maintenance page',
                 details: error.message
