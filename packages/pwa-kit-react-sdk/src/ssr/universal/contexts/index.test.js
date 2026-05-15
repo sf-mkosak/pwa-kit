@@ -109,6 +109,8 @@ describe('CorrelationIdProvider', function () {
 })
 
 describe('MrtDataStoreProvider', () => {
+    const siteId = 'RefArch'
+
     beforeEach(() => {
         delete window.__MRT_DATA_STORE__
     })
@@ -126,7 +128,7 @@ describe('MrtDataStoreProvider', () => {
         }
 
         render(
-            <MrtDataStoreProvider>
+            <MrtDataStoreProvider siteId={siteId}>
                 <Component />
             </MrtDataStoreProvider>
         )
@@ -152,6 +154,7 @@ describe('MrtDataStoreProvider', () => {
 
         render(
             <MrtDataStoreProvider
+                siteId={siteId}
                 customSitePreferences={sitePrefs}
                 customGlobalPreferences={globalPrefs}
             >
@@ -163,13 +166,14 @@ describe('MrtDataStoreProvider', () => {
         expect(screen.getByTestId('global-prefs')).toHaveTextContent(JSON.stringify(globalPrefs))
     })
 
-    test('reads from window.__MRT_DATA_STORE__ on client', () => {
+    test('reads from window.__MRT_DATA_STORE__ using DAL keys', () => {
         const sitePrefs = {clientFeature: true}
         const globalPrefs = {clientTheme: 'light'}
 
         window.__MRT_DATA_STORE__ = {
-            customSitePreferences: sitePrefs,
-            customGlobalPreferences: globalPrefs
+            __siteId: siteId,
+            'RefArch-custom-site-preferences': sitePrefs,
+            'custom-global-preferences': globalPrefs
         }
 
         const Component = () => {
@@ -184,7 +188,7 @@ describe('MrtDataStoreProvider', () => {
         }
 
         render(
-            <MrtDataStoreProvider>
+            <MrtDataStoreProvider siteId={siteId}>
                 <Component />
             </MrtDataStoreProvider>
         )
@@ -200,8 +204,9 @@ describe('MrtDataStoreProvider', () => {
         const ssrGlobalPrefs = {ssrTheme: 'light'}
 
         window.__MRT_DATA_STORE__ = {
-            customSitePreferences: windowSitePrefs,
-            customGlobalPreferences: windowGlobalPrefs
+            __siteId: siteId,
+            'RefArch-custom-site-preferences': windowSitePrefs,
+            'custom-global-preferences': windowGlobalPrefs
         }
 
         const Component = () => {
@@ -217,6 +222,7 @@ describe('MrtDataStoreProvider', () => {
 
         render(
             <MrtDataStoreProvider
+                siteId={siteId}
                 customSitePreferences={ssrSitePrefs}
                 customGlobalPreferences={ssrGlobalPrefs}
             >
@@ -246,12 +252,41 @@ describe('MrtDataStoreProvider', () => {
         }
 
         render(
-            <MrtDataStoreProvider>
+            <MrtDataStoreProvider siteId={siteId}>
                 <Component />
             </MrtDataStoreProvider>
         )
 
         expect(screen.getByTestId('site-prefs')).toHaveTextContent('{}')
         expect(screen.getByTestId('global-prefs')).toHaveTextContent('{}')
+    })
+
+    test('handles missing siteId gracefully', () => {
+        const globalPrefs = {theme: 'dark'}
+
+        window.__MRT_DATA_STORE__ = {
+            __siteId: null,
+            'custom-global-preferences': globalPrefs
+        }
+
+        const Component = () => {
+            const sitePreferences = useCustomSitePreferences()
+            const globalPreferences = useCustomGlobalPreferences()
+            return (
+                <div>
+                    <div data-testid="site-prefs">{JSON.stringify(sitePreferences)}</div>
+                    <div data-testid="global-prefs">{JSON.stringify(globalPreferences)}</div>
+                </div>
+            )
+        }
+
+        render(
+            <MrtDataStoreProvider>
+                <Component />
+            </MrtDataStoreProvider>
+        )
+
+        expect(screen.getByTestId('site-prefs')).toHaveTextContent('{}')
+        expect(screen.getByTestId('global-prefs')).toHaveTextContent(JSON.stringify(globalPrefs))
     })
 })

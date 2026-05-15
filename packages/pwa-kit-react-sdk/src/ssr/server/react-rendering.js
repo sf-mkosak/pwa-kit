@@ -21,9 +21,9 @@ import sprite from 'svg-sprite-loader/runtime/sprite.build'
 import {isRemote} from '@salesforce/pwa-kit-runtime/utils/ssr-server'
 import {proxyConfigs} from '@salesforce/pwa-kit-runtime/utils/ssr-shared'
 import {
-    DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY,
-    DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY,
-    DATA_STORE_WINDOW_GLOBAL
+    DATA_STORE_WINDOW_GLOBAL,
+    CUSTOM_GLOBAL_PREFERENCES_DATA_STORE_KEY,
+    CUSTOM_SITE_PREFERENCES_KEY_SUFFIX
 } from '@salesforce/pwa-kit-runtime/utils/data-store/constants'
 import {
     getCustomGlobalPreferences,
@@ -328,6 +328,7 @@ const OuterApp = ({
                     resetOnPageChange={false}
                 >
                     <MrtDataStoreProvider
+                        siteId={res.locals.site?.id}
                         customSitePreferences={customSitePreferences}
                         customGlobalPreferences={customGlobalPreferences}
                     >
@@ -440,9 +441,16 @@ const renderApp = (args) => {
     }
 
     if (mrtDataStoreEnabled) {
+        const siteId = res.locals.site?.id
+        // Serialize using DAL keys for consistency with backend storage
         windowGlobals[DATA_STORE_WINDOW_GLOBAL] = {
-            [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: customSitePreferences ?? {},
-            [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: customGlobalPreferences ?? {}
+            __siteId: siteId, // Include siteId so client can construct keys
+            [CUSTOM_GLOBAL_PREFERENCES_DATA_STORE_KEY]: customGlobalPreferences ?? {}
+        }
+        // Add site preferences only if we have a siteId
+        if (siteId) {
+            const siteKey = `${siteId}${CUSTOM_SITE_PREFERENCES_KEY_SUFFIX}`
+            windowGlobals[DATA_STORE_WINDOW_GLOBAL][siteKey] = customSitePreferences ?? {}
         }
     }
 

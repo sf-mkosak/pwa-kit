@@ -25,10 +25,10 @@ describe('ssr-global-preferences', () => {
             delete window[DATA_STORE_WINDOW_GLOBAL]
         })
 
-        test('getCustomGlobalPreferences reads nested global payload', async () => {
+        test('getCustomGlobalPreferences reads using DAL key', async () => {
             window[DATA_STORE_WINDOW_GLOBAL] = {
-                [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: {},
-                [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: {org: 1}
+                'RefArch-custom-site-preferences': {},
+                'custom-global-preferences': {org: 1}
             }
             expect(await getCustomGlobalPreferences()).toEqual({org: 1})
         })
@@ -39,8 +39,8 @@ describe('ssr-global-preferences', () => {
 
         test('returns {} when nested global value is not a plain object', async () => {
             window[DATA_STORE_WINDOW_GLOBAL] = {
-                [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: {},
-                [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: 'x'
+                'RefArch-custom-site-preferences': {},
+                'custom-global-preferences': 'x'
             }
             expect(await getCustomGlobalPreferences()).toEqual({})
         })

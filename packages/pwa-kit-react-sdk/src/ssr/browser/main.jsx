@@ -47,6 +47,12 @@ export const OuterApp = ({routes, error, WrappedApp, locals, onHydrate}) => {
     const isInitialPageRef = useRef(true)
     const routerBasename = getRouterBasePath() || undefined
 
+    // Get siteId from window.__MRT_DATA_STORE__ if available
+    const siteId =
+        typeof window !== 'undefined' && window.__MRT_DATA_STORE__
+            ? window.__MRT_DATA_STORE__.__siteId
+            : undefined
+
     return (
         <ServerContext.Provider value={{}}>
             <Router ref={onHydrate} basename={routerBasename}>
@@ -60,7 +66,7 @@ export const OuterApp = ({routes, error, WrappedApp, locals, onHydrate}) => {
                         return uuidv4()
                     }}
                 >
-                    <MrtDataStoreProvider>
+                    <MrtDataStoreProvider siteId={siteId}>
                         <AppConfig locals={locals}>
                             <Switch
                                 error={error}

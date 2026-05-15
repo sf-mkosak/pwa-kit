@@ -76,7 +76,7 @@ export const useOrigin = ({fromXForwardedHeader = false}) => {
  *
  * Works isomorphically:
  * - Server (SSR): Uses preferences passed to MrtDataStoreProvider
- * - Client: Reads from window.__MRT_DATA_STORE__ (bootstrapped by server)
+ * - Client: Reads from window.__MRT_DATA_STORE__ using DAL keys (bootstrapped by server)
  *
  * Requires:
  * - MrtDataStoreProvider in component tree
@@ -94,7 +94,7 @@ export const useOrigin = ({fromXForwardedHeader = false}) => {
  */
 export const useCustomSitePreferences = () => {
     const {customSitePreferences} = useContext(MrtDataStoreContext)
-    return customSitePreferences
+    return customSitePreferences || {}
 }
 
 /**
@@ -102,7 +102,7 @@ export const useCustomSitePreferences = () => {
  *
  * Works isomorphically:
  * - Server (SSR): Uses preferences passed to MrtDataStoreProvider
- * - Client: Reads from window.__MRT_DATA_STORE__ (bootstrapped by server)
+ * - Client: Reads from window.__MRT_DATA_STORE__ using DAL keys (bootstrapped by server)
  *
  * Requires:
  * - MrtDataStoreProvider in component tree
@@ -120,5 +120,5 @@ export const useCustomSitePreferences = () => {
  */
 export const useCustomGlobalPreferences = () => {
     const {customGlobalPreferences} = useContext(MrtDataStoreContext)
-    return customGlobalPreferences
+    return customGlobalPreferences || {}
 }

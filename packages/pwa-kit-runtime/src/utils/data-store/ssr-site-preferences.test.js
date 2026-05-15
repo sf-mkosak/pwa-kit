@@ -24,29 +24,39 @@ describe('ssr-site-preferences', () => {
             delete window[DATA_STORE_WINDOW_GLOBAL]
         })
 
-        test('getCustomSitePreferences reads nested site payload', async () => {
+        test('getCustomSitePreferences reads using DAL key', async () => {
+            const siteId = 'RefArch'
             window[DATA_STORE_WINDOW_GLOBAL] = {
-                [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: {flag: true},
-                [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: {}
+                'RefArch-custom-site-preferences': {flag: true},
+                'custom-global-preferences': {}
             }
-            expect(await getCustomSitePreferences()).toEqual({flag: true})
+            expect(await getCustomSitePreferences({siteId})).toEqual({flag: true})
         })
 
         test('returns {} when __MRT_DATA_STORE__ missing', async () => {
-            expect(await getCustomSitePreferences()).toEqual({})
+            expect(await getCustomSitePreferences({siteId: 'RefArch'})).toEqual({})
+        })
+
+        test('returns {} when siteId is missing', async () => {
+            window[DATA_STORE_WINDOW_GLOBAL] = {
+                'RefArch-custom-site-preferences': {flag: true}
+            }
+            expect(await getCustomSitePreferences({})).toEqual({})
+            expect(await getCustomSitePreferences({siteId: null})).toEqual({})
+            expect(await getCustomSitePreferences({siteId: ''})).toEqual({})
         })
 
         test('returns {} when nested site value is not a plain object', async () => {
             window[DATA_STORE_WINDOW_GLOBAL] = {
-                [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: [1, 2],
-                [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: {}
+                'RefArch-custom-site-preferences': [1, 2],
+                'custom-global-preferences': {}
             }
-            expect(await getCustomSitePreferences()).toEqual({})
+            expect(await getCustomSitePreferences({siteId: 'RefArch'})).toEqual({})
         })
 
         test('returns {} when __MRT_DATA_STORE__ is not an object', async () => {
             window[DATA_STORE_WINDOW_GLOBAL] = 'bad'
-            expect(await getCustomSitePreferences()).toEqual({})
+            expect(await getCustomSitePreferences({siteId: 'RefArch'})).toEqual({})
         })
     })
 
