@@ -9,6 +9,11 @@ import React, {useEffect, useRef, useMemo} from 'react'
 import PropTypes from 'prop-types'
 import {useLocation} from 'react-router-dom'
 import logger from '../../../utils/logger-instance'
+import {
+    DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY,
+    DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY,
+    DATA_STORE_WINDOW_GLOBAL
+} from '@salesforce/pwa-kit-runtime/utils/data-store/constants'
 
 const CorrelationIdContext = React.createContext()
 const ServerContext = React.createContext()
@@ -89,10 +94,12 @@ const MrtDataStoreProvider = ({
 }) => {
     const value = useMemo(() => {
         // Client: read from bootstrapped window object
-        if (typeof window !== 'undefined' && window.__MRT_DATA_STORE__) {
+        if (typeof window !== 'undefined' && window[DATA_STORE_WINDOW_GLOBAL]) {
+            const dataStore = window[DATA_STORE_WINDOW_GLOBAL]
             return {
-                customSitePreferences: window.__MRT_DATA_STORE__.customSitePreferences || {},
-                customGlobalPreferences: window.__MRT_DATA_STORE__.customGlobalPreferences || {}
+                customSitePreferences: dataStore[DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY] || {},
+                customGlobalPreferences:
+                    dataStore[DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY] || {}
             }
         }
 
