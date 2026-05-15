@@ -5,7 +5,7 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import React, {createContext, useEffect, useRef, useMemo} from 'react'
+import React, {useEffect, useRef, useMemo} from 'react'
 import PropTypes from 'prop-types'
 import {useLocation} from 'react-router-dom'
 import logger from '../../../utils/logger-instance'
@@ -16,7 +16,7 @@ const ServerContext = React.createContext()
 /**
  * Context for MRT Data Store preferences
  */
-const MrtDataStoreContext = createContext({
+const MrtDataStoreContext = React.createContext({
     customSitePreferences: {},
     customGlobalPreferences: {}
 })
