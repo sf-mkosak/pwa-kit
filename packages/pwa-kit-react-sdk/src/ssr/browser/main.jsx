@@ -8,7 +8,7 @@
 import React, {useRef} from 'react'
 import {hydrateRoot} from 'react-dom/client'
 import {BrowserRouter as Router} from 'react-router-dom'
-import {ServerContext, CorrelationIdProvider} from '../universal/contexts'
+import {ServerContext, CorrelationIdProvider, MrtDataStoreProvider} from '../universal/contexts'
 import App from '../universal/components/_app'
 import {getAppConfig} from '../universal/compatibility'
 import Switch from '../universal/components/switch'
@@ -60,14 +60,16 @@ export const OuterApp = ({routes, error, WrappedApp, locals, onHydrate}) => {
                         return uuidv4()
                     }}
                 >
-                    <AppConfig locals={locals}>
-                        <Switch
-                            error={error}
-                            appState={window.__PRELOADED_STATE__}
-                            routes={routes}
-                            App={WrappedApp}
-                        />
-                    </AppConfig>
+                    <MrtDataStoreProvider>
+                        <AppConfig locals={locals}>
+                            <Switch
+                                error={error}
+                                appState={window.__PRELOADED_STATE__}
+                                routes={routes}
+                                App={WrappedApp}
+                            />
+                        </AppConfig>
+                    </MrtDataStoreProvider>
                 </CorrelationIdProvider>
             </Router>
         </ServerContext.Provider>

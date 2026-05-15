@@ -17,9 +17,11 @@ import {warnIfMrtDataStoreBootstrapMissing} from './logging-utils'
  *
  * **Note:** Not called by the PWA Kit framework or template apps today; intended for customer code.
  *
- * @returns {Record<string, unknown>}
+ * @param {Object} params - Parameters (ignored on client, accepted for signature compatibility with server)
+ * @param {string} [params.siteId] - Site ID (ignored on client)
+ * @returns {Promise<Record<string, unknown>>}
  */
-export function getCustomSitePreferences() {
+export async function getCustomSitePreferences(params = {}) {
     if (typeof window === 'undefined') {
         return {}
     }

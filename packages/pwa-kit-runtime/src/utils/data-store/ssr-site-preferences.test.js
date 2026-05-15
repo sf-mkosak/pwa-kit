@@ -24,29 +24,29 @@ describe('ssr-site-preferences', () => {
             delete window[DATA_STORE_WINDOW_GLOBAL]
         })
 
-        test('getCustomSitePreferences reads nested site payload', () => {
+        test('getCustomSitePreferences reads nested site payload', async () => {
             window[DATA_STORE_WINDOW_GLOBAL] = {
                 [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: {flag: true},
                 [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: {}
             }
-            expect(getCustomSitePreferences()).toEqual({flag: true})
+            expect(await getCustomSitePreferences()).toEqual({flag: true})
         })
 
-        test('returns {} when __MRT_DATA_STORE__ missing', () => {
-            expect(getCustomSitePreferences()).toEqual({})
+        test('returns {} when __MRT_DATA_STORE__ missing', async () => {
+            expect(await getCustomSitePreferences()).toEqual({})
         })
 
-        test('returns {} when nested site value is not a plain object', () => {
+        test('returns {} when nested site value is not a plain object', async () => {
             window[DATA_STORE_WINDOW_GLOBAL] = {
                 [DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY]: [1, 2],
                 [DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY]: {}
             }
-            expect(getCustomSitePreferences()).toEqual({})
+            expect(await getCustomSitePreferences()).toEqual({})
         })
 
-        test('returns {} when __MRT_DATA_STORE__ is not an object', () => {
+        test('returns {} when __MRT_DATA_STORE__ is not an object', async () => {
             window[DATA_STORE_WINDOW_GLOBAL] = 'bad'
-            expect(getCustomSitePreferences()).toEqual({})
+            expect(await getCustomSitePreferences()).toEqual({})
         })
     })
 

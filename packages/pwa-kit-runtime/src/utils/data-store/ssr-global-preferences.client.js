@@ -17,9 +17,9 @@ import {warnIfMrtDataStoreBootstrapMissing} from './logging-utils'
  *
  * **Note:** Not called by the PWA Kit framework or template apps today; intended for customer code.
  *
- * @returns {Record<string, unknown>}
+ * @returns {Promise<Record<string, unknown>>}
  */
-export function getCustomGlobalPreferences() {
+export async function getCustomGlobalPreferences() {
     if (typeof window === 'undefined') {
         return {}
     }

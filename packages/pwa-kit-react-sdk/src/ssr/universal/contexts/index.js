@@ -5,13 +5,21 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import React, {useEffect, useRef} from 'react'
+import React, {createContext, useEffect, useRef, useMemo} from 'react'
 import PropTypes from 'prop-types'
 import {useLocation} from 'react-router-dom'
 import logger from '../../../utils/logger-instance'
 
 const CorrelationIdContext = React.createContext()
 const ServerContext = React.createContext()
+
+/**
+ * Context for MRT Data Store preferences
+ */
+const MrtDataStoreContext = createContext({
+    customSitePreferences: {},
+    customGlobalPreferences: {}
+})
 
 /**
  * This provider initializes the correlation id,
@@ -63,4 +71,51 @@ CorrelationIdProvider.propTypes = {
     location: PropTypes.object
 }
 
-export {CorrelationIdContext, CorrelationIdProvider, ServerContext}
+/**
+ * Provider for MRT Data Store preferences.
+ *
+ * On server (SSR): Receives preferences from SSR bootstrap as props
+ * On client: Reads from window.__MRT_DATA_STORE__ (serialized by server)
+ *
+ * @param {Object} props
+ * @param {Object} props.customSitePreferences - Site preferences (from SSR)
+ * @param {Object} props.customGlobalPreferences - Global preferences (from SSR)
+ * @param {React.ReactNode} props.children
+ */
+const MrtDataStoreProvider = ({
+    customSitePreferences: ssrSitePreferences = {},
+    customGlobalPreferences: ssrGlobalPreferences = {},
+    children
+}) => {
+    const value = useMemo(() => {
+        // Client: read from bootstrapped window object
+        if (typeof window !== 'undefined' && window.__MRT_DATA_STORE__) {
+            return {
+                customSitePreferences: window.__MRT_DATA_STORE__.customSitePreferences || {},
+                customGlobalPreferences: window.__MRT_DATA_STORE__.customGlobalPreferences || {}
+            }
+        }
+
+        // Server: use props from SSR bootstrap
+        return {
+            customSitePreferences: ssrSitePreferences,
+            customGlobalPreferences: ssrGlobalPreferences
+        }
+    }, [ssrSitePreferences, ssrGlobalPreferences])
+
+    return <MrtDataStoreContext.Provider value={value}>{children}</MrtDataStoreContext.Provider>
+}
+
+MrtDataStoreProvider.propTypes = {
+    customSitePreferences: PropTypes.object,
+    customGlobalPreferences: PropTypes.object,
+    children: PropTypes.node
+}
+
+export {
+    CorrelationIdContext,
+    CorrelationIdProvider,
+    ServerContext,
+    MrtDataStoreContext,
+    MrtDataStoreProvider
+}
