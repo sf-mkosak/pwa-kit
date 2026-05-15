@@ -6,7 +6,12 @@
  */
 
 const {test, expect} = require('@playwright/test')
-const {addProductToCart, searchProduct, checkoutProduct} = require('../../scripts/pageHelpers')
+const {
+    addProductToCart,
+    answerConsentTrackingForm,
+    searchProduct,
+    checkoutProduct
+} = require('../../scripts/pageHelpers')
 const {generateUserCredentials, getCreditCardExpiry} = require('../../scripts/utils.js')
 const {clearCartAndWishlist} = require('../../scripts/cleanup.js')
 
@@ -143,12 +148,18 @@ test('Guest shopper can checkout product bundle', async ({page}) => {
 
     await page.waitForLoadState()
 
+    // The DNT consent modal can re-appear after navigations on mobile when
+    // the dnt cookie isn't yet set, and it intercepts clicks on the bottom
+    // of the viewport (where Add Bundle to Cart sits).
+    await answerConsentTrackingForm(page)
+
     await expect(page.getByRole('heading', {name: /Turquoise Jewelry Bundle/i})).toBeVisible({
         timeout: 30000
     })
 
     const addBundleToCart = page.getByRole('button', {name: /Add Bundle to Cart/i})
     await expect(addBundleToCart).toBeEnabled({timeout: 30000})
+    await expect(page.locator('text=Tracking Consent')).toBeHidden({timeout: 10000})
     await addBundleToCart.click()
 
     const addedToCartModal = page.getByText(/1 item added to cart/i)

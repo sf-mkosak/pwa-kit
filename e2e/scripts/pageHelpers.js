@@ -24,23 +24,36 @@ const {getCreditCardExpiry, runAccessibilityTest} = require('../scripts/utils.js
  * @param {Boolean} dnt - Do Not Track value to answer the form. False to enable tracking, True to disable tracking.
  */
 export const answerConsentTrackingForm = async (page, dnt = false) => {
+    const consentForm = page.locator('text=Tracking Consent')
+
+    // Probe for the form: if it doesn't appear, assume the preference is
+    // already set and return. With httpOnly cookies, auth initialization
+    // can be slow so we allow up to 10s for it to render.
     try {
-        const consentForm = page.locator('text=Tracking Consent')
-
-        // Wait for the consent form to appear. With httpOnly cookies, auth initialization
-        // may be slower so the form can take longer to render after page.goto resolves.
         await consentForm.waitFor({state: 'visible', timeout: 10000})
+    } catch {
+        return
+    }
 
-        const ariaLabel = dnt ? 'Decline tracking' : 'Accept tracking'
-        const button = page
-            .locator(`button[aria-label="${ariaLabel}"]`)
-            .and(page.locator(':visible'))
-        await button.first().click()
+    const ariaLabel = dnt ? 'Decline tracking' : 'Accept tracking'
+    const button = page.locator(`button[aria-label="${ariaLabel}"]`).and(page.locator(':visible'))
 
-        // Wait for the consent form to fully disappear from the DOM
-        await consentForm.waitFor({state: 'hidden', timeout: 5000})
-    } catch (error) {
-        // Consent form may not appear (e.g. preference already set) — continue silently
+    // The consent modal is rendered into a chakra-portal anchored to the
+    // bottom of the viewport. While it is visible, its inner Stack of
+    // buttons intercepts pointer events on any element that overlaps it
+    // (e.g. Sign In, Add Bundle to Cart). If the first dismissal click
+    // doesn't make the modal disappear within 5s, retry once before giving
+    // up — this is more robust than a single click + long wait, and avoids
+    // the misleading 60s waitForResponse timeouts we see when a stale modal
+    // intercepts a later click in the test.
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            await button.first().click()
+            await consentForm.waitFor({state: 'hidden', timeout: 5000})
+            return
+        } catch {
+            // fall through and retry
+        }
     }
 }
 
@@ -325,6 +338,13 @@ export const loginShopper = async ({page, userCredentials, allowFallback = true}
 
         await page.locator('input#email').fill(userCredentials.email)
         await page.locator('input#password').fill(userCredentials.password)
+
+        // The DNT consent modal is portaled to the bottom of the viewport.
+        // If it is still visible when we click Sign In, its container
+        // intercepts the click — the form never submits and waitForResponse
+        // below times out at 60s with a misleading message. Make the failure
+        // explicit instead.
+        await expect(page.locator('text=Tracking Consent')).toBeHidden({timeout: 10000})
 
         const loginResponsePromise = page.waitForResponse(
             '**/shopper/auth/v1/organizations/**/oauth2/login'
