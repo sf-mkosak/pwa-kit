@@ -10,6 +10,12 @@ const config = require('../config.js')
 // commerce-sdk-react stores tokens in localStorage with the siteId as suffix:
 // e.g. `access_token_RefArch`, `customer_id_RefArch`. Match by prefix so the
 // helper works regardless of the active siteId.
+//
+// NOTE: When SLAS tokens migrate from localStorage to httpOnly cookies, this
+// helper will silently no-op (no access_token/customer_id in localStorage →
+// readSession returns null → cleanup skips). Follow-up: switch to reading
+// the session from cookies, or call cookie-authed /mobify/slas/private/*
+// endpoints. Tracked separately from this PR.
 const readSession = (page) =>
     page.evaluate(() => {
         const entries = Object.entries(window.localStorage)

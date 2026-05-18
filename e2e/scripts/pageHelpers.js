@@ -328,10 +328,15 @@ export const validateWishlist = async ({page, a11y = {}}) => {
  *      - lastName
  *      - email
  *      - password
+ * @param {Boolean} [options.allowFallback=true] - When false, rethrows the underlying error
+ *      instead of returning false. Use this to surface real SLAS failures in tests that
+ *      shouldn't fall through to register-then-relogin against polluted state.
  *
  * @return {Boolean} - denotes whether or not login was successful
  */
 export const loginShopper = async ({page, userCredentials, allowFallback = true}) => {
+    let loginResponse
+    let tokenResponse
     try {
         await page.goto(config.RETAIL_APP_HOME + '/login')
         await answerConsentTrackingForm(page)
@@ -354,10 +359,10 @@ export const loginShopper = async ({page, userCredentials, allowFallback = true}
         )
         await page.getByRole('button', {name: /Sign In/i}).click()
 
-        const loginResponse = await loginResponsePromise
+        loginResponse = await loginResponsePromise
         expect(loginResponse.status()).toBe(303) // Login returns a 303 redirect to /callback with authCode and usid
 
-        const tokenResponse = await tokenResponsePromise
+        tokenResponse = await tokenResponsePromise
         expect(tokenResponse.status()).toBe(200)
 
         await page.waitForURL(/.*\/account.*/, {timeout: 10000})
@@ -365,7 +370,11 @@ export const loginShopper = async ({page, userCredentials, allowFallback = true}
         await expect(page.getByText(userCredentials.email)).toBeVisible()
         return true
     } catch (error) {
-        console.error('[e2e] loginShopper failed:', error.message)
+        const lastResponse = tokenResponse || loginResponse
+        const responseContext = lastResponse
+            ? ` (last SLAS response: ${lastResponse.status()} ${lastResponse.url()})`
+            : ''
+        console.error(`[e2e] loginShopper failed${responseContext}:`, error.message)
         if (!allowFallback) throw error
         return false
     }
