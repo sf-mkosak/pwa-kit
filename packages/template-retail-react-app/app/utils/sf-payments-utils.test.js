@@ -10,6 +10,8 @@ import {
     buildTheme,
     getSFPaymentsInstrument,
     transformAddressDetails,
+    transformPayPalAddressFromPaymentReference,
+    getPaymentReference,
     transformShippingMethods,
     getSelectedShippingMethodId,
     isShippingMethodValid,
@@ -869,6 +871,92 @@ describe('sf-payments-utils', () => {
             expect(result.billingAddress.firstName).toBe('Jane')
             expect(result.billingAddress.lastName).toBe('Smith')
             expect(result.billingAddress.city).toBe('Los Angeles')
+        })
+    })
+
+    describe('transformPayPalAddressFromPaymentReference', () => {
+        const paypalProps = {
+            payer: {givenName: 'Pat', surname: 'Buyer', emailAddress: 'pat@example.com'},
+            shipping: {
+                addressLine1: '4 Main St.',
+                addressLine2: 'Basement Flat',
+                adminArea1: 'MA',
+                adminArea2: 'Boston',
+                countryCode: 'US',
+                postalCode: '40982'
+            }
+        }
+
+        test('maps payer + shipping into a basket address body', () => {
+            expect(transformPayPalAddressFromPaymentReference(paypalProps)).toEqual({
+                firstName: 'Pat',
+                lastName: 'Buyer',
+                address1: '4 Main St.',
+                address2: 'Basement Flat',
+                city: 'Boston',
+                stateCode: 'MA',
+                postalCode: '40982',
+                countryCode: 'US',
+                phone: null
+            })
+        })
+
+        test('returns null when shipping.addressLine1 is missing', () => {
+            expect(transformPayPalAddressFromPaymentReference({payer: paypalProps.payer})).toBeNull()
+            expect(transformPayPalAddressFromPaymentReference({shipping: {}})).toBeNull()
+            expect(transformPayPalAddressFromPaymentReference(undefined)).toBeNull()
+        })
+
+        test('omits payer name fields when payer is missing', () => {
+            const result = transformPayPalAddressFromPaymentReference({
+                shipping: paypalProps.shipping
+            })
+            expect(result.firstName).toBeNull()
+            expect(result.lastName).toBeNull()
+            expect(result.address1).toBe('4 Main St.')
+        })
+    })
+
+    describe('getPaymentReference', () => {
+        test('defaults to gateway=paypal and returns the matching paymentReference', () => {
+            const ref = {gateway: 'paypal', paymentReferenceId: 'pr-1'}
+            const basket = {
+                paymentInstruments: [
+                    {paymentMethodId: 'Salesforce Payments', paymentReference: ref}
+                ]
+            }
+            expect(getPaymentReference(basket)).toBe(ref)
+        })
+
+        test('matches the given gateway when one is supplied', () => {
+            const stripeRef = {gateway: 'stripe', paymentReferenceId: 'pr-stripe'}
+            const venmoRef = {gateway: 'venmo', paymentReferenceId: 'pr-venmo'}
+            const basket = {
+                paymentInstruments: [
+                    {paymentMethodId: 'Salesforce Payments', paymentReference: stripeRef},
+                    {paymentMethodId: 'Salesforce Payments', paymentReference: venmoRef}
+                ]
+            }
+            expect(getPaymentReference(basket, 'venmo')).toBe(venmoRef)
+            expect(getPaymentReference(basket, 'stripe')).toBe(stripeRef)
+        })
+
+        test('returns undefined when no instrument has the requested gateway', () => {
+            const basket = {
+                paymentInstruments: [
+                    {
+                        paymentMethodId: 'Salesforce Payments',
+                        paymentReference: {gateway: 'stripe'}
+                    }
+                ]
+            }
+            expect(getPaymentReference(basket, 'paypal')).toBeUndefined()
+        })
+
+        test('returns undefined for an empty / missing basket', () => {
+            expect(getPaymentReference(undefined)).toBeUndefined()
+            expect(getPaymentReference({})).toBeUndefined()
+            expect(getPaymentReference({paymentInstruments: []})).toBeUndefined()
         })
     })
 

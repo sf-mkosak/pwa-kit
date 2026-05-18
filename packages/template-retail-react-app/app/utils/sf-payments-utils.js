@@ -97,6 +97,45 @@ export const transformAddressDetails = (billingDetails, shippingDetails) => {
 }
 
 /**
+ * Transform a PayPal paymentReference (from getBasket?expand=paymentreferences) into a
+ * basket address body. PayPal/Venmo only supplies a shipping address on the PayPal/Venmo order, so the
+ * same address is used for both shipping and billing.
+ * @param {Object} paypalOrder - paymentReference.gatewayProperties.paypal
+ * @returns {Object|null} Address body suitable for updateShippingAddressForShipment /
+ *   updateBillingAddressForBasket, or null if the payload is missing required fields.
+ */
+export const transformPayPalAddressFromPaymentReference = (paypalOrder) => {
+    const shipping = paypalOrder?.shipping
+    if (!shipping?.addressLine1) {
+        return null
+    }
+    const payer = paypalOrder?.payer || {}
+    return {
+        firstName: payer.givenName || null,
+        lastName: payer.surname || null,
+        address1: shipping.addressLine1,
+        address2: shipping.addressLine2 || null,
+        city: shipping.adminArea2 || null,
+        stateCode: shipping.adminArea1 || null,
+        postalCode: shipping.postalCode || null,
+        countryCode: shipping.countryCode || null,
+        phone: null
+    }
+}
+
+/**
+ * Returns the first paymentReference whose gateway matches the given gateway from a basket or order
+ * fetched with `expand=paymentreferences`.
+ * @param {Object} basketOrOrder - Basket or order containing paymentInstruments
+ * @param {string} gateway - Gateway to match (e.g., 'paypal', 'venmo') default is 'paypal'
+ * @returns {Object|undefined} Matching paymentReference, or undefined if none exist
+ */
+export const getPaymentReference = (basketOrOrder, gateway = 'paypal') => {
+    return basketOrOrder?.paymentInstruments?.find((pi) => pi.paymentReference?.gateway === gateway)
+        ?.paymentReference
+}
+
+/**
  * Transform shipping methods from API format to express payment format.
  * @param {Array} shippingMethods - Array of shipping methods from API
  * @param {Object} basket - Basket object containing currency
