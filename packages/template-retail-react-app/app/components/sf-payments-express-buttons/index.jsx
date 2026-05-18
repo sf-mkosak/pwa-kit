@@ -29,6 +29,8 @@ import {
     buildTheme,
     getSFPaymentsInstrument,
     transformAddressDetails,
+    transformPayPalAddressFromPaymentReference,
+    getPaymentReference,
     transformShippingMethods,
     getSelectedShippingMethodId,
     createPaymentInstrumentBody,
@@ -548,6 +550,7 @@ const SFPaymentsExpressButtons = ({
                         updatedBasket,
                         updatedShippingMethods
                     )
+                    expressBasket.current = updatedBasket
 
                     const expressCallback = createExpressCallback(
                         updatedBasket,
@@ -610,20 +613,51 @@ const SFPaymentsExpressButtons = ({
                 // Set confirmingBasket to show loading spinner during address updates
                 startConfirming(expressBasket.current)
 
-                // For non-PayPal methods, if order was already created in createIntentFunction,
+                // If the order was already created in createIntentFunction (Adyen),
                 // the basket is consumed and we shouldn't try to update addresses
-                if (!isPayPalPaymentMethodType(paymentMethodType) && orderRef.current) {
+                if (orderRef.current) {
                     logger.info('Order already created, skipping address updates', {
                         namespace: 'SFPaymentsExpressButtons.onPayerApprove'
                     })
                     return
                 }
-                try {
-                    // Transform both billing and shipping addresses
-                    const {billingAddress, shippingAddress} = transformAddressDetails(
-                        billingDetails,
-                        shippingDetails
+                // PayPal/Venmo: the SDK does not surface billing/shipping in the callback.
+                // Pull the basket back with expand=paymentreferences so we can read the
+                // payer + shipping address PayPal captured at approval time, then stamp
+                // both shipping and billing addresses on the basket from that data.
+                const resolvePayPalAddresses = async () => {
+                    const token = await getTokenWhenReady()
+                    const basketWithRefs = await api.shopperBasketsV2.getBasket({
+                        parameters: {
+                            basketId: expressBasket.current.basketId,
+                            expand: ['paymentreferences']
+                        },
+                        headers: {Authorization: `Bearer ${token}`}
+                    })
+                    const paypalRef = getPaymentReference(basketWithRefs, 'paypal')
+                    const paypalAddress = transformPayPalAddressFromPaymentReference(
+                        paypalRef?.gatewayProperties?.paypal
                     )
+                    if (!paypalAddress) {
+                        logger.error('Missing PayPal address on paymentReference', {
+                            namespace: 'SFPaymentsExpressButtons.onPayerApprove',
+                            additionalProperties: {
+                                basketId: expressBasket.current?.basketId,
+                                paymentMethodType,
+                                hasPaypalRef: Boolean(paypalRef)
+                            }
+                        })
+                        throw new Error('Missing PayPal address on paymentReference')
+                    }
+                    return {billingAddress: paypalAddress, shippingAddress: paypalAddress}
+                }
+
+                try {
+                    const {billingAddress, shippingAddress} = isPayPalPaymentMethodType(
+                        paymentMethodType
+                    )
+                        ? await resolvePayPalAddresses()
+                        : transformAddressDetails(billingDetails, shippingDetails)
 
                     // Next update shipping address in basket
                     const updatedBasket = await updateShippingAddressForShipment.mutateAsync({
