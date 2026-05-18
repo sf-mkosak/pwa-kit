@@ -328,13 +328,10 @@ export const validateWishlist = async ({page, a11y = {}}) => {
  *      - lastName
  *      - email
  *      - password
- * @param {Boolean} [options.allowFallback=true] - When false, rethrows the underlying error
- *      instead of returning false. Use this to surface real SLAS failures in tests that
- *      shouldn't fall through to register-then-relogin against polluted state.
  *
  * @return {Boolean} - denotes whether or not login was successful
  */
-export const loginShopper = async ({page, userCredentials, allowFallback = true}) => {
+export const loginShopper = async ({page, userCredentials}) => {
     let loginResponse
     let tokenResponse
     try {
@@ -375,7 +372,6 @@ export const loginShopper = async ({page, userCredentials, allowFallback = true}
             ? ` (last SLAS response: ${lastResponse.status()} ${lastResponse.url()})`
             : ''
         console.error(`[e2e] loginShopper failed${responseContext}:`, error.message)
-        if (!allowFallback) throw error
         return false
     }
 }
