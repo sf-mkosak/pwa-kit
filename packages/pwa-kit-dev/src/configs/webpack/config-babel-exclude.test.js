@@ -21,9 +21,7 @@ const EXT_EXTENDS_WIN = EXT_EXTENDS.replace('/', '\\')
 
 const buildBabelExcludeRegex = () => {
     return new RegExp(
-        `${path.sep}node_modules(?!${path.sep}${
-            path.sep === '/' ? EXT_EXTENDS : EXT_EXTENDS_WIN
-        })`
+        `${path.sep}node_modules(?!${path.sep}${path.sep === '/' ? EXT_EXTENDS : EXT_EXTENDS_WIN})`
     )
 }
 
@@ -31,10 +29,7 @@ describe('babel-loader exclude regex (Windows regression - issue #3789)', () => 
     const exclude = buildBabelExcludeRegex()
 
     if (path.sep === '\\') {
-        // eslint-disable-next-line no-console
-        console.log(
-            `[DEBUG] Running on Windows. path.sep='\\\\', regex source: ${exclude.source}`
-        )
+        console.log(`[DEBUG] Running on Windows. path.sep='\\\\', regex source: ${exclude.source}`) // eslint-disable-line no-console
     }
 
     test('excludes regular node_modules packages', () => {
