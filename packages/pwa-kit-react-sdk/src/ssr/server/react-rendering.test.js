@@ -19,6 +19,7 @@ import path from 'path'
 import {isRemote} from '@salesforce/pwa-kit-runtime/utils/ssr-server'
 import {
     DATA_STORE_WINDOW_GLOBAL,
+    DATA_STORE_BOOTSTRAP_SITE_ID_KEY,
     CUSTOM_GLOBAL_PREFERENCES_DATA_STORE_KEY
 } from '@salesforce/pwa-kit-runtime/utils/data-store/constants'
 import {getAppConfig} from '../universal/compatibility'
@@ -844,7 +845,7 @@ describe('Additional branch coverage for react-rendering', () => {
             // Expect DAL keys: custom-global-preferences and __siteId
             // No site key since res.locals.site is undefined in test fixtures
             expect(data[DATA_STORE_WINDOW_GLOBAL]).toEqual({
-                __siteId: undefined,
+                [DATA_STORE_BOOTSTRAP_SITE_ID_KEY]: undefined,
                 [CUSTOM_GLOBAL_PREFERENCES_DATA_STORE_KEY]: {}
             })
         } finally {

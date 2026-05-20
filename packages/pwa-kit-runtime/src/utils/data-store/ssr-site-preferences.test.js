@@ -7,11 +7,7 @@
 
 import {DataStore} from '../ssr-server/data-store'
 import {resetDataStoreProviderCacheForTests} from './data-store-utils'
-import {
-    DATA_STORE_BOOTSTRAP_GLOBAL_PREFERENCES_KEY,
-    DATA_STORE_BOOTSTRAP_SITE_PREFERENCES_KEY,
-    DATA_STORE_WINDOW_GLOBAL
-} from './constants'
+import {DATA_STORE_WINDOW_GLOBAL} from './constants'
 import {getCustomSitePreferences} from './ssr-site-preferences.client'
 import {
     buildCustomSitePreferencesDataStoreKey,

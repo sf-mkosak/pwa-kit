@@ -22,6 +22,7 @@ import {isRemote} from '@salesforce/pwa-kit-runtime/utils/ssr-server'
 import {proxyConfigs} from '@salesforce/pwa-kit-runtime/utils/ssr-shared'
 import {
     DATA_STORE_WINDOW_GLOBAL,
+    DATA_STORE_BOOTSTRAP_SITE_ID_KEY,
     CUSTOM_GLOBAL_PREFERENCES_DATA_STORE_KEY,
     CUSTOM_SITE_PREFERENCES_KEY_SUFFIX
 } from '@salesforce/pwa-kit-runtime/utils/data-store/constants'
@@ -444,7 +445,7 @@ const renderApp = (args) => {
         const siteId = res.locals.site?.id
         // Serialize using DAL keys for consistency with backend storage
         windowGlobals[DATA_STORE_WINDOW_GLOBAL] = {
-            __siteId: siteId, // Include siteId so client can construct keys
+            [DATA_STORE_BOOTSTRAP_SITE_ID_KEY]: siteId, // Include siteId so client can construct keys
             [CUSTOM_GLOBAL_PREFERENCES_DATA_STORE_KEY]: customGlobalPreferences ?? {}
         }
         // Add site preferences only if we have a siteId
