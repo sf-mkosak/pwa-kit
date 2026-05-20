@@ -61,6 +61,8 @@ export const EXT_OVERRIDES_DIR_NO_SLASH = EXT_OVERRIDES_DIR?.replace(/^\//, '')
 export const EXT_EXTENDS = pkg?.ccExtensibility?.extends
 export const EXT_EXTENDS_WIN = pkg?.ccExtensibility?.extends?.replace('/', '\\')
 export const EXT_EXTENDABLE = pkg?.ccExtensibility?.extendable
+const ESCAPED_SEP = path.sep.replace(/\\/g, '\\\\')
+const EXT_EXTENDS_REGEX = EXT_EXTENDS?.replace('/', ESCAPED_SEP)
 
 // TODO: can these be handled in package.json as peerDependencies?
 // https://salesforce-internal.slack.com/archives/C0DKK1FJS/p1672939909212589
@@ -378,9 +380,7 @@ const ruleForBabelLoader = (babelPlugins) => {
             ? // TODO: handle for array here when that's supported
               {
                   exclude: new RegExp(
-                      `${path.sep}node_modules(?!${path.sep}${
-                          path.sep === '/' ? EXT_EXTENDS : EXT_EXTENDS_WIN
-                      })`
+                      `${ESCAPED_SEP}node_modules(?!${ESCAPED_SEP}${EXT_EXTENDS_REGEX})`
                   )
               }
             : {exclude: /node_modules/}),
