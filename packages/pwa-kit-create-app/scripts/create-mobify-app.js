@@ -419,6 +419,12 @@ const runGenerator = (context, {outputDir, templateVersion, verbose}) => {
         // (bootstrap/bundle) we'll do it here where it works in both scenarios.
         const pkgJsonPath = p.resolve(outputDir, 'package.json')
         const pkgJSON = readJson(pkgJsonPath)
+
+        // Pin @formatjs/cli to avoid native binaries (>=6.15.0) that break --pseudo-locale
+        if (pkgJSON.dependencies && pkgJSON.dependencies['@formatjs/cli']) {
+            pkgJSON.dependencies['@formatjs/cli'] = '6.9.0'
+        }
+
         const finalPkgData = merge(pkgJSON, {
             name: slugifyName(context.answers.project.name || context.template.id),
             version: GENERATED_PROJECT_VERSION

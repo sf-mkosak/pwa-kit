@@ -148,9 +148,29 @@ const runGenerator = () => {
     )
 }
 
+const patchGeneratedProject = () => {
+    const outputDirFlag = process.argv.find((arg, i) =>
+        process.argv[i - 1] === '--outputDir'
+    )
+    if (!outputDirFlag) return
+
+    const pkgPath = p.resolve(outputDirFlag, 'package.json')
+    if (!sh.test('-e', pkgPath)) return
+
+    const pkg = JSON.parse(sh.cat(pkgPath))
+    if (pkg.dependencies && pkg.dependencies['@formatjs/cli']) {
+        pkg.dependencies['@formatjs/cli'] = '6.9.0'
+        sh.ShellString(JSON.stringify(pkg, null, 2) + '\n').to(pkgPath)
+
+        console.log('Reinstalling with pinned @formatjs/cli...')
+        cp.execSync('npm install', {cwd: outputDirFlag, stdio: 'inherit'})
+    }
+}
+
 const main = () => {
     return Promise.resolve()
         .then(() => withLocalNPMRepo(runGenerator))
+        .then(() => patchGeneratedProject())
         .then(() => process.exit(0))
         .catch(() => process.exit(1))
 }
