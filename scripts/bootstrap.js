@@ -26,7 +26,7 @@ const ciCommand = npmCmd === 'ci'
 // They are often memory-constrained and kill processes which produce no
 // output for too long.
 const commandArgs = ciCommand ? '--ci' : '--no-ci'
-const environmentArgs = ciEnvironment ? '--concurrency 1 --loglevel debug --stream' : ''
+const environmentArgs = ciEnvironment ? '--concurrency 1 --loglevel debug' : ''
 const cmd = `npm run lerna -- bootstrap ${commandArgs} ${environmentArgs}`
 
 childProc.execSync(cmd, {stdio: 'inherit'})
