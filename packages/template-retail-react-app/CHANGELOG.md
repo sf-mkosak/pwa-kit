@@ -1,4 +1,4 @@
-## v10.0.1
+## v10.0.1 (May 21, 2026)
 - Upgrade @salesforce/storefront-next-runtime to 0.4.2 [#3839](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3839)
 - [Bugfix] Pin `@formatjs/cli` to 6.9.0 to fix pseudo-locale compilation in generated projects [#3842](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3842)
 
