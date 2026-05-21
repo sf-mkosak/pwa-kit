@@ -1,4 +1,5 @@
 ## v10.1.0-dev (May 07, 2026)
+- [Bugfix] Make `compile-translations` and `compile-translations:pseudo` postinstall scripts wait for `formatjs` to finish so generated projects don't race the test runner against an empty `app/static/translations/compiled/en-XA.json` on Node 24. [#3834](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3834)
 - [Feature] Add maintenance mode page: when the Commerce API returns an `sfdc_maintenance` response header, a 503 error is detected and a dedicated maintenance page is displayed instead of the generic error page. The maintenance page can render a shared page fetched from a configurable CDN URL (default) or fall back to a built-in message. Configure via `app.pages.maintenancePage` in `config/default.js`. [#3827](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3827)
 
 ## v10.0.0 (May 07, 2026)
