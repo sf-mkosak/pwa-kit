@@ -1,3 +1,6 @@
+## v5.2.1
+- Add contentLinkUuid support to fix Page Designer integration [#3839](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3839)
+
 ## v5.2.0 (May 07, 2026)
 - Allow auth related cookies domain to be set via config [#3782](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3782)
 - WIP: Add support for HttpOnly session cookies [#3804](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3804)
