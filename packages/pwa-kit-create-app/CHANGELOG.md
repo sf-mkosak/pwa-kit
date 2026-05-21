@@ -1,3 +1,6 @@
+## v3.18.1 (May 21, 2026)
+- Add react-router override for @salesforce/storefront-next-runtime in generated project template [#3839](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3839)
+
 ## v3.18.0 (May 07, 2026)
 - Add opt-in `app.mrtDataStore.enabled` to generated `config/default.js` templates (default `false`; enable MRT Data Store bootstrap with `true` or `PWAKIT_MRT_DATA_STORE_ENABLED`; when false, `__MRT_DATA_STORE__` is omitted from `#mobify-data`). Comments reference `isMrtDataStoreEnabled`. Document local defaults env vars (`MRT_DATA_STORE_DEFAULTS`, etc.) for the in-memory local provider from `@salesforce/mrt-utilities`. [#3787](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3787) [#3811](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3811) [#3823](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3823)
 - Allow auth related cookies domain to be set via config [#3782](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3782)
