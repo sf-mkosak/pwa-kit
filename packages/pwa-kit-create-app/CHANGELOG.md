@@ -1,4 +1,4 @@
-## v3.18.1
+## v3.18.1 (May 21, 2026)
 - Add react-router override for @salesforce/storefront-next-runtime in generated project template [#3839](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3839)
 - [Bugfix] Fix verdaccio config to not proxy monorepo `@salesforce/*` packages, ensuring locally published versions are used in generated project tests [#3842](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3842)
 
