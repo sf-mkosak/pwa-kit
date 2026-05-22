@@ -1,3 +1,6 @@
+## v5.3.0-dev (May 22, 2026)
+## v5.2.1 (May 22, 2026)
+## v3.19.0-dev (May 22, 2026)
 ## v5.2.1 (May 21, 2026)
 - Add contentLinkUuid support to fix Page Designer integration [#3839](https://github.com/SalesforceCommerceCloud/pwa-kit/pull/3839)
 
