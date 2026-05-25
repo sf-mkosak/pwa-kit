@@ -5,51 +5,11 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import path from 'path'
 import {buildBabelExcludeRegex} from './babel-exclude'
 
 const EXT_EXTENDS = '@salesforce/retail-react-app'
 
 describe('babel-loader exclude regex', () => {
-    describe(`on current platform (path.sep = '${path.sep}')`, () => {
-        const exclude = buildBabelExcludeRegex(path.sep, EXT_EXTENDS)
-
-        test('excludes regular node_modules packages', () => {
-            const lodashPath = path.join('C:', 'project', 'node_modules', 'lodash', 'index.js')
-            expect(exclude.test(lodashPath)).toBe(true)
-        })
-
-        test('does NOT exclude the extends package', () => {
-            const extendsPath = path.join(
-                'C:',
-                'project',
-                'node_modules',
-                '@salesforce',
-                'retail-react-app',
-                'app',
-                'index.jsx'
-            )
-            expect(exclude.test(extendsPath)).toBe(false)
-        })
-
-        test('excludes other @salesforce scoped packages', () => {
-            const otherPath = path.join(
-                'C:',
-                'project',
-                'node_modules',
-                '@salesforce',
-                'pwa-kit-runtime',
-                'index.js'
-            )
-            expect(exclude.test(otherPath)).toBe(true)
-        })
-
-        test('does not exclude source files outside node_modules', () => {
-            const srcPath = path.join('C:', 'project', 'app', 'components', 'index.jsx')
-            expect(exclude.test(srcPath)).toBe(false)
-        })
-    })
-
     describe('on Windows (path.sep = backslash)', () => {
         const exclude = buildBabelExcludeRegex('\\', EXT_EXTENDS)
 
