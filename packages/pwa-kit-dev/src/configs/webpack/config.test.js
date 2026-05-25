@@ -1,23 +1,18 @@
 /*
- * Copyright (c) 2024, salesforce.com, inc.
+ * Copyright (c) 2026, salesforce.com, inc.
  * All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
 import path from 'path'
+import {buildBabelExcludeRegex} from './babel-exclude'
 
 const EXT_EXTENDS = '@salesforce/retail-react-app'
 
-const buildBabelExcludeRegex = (sep) => {
-    const escapedSep = sep.replace(/\\/g, '\\\\')
-    const extendsRegex = EXT_EXTENDS.replace('/', escapedSep)
-    return new RegExp(`${escapedSep}node_modules(?!${escapedSep}${extendsRegex})`)
-}
-
 describe('babel-loader exclude regex', () => {
     describe(`on current platform (path.sep = '${path.sep}')`, () => {
-        const exclude = buildBabelExcludeRegex(path.sep)
+        const exclude = buildBabelExcludeRegex(path.sep, EXT_EXTENDS)
 
         test('excludes regular node_modules packages', () => {
             const lodashPath = path.join('C:', 'project', 'node_modules', 'lodash', 'index.js')
@@ -56,7 +51,7 @@ describe('babel-loader exclude regex', () => {
     })
 
     describe('on Windows (path.sep = backslash)', () => {
-        const exclude = buildBabelExcludeRegex('\\')
+        const exclude = buildBabelExcludeRegex('\\', EXT_EXTENDS)
 
         test('excludes regular node_modules packages', () => {
             expect(exclude.test('C:\\project\\node_modules\\lodash\\index.js')).toBe(true)
@@ -82,7 +77,7 @@ describe('babel-loader exclude regex', () => {
     })
 
     describe('on Unix (path.sep = /)', () => {
-        const exclude = buildBabelExcludeRegex('/')
+        const exclude = buildBabelExcludeRegex('/', EXT_EXTENDS)
 
         test('excludes regular node_modules packages', () => {
             expect(exclude.test('/home/dev/project/node_modules/lodash/index.js')).toBe(true)

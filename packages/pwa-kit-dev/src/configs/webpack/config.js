@@ -23,6 +23,7 @@ import {getEnvBasePath, bundleBasePath} from '@salesforce/pwa-kit-runtime/utils/
 import OverridesResolverPlugin from './overrides-plugin'
 import {sdkReplacementPlugin} from './plugins'
 import {CLIENT, SERVER, CLIENT_OPTIONAL, SSR, REQUEST_PROCESSOR} from './config-names'
+import {buildBabelExcludeRegex} from './babel-exclude'
 
 const projectDir = process.cwd()
 const pkg = fse.readJsonSync(resolve(projectDir, 'package.json'))
@@ -379,9 +380,7 @@ const ruleForBabelLoader = (babelPlugins) => {
         ...(EXT_OVERRIDES_DIR && EXT_EXTENDS
             ? // TODO: handle for array here when that's supported
               {
-                  exclude: new RegExp(
-                      `${ESCAPED_SEP}node_modules(?!${ESCAPED_SEP}${EXT_EXTENDS_REGEX})`
-                  )
+                  exclude: buildBabelExcludeRegex(path.sep, EXT_EXTENDS)
               }
             : {exclude: /node_modules/}),
         use: [
