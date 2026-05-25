@@ -328,6 +328,7 @@ const withChunking = (config) => {
                         // 3. If extending another template, don't include the
                         //    baseline route files in vendor.js
                         test: (module) => {
+                            // String.includes — literal match, so unescaped backslashes are correct here
                             if (
                                 EXT_EXTENDS &&
                                 EXT_OVERRIDES_DIR &&
