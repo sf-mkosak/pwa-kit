@@ -500,6 +500,33 @@ const SFPaymentsExpressButtons = ({
                 }
             }
 
+            const resolvePayPalAddresses = async () => {
+                const token = await getTokenWhenReady()
+                const basketWithRefs = await api.shopperBasketsV2.getBasket({
+                    parameters: {
+                        basketId: expressBasket.current.basketId,
+                        expand: ['paymentreferences']
+                    },
+                    headers: {Authorization: `Bearer ${token}`}
+                })
+                const paypalRef = getPaymentReference(basketWithRefs, 'paypal')
+                const paypalAddress = transformPayPalAddressFromPaymentReference(
+                    paypalRef?.gatewayProperties?.paypal
+                )
+                if (!paypalAddress) {
+                    logger.error('Missing PayPal address on paymentReference', {
+                        namespace: 'SFPaymentsExpressButtons.onPayerApprove',
+                        additionalProperties: {
+                            basketId: expressBasket.current?.basketId,
+                            paymentMethodType,
+                            hasPaypalRef: Boolean(paypalRef)
+                        }
+                    })
+                    throw new Error('Missing PayPal address on paymentReference')
+                }
+                return {billingAddress: paypalAddress, shippingAddress: paypalAddress}
+            }
+
             const onCancel = async () => {
                 isPaymentInProgress.current = false
                 endConfirming()
@@ -613,7 +640,7 @@ const SFPaymentsExpressButtons = ({
                 // Set confirmingBasket to show loading spinner during address updates
                 startConfirming(expressBasket.current)
 
-                // If the order was already created in createIntentFunction (Adyen),
+                // If the order was already created in createIntentFunction,
                 // the basket is consumed and we shouldn't try to update addresses
                 if (orderRef.current) {
                     logger.info('Order already created, skipping address updates', {
@@ -621,38 +648,11 @@ const SFPaymentsExpressButtons = ({
                     })
                     return
                 }
-                // PayPal/Venmo: the SDK does not surface billing/shipping in the callback.
-                // Pull the basket back with expand=paymentreferences so we can read the
-                // payer + shipping address PayPal captured at approval time, then stamp
-                // both shipping and billing addresses on the basket from that data.
-                const resolvePayPalAddresses = async () => {
-                    const token = await getTokenWhenReady()
-                    const basketWithRefs = await api.shopperBasketsV2.getBasket({
-                        parameters: {
-                            basketId: expressBasket.current.basketId,
-                            expand: ['paymentreferences']
-                        },
-                        headers: {Authorization: `Bearer ${token}`}
-                    })
-                    const paypalRef = getPaymentReference(basketWithRefs, 'paypal')
-                    const paypalAddress = transformPayPalAddressFromPaymentReference(
-                        paypalRef?.gatewayProperties?.paypal
-                    )
-                    if (!paypalAddress) {
-                        logger.error('Missing PayPal address on paymentReference', {
-                            namespace: 'SFPaymentsExpressButtons.onPayerApprove',
-                            additionalProperties: {
-                                basketId: expressBasket.current?.basketId,
-                                paymentMethodType,
-                                hasPaypalRef: Boolean(paypalRef)
-                            }
-                        })
-                        throw new Error('Missing PayPal address on paymentReference')
-                    }
-                    return {billingAddress: paypalAddress, shippingAddress: paypalAddress}
-                }
 
                 try {
+                    // For scenarios where the addresses aren't provided client side such as PayPal/Venmo,
+                    // fetch the basket back with expand=paymentreferences so the addresses
+                    // can be fetched server side from the gateway and returned to the client
                     const {billingAddress, shippingAddress} = isPayPalPaymentMethodType(
                         paymentMethodType
                     )
