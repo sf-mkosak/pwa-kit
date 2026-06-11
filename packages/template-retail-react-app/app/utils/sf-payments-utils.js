@@ -344,6 +344,53 @@ export const createPaymentInstrumentBody = ({
 }
 
 /**
+ * Builds the PATCH body for updating a basket payment instrument in response to a
+ * PayPal/Venmo shipping address change. Pushes the new basket amount and the latest
+ * applicable shipping options to the upstream PayPal Order via SCAPI.
+ * @param {Object} params
+ * @param {Object} params.basket - Updated basket (carries currency and orderTotal)
+ * @param {Object} params.shippingMethods - Shipping methods response with applicableShippingMethods
+ * @param {string} params.selectedShippingMethodId - Currently selected shipping method id
+ * @param {string} params.paymentMethodType - 'paypal' or 'venmo'
+ * @param {string} [params.zoneId] - Zone ID for payment processing
+ * @returns {Object} PATCH /baskets/{basketId}/payment-instruments/{paymentInstrumentId} body
+ */
+export const createPayPalShippingPatchBody = ({
+    basket,
+    shippingMethods,
+    selectedShippingMethodId,
+    paymentMethodType,
+    zoneId
+} = {}) => {
+    const currencyCode = basket?.currency
+    const amount = basket?.orderTotal
+
+    const shippingOptions = (shippingMethods?.applicableShippingMethods || []).map((method) => ({
+        id: method.id,
+        label: method.name,
+        amount: method.price?.toString(),
+        currencyCode,
+        selected: method.id === selectedShippingMethodId
+    }))
+
+    return {
+        amount,
+        paymentMethodId: 'Salesforce Payments',
+        paymentReferenceRequest: {
+            paymentMethodType,
+            zoneId: zoneId ?? 'default',
+            gatewayProperties: {
+                paypal: {
+                    amount: amount?.toString(),
+                    currencyCode,
+                    shippingOptions
+                }
+            }
+        }
+    }
+}
+
+/**
  * Transforms payment method references from API format to SF Payments SDK format.
  * @param {Object} customer - Customer object with paymentMethodReferences property
  * @param {Object} paymentConfig - Payment configuration object with paymentMethodSetAccounts property

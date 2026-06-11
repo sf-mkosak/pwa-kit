@@ -34,6 +34,7 @@ import {
     transformShippingMethods,
     getSelectedShippingMethodId,
     createPaymentInstrumentBody,
+    createPayPalShippingPatchBody,
     isPayPalPaymentMethodType,
     getClientSecret,
     getGatewayFromPaymentMethod,
@@ -96,6 +97,9 @@ const SFPaymentsExpressButtons = ({
     const updateShippingMethod = useShopperBasketsMutation('updateShippingMethodForShipment')
     const {mutateAsync: addPaymentInstrumentToBasket} = useShopperBasketsMutation(
         'addPaymentInstrumentToBasket'
+    )
+    const {mutateAsync: updatePaymentInstrumentInBasket} = useShopperBasketsMutation(
+        'updatePaymentInstrumentInBasket'
     )
     const {mutateAsync: updatePaymentInstrumentForOrder} = useShopperOrdersMutation(
         'updatePaymentInstrumentForOrder'
@@ -578,6 +582,46 @@ const SFPaymentsExpressButtons = ({
                         updatedShippingMethods
                     )
                     expressBasket.current = updatedBasket
+
+                    // PayPal/Venmo: PATCH the basket payment instrument so the upstream
+                    // PayPal Order reflects the new amount and shipping options.
+                    // Address change only — onShippingMethodChange PATCH is deferred (W-22773627).
+                    if (isPayPalPaymentMethodType(paymentMethodType)) {
+                        const sfPaymentsInstrument = getSFPaymentsInstrument(updatedBasket)
+                        if (sfPaymentsInstrument) {
+                            try {
+                                expressBasket.current = await updatePaymentInstrumentInBasket({
+                                    parameters: {
+                                        basketId: updatedBasket.basketId,
+                                        paymentInstrumentId:
+                                            sfPaymentsInstrument.paymentInstrumentId
+                                    },
+                                    body: createPayPalShippingPatchBody({
+                                        basket: updatedBasket,
+                                        shippingMethods: updatedShippingMethods,
+                                        selectedShippingMethodId: getSelectedShippingMethodId(
+                                            updatedBasket,
+                                            updatedShippingMethods
+                                        ),
+                                        paymentMethodType,
+                                        zoneId
+                                    })
+                                })
+                            } catch (error) {
+                                logger.error(
+                                    'Failed to PATCH PayPal payment instrument with shipping options',
+                                    {
+                                        namespace:
+                                            'SFPaymentsExpressButtons.onShippingAddressChange',
+                                        additionalProperties: {
+                                            error,
+                                            basketId: updatedBasket.basketId
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
 
                     const expressCallback = createExpressCallback(
                         updatedBasket,
