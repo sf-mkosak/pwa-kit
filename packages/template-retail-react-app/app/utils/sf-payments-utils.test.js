@@ -18,6 +18,7 @@ import {
     isPayPalPaymentMethodType,
     findPaymentAccount,
     createPaymentInstrumentBody,
+    createPayPalShippingPatchBody,
     getGatewayFromPaymentMethod,
     transformPaymentMethodReferences,
     getExpressPaymentMethodType
@@ -902,7 +903,9 @@ describe('sf-payments-utils', () => {
         })
 
         test('returns null when shipping.addressLine1 is missing', () => {
-            expect(transformPayPalAddressFromPaymentReference({payer: paypalProps.payer})).toBeNull()
+            expect(
+                transformPayPalAddressFromPaymentReference({payer: paypalProps.payer})
+            ).toBeNull()
             expect(transformPayPalAddressFromPaymentReference({shipping: {}})).toBeNull()
             expect(transformPayPalAddressFromPaymentReference(undefined)).toBeNull()
         })
@@ -2123,6 +2126,112 @@ describe('sf-payments-utils', () => {
                 paymentMethodSetAccounts
             )
             expect(result).toBe('paypal')
+        })
+    })
+
+    describe('createPayPalShippingPatchBody', () => {
+        const basket = {
+            basketId: 'basket-1',
+            currency: 'USD',
+            orderTotal: 25
+        }
+        const shippingMethods = {
+            applicableShippingMethods: [
+                {id: 'standard', name: 'Standard Shipping', price: 5.99},
+                {id: 'express', name: 'Express Shipping', price: 12.99}
+            ]
+        }
+
+        test('builds PATCH body with shipping options and selected flag', () => {
+            const result = createPayPalShippingPatchBody({
+                basket,
+                shippingMethods,
+                selectedShippingMethodId: 'standard',
+                paymentMethodType: 'paypal',
+                zoneId: 'default'
+            })
+
+            expect(result).toEqual({
+                amount: 25,
+                paymentMethodId: 'Salesforce Payments',
+                paymentReferenceRequest: {
+                    paymentMethodType: 'paypal',
+                    zoneId: 'default',
+                    gatewayProperties: {
+                        paypal: {
+                            amount: '25',
+                            currencyCode: 'USD',
+                            shippingOptions: [
+                                {
+                                    id: 'standard',
+                                    label: 'Standard Shipping',
+                                    amount: '5.99',
+                                    currencyCode: 'USD',
+                                    selected: true
+                                },
+                                {
+                                    id: 'express',
+                                    label: 'Express Shipping',
+                                    amount: '12.99',
+                                    currencyCode: 'USD',
+                                    selected: false
+                                }
+                            ]
+                        }
+                    }
+                }
+            })
+        })
+
+        test('marks no option selected when selectedShippingMethodId does not match', () => {
+            const result = createPayPalShippingPatchBody({
+                basket,
+                shippingMethods,
+                selectedShippingMethodId: 'overnight',
+                paymentMethodType: 'paypal',
+                zoneId: 'default'
+            })
+
+            const options = result.paymentReferenceRequest.gatewayProperties.paypal.shippingOptions
+            expect(options.every((o) => o.selected === false)).toBe(true)
+        })
+
+        test('passes through paymentMethodType (e.g. venmo)', () => {
+            const result = createPayPalShippingPatchBody({
+                basket,
+                shippingMethods,
+                selectedShippingMethodId: 'standard',
+                paymentMethodType: 'venmo',
+                zoneId: 'zone-a'
+            })
+
+            expect(result.paymentReferenceRequest.paymentMethodType).toBe('venmo')
+            expect(result.paymentReferenceRequest.zoneId).toBe('zone-a')
+        })
+
+        test('defaults zoneId to "default" when undefined', () => {
+            const result = createPayPalShippingPatchBody({
+                basket,
+                shippingMethods,
+                selectedShippingMethodId: 'standard',
+                paymentMethodType: 'paypal'
+            })
+
+            expect(result.paymentReferenceRequest.zoneId).toBe('default')
+        })
+
+        test('produces empty shippingOptions array when no applicable methods', () => {
+            const result = createPayPalShippingPatchBody({
+                basket,
+                shippingMethods: {applicableShippingMethods: []},
+                selectedShippingMethodId: null,
+                paymentMethodType: 'paypal',
+                zoneId: 'default'
+            })
+
+            expect(result.paymentReferenceRequest.gatewayProperties.paypal.shippingOptions).toEqual(
+                []
+            )
         })
     })
 })
