@@ -1341,7 +1341,7 @@ describe('onPayerApprove PayPal/Venmo address resolution', () => {
     })
 
     test.each([['paypal'], ['venmo']])(
-        'fetches basket with expand=paymentreferences and stamps shipping+billing from paypal data — %s',
+        'fetches basket with expand=payment_references and stamps shipping+billing from paypal data — %s',
         async (type) => {
             mockGetBasketWithRefs = jest.fn().mockResolvedValue(basketWithPaypalRef())
 
@@ -1360,7 +1360,7 @@ describe('onPayerApprove PayPal/Venmo address resolution', () => {
                 expect.objectContaining({
                     parameters: expect.objectContaining({
                         basketId,
-                        expand: ['paymentreferences']
+                        expand: ['payment_references']
                     }),
                     headers: expect.objectContaining({
                         Authorization: expect.stringMatching(/^Bearer /)

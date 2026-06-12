@@ -505,7 +505,7 @@ const SFPaymentsExpressButtons = ({
                 const basketWithRefs = await api.shopperBasketsV2.getBasket({
                     parameters: {
                         basketId: expressBasket.current.basketId,
-                        expand: ['paymentreferences']
+                        expand: ['payment_references']
                     },
                     headers: {Authorization: `Bearer ${token}`}
                 })
@@ -651,7 +651,7 @@ const SFPaymentsExpressButtons = ({
 
                 try {
                     // For scenarios where the addresses aren't provided client side such as PayPal/Venmo,
-                    // fetch the basket back with expand=paymentreferences so the addresses
+                    // fetch the basket back with expand=payment_references so the addresses
                     // can be fetched server side from the gateway and returned to the client
                     const {billingAddress, shippingAddress} = isPayPalPaymentMethodType(
                         paymentMethodType

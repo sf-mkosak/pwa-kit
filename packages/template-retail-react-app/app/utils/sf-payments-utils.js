@@ -97,23 +97,24 @@ export const transformAddressDetails = (billingDetails, shippingDetails) => {
 }
 
 /**
- * Transform a PayPal paymentReference (from getBasket?expand=paymentreferences) into a
+ * Transform a PayPal paymentReference (from getBasket?expand=payment_references) into a
  * basket address body. PayPal/Venmo only supplies a shipping address on the PayPal/Venmo order, so the
  * same address is used for both shipping and billing.
  * @param {Object} paypalOrder - paymentReference.gatewayProperties.paypal
  * @returns {Object|null} Address body suitable for updateShippingAddressForShipment /
- *   updateBillingAddressForBasket, or null if the payload is missing required fields.
+ *   updateBillingAddressForBasket, or null when no shipping payload is present.
+ *   Field-level validation is left to SCAPI so it can surface a precise error.
  */
 export const transformPayPalAddressFromPaymentReference = (paypalOrder) => {
     const shipping = paypalOrder?.shipping
-    if (!shipping?.addressLine1) {
+    if (!shipping) {
         return null
     }
     const payer = paypalOrder?.payer || {}
     return {
         firstName: payer.givenName || null,
         lastName: payer.surname || null,
-        address1: shipping.addressLine1,
+        address1: shipping.addressLine1 || null,
         address2: shipping.addressLine2 || null,
         city: shipping.adminArea2 || null,
         stateCode: shipping.adminArea1 || null,
@@ -125,7 +126,7 @@ export const transformPayPalAddressFromPaymentReference = (paypalOrder) => {
 
 /**
  * Returns the first paymentReference whose gateway matches the given gateway from a basket or order
- * fetched with `expand=paymentreferences`.
+ * fetched with `expand=payment_references`.
  * @param {Object} basketOrOrder - Basket or order containing paymentInstruments
  * @param {string} gateway - Gateway to match (e.g., 'paypal', 'venmo') default is 'paypal'
  * @returns {Object|undefined} Matching paymentReference, or undefined if none exist
