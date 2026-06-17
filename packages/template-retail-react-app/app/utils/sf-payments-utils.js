@@ -128,7 +128,7 @@ export const transformPayPalAddressFromPaymentReference = (paypalOrder) => {
  * Returns the first paymentReference whose gateway matches the given gateway from a basket or order
  * fetched with `expand=payment_references`.
  * @param {Object} basketOrOrder - Basket or order containing paymentInstruments
- * @param {string} gateway - Gateway to match (e.g., 'paypal', 'venmo') default is 'paypal'
+ * @param {string} gateway - Gateway to match (e.g., 'paypal', 'stripe') default is 'paypal'
  * @returns {Object|undefined} Matching paymentReference, or undefined if none exist
  */
 export const getPaymentReference = (basketOrOrder, gateway = 'paypal') => {
