@@ -206,8 +206,7 @@ jest.mock('@salesforce/commerce-sdk-react', () => {
             }
             const shopperBasketsV2 = {
                 getBasket:
-                    mockGetBasketWithRefs ||
-                    jest.fn().mockResolvedValue({paymentInstruments: []})
+                    mockGetBasketWithRefs || jest.fn().mockResolvedValue({paymentInstruments: []})
             }
             return {shopperOrders, shopperBasketsV2}
         },
@@ -1390,9 +1389,7 @@ describe('onPayerApprove PayPal/Venmo address resolution', () => {
     )
 
     test('throws and calls endConfirming when paymentReference is missing the paypal address', async () => {
-        mockGetBasketWithRefs = jest
-            .fn()
-            .mockResolvedValue({basketId, paymentInstruments: []})
+        mockGetBasketWithRefs = jest.fn().mockResolvedValue({basketId, paymentInstruments: []})
 
         const {config} = await renderAndGetConfig({
             prepareBasket: jest.fn().mockResolvedValue(mockBasket)

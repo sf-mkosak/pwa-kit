@@ -902,7 +902,9 @@ describe('sf-payments-utils', () => {
         })
 
         test('returns null only when the shipping payload is absent', () => {
-            expect(transformPayPalAddressFromPaymentReference({payer: paypalProps.payer})).toBeNull()
+            expect(
+                transformPayPalAddressFromPaymentReference({payer: paypalProps.payer})
+            ).toBeNull()
             expect(transformPayPalAddressFromPaymentReference(undefined)).toBeNull()
         })
 
