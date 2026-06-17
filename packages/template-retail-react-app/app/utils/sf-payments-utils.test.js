@@ -2265,5 +2265,22 @@ describe('sf-payments-utils', () => {
                 []
             )
         })
+
+        test('omits shippingOptions when shippingMethods is not passed (amount-only PATCH)', () => {
+            const result = createPayPalShippingPatchBody({
+                basket,
+                paymentMethodType: 'paypal',
+                zoneId: 'default'
+            })
+
+            const paypal = result.paymentReferenceRequest.gatewayProperties.paypal
+            expect(paypal).toEqual({
+                amount: '25',
+                currencyCode: 'USD'
+            })
+            expect(paypal).not.toHaveProperty('shippingOptions')
+            expect(result.amount).toBe(25)
+            expect(result.paymentMethodId).toBe('Salesforce Payments')
+        })
     })
 })

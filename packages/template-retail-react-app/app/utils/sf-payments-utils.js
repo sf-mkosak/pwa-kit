@@ -345,13 +345,18 @@ export const createPaymentInstrumentBody = ({
 }
 
 /**
- * Builds the PATCH body for updating a basket payment instrument in response to a
- * PayPal/Venmo shipping address change. Pushes the new basket amount and the latest
- * applicable shipping options to the upstream PayPal Order via SCAPI.
+ * Builds the PATCH body for updating a basket payment instrument so the upstream PayPal
+ * Order reflects the new basket amount, currency, and (optionally) the latest applicable
+ * shipping options.
+ *
+ * Pass `shippingMethods` on shipping-address change to push a refreshed option list.
+ * Omit it on shipping-method change so `shippingOptions` is left off the body — signaling
+ * to PayPal that the client is not trying to mutate the option list, only the amount.
  * @param {Object} params
  * @param {Object} params.basket - Updated basket (carries currency and orderTotal)
- * @param {Object} params.shippingMethods - Shipping methods response with applicableShippingMethods
- * @param {string} params.selectedShippingMethodId - Currently selected shipping method id
+ * @param {Object} [params.shippingMethods] - Shipping methods response with applicableShippingMethods.
+ *   When omitted, `shippingOptions` is omitted from the body.
+ * @param {string} [params.selectedShippingMethodId] - Currently selected shipping method id
  * @param {string} params.paymentMethodType - 'paypal' or 'venmo'
  * @param {string} [params.zoneId] - Zone ID for payment processing
  * @returns {Object} PATCH /baskets/{basketId}/payment-instruments/{paymentInstrumentId} body
@@ -366,13 +371,22 @@ export const createPayPalShippingPatchBody = ({
     const currencyCode = basket?.currency
     const amount = basket?.orderTotal
 
-    const shippingOptions = (shippingMethods?.applicableShippingMethods || []).map((method) => ({
-        id: method.id,
-        label: method.name,
-        amount: method.price?.toString(),
-        currencyCode,
-        selected: method.id === selectedShippingMethodId
-    }))
+    const paypal = {
+        amount: amount?.toString(),
+        currencyCode
+    }
+
+    if (shippingMethods) {
+        paypal.shippingOptions = (shippingMethods.applicableShippingMethods || []).map(
+            (method) => ({
+                id: method.id,
+                label: method.name,
+                amount: method.price?.toString(),
+                currencyCode,
+                selected: method.id === selectedShippingMethodId
+            })
+        )
+    }
 
     return {
         amount,
@@ -381,11 +395,7 @@ export const createPayPalShippingPatchBody = ({
             paymentMethodType,
             zoneId: zoneId ?? 'default',
             gatewayProperties: {
-                paypal: {
-                    amount: amount?.toString(),
-                    currencyCode,
-                    shippingOptions
-                }
+                paypal
             }
         }
     }

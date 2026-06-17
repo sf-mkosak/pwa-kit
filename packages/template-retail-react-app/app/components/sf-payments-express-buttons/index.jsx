@@ -651,7 +651,7 @@ const SFPaymentsExpressButtons = ({
                     }
 
                     // Update the shipping method in the default shipment
-                    const updatedBasket = await updateShippingMethod.mutateAsync({
+                    let updatedBasket = await updateShippingMethod.mutateAsync({
                         parameters: {
                             basketId: expressBasket.current.basketId,
                             shipmentId: DEFAULT_SHIPMENT_ID
@@ -665,6 +665,43 @@ const SFPaymentsExpressButtons = ({
 
                     // Fetch applicable shipping methods after shipping method update
                     const {data: updatedShippingMethods} = await refetchShippingMethods()
+
+                    // PayPal/Venmo: PATCH the basket payment instrument so the upstream
+                    // PayPal Order reflects the new amount. shippingMethods is intentionally
+                    // omitted so the body carries no shippingOptions — the option list is
+                    // unchanged on a method-selection.
+                    if (isPayPalPaymentMethodType(paymentMethodType)) {
+                        const sfPaymentsInstrument = getSFPaymentsInstrument(updatedBasket)
+                        if (sfPaymentsInstrument) {
+                            try {
+                                updatedBasket = await updatePaymentInstrumentInBasket({
+                                    parameters: {
+                                        basketId: updatedBasket.basketId,
+                                        paymentInstrumentId:
+                                            sfPaymentsInstrument.paymentInstrumentId
+                                    },
+                                    body: createPayPalShippingPatchBody({
+                                        basket: updatedBasket,
+                                        paymentMethodType,
+                                        zoneId
+                                    })
+                                })
+                                expressBasket.current = updatedBasket
+                            } catch (error) {
+                                logger.error(
+                                    'Failed to PATCH PayPal payment instrument with updated amount',
+                                    {
+                                        namespace:
+                                            'SFPaymentsExpressButtons.onShippingMethodChange',
+                                        additionalProperties: {
+                                            error,
+                                            basketId: updatedBasket.basketId
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
 
                     const expressCallback = createExpressCallback(
                         updatedBasket,

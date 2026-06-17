@@ -2707,3 +2707,156 @@ describe('onShippingAddressChange PayPal PATCH', () => {
         )
     })
 })
+
+describe('onShippingMethodChange PayPal PATCH', () => {
+    const basketId = 'basket-paypal-method-patch'
+    const paymentInstrumentId = 'pi-sfp-2'
+    const sfPaymentsInstrument = {
+        paymentInstrumentId,
+        paymentMethodId: 'Salesforce Payments'
+    }
+    const applicableShippingMethods = [
+        {id: 'standard', name: 'Standard', price: 5.99},
+        {id: 'express', name: 'Express', price: 12.99}
+    ]
+    const updatedBasket = {
+        basketId,
+        currency: 'USD',
+        orderTotal: 32,
+        productSubTotal: 19.01,
+        shipments: [
+            {
+                shipmentId: DEFAULT_SHIPMENT_ID,
+                shippingMethod: {id: 'express'}
+            }
+        ],
+        paymentInstruments: [sfPaymentsInstrument]
+    }
+    const shippingMethod = {id: 'express', name: 'Express'}
+
+    beforeEach(() => {
+        mockValidateTestCaptureConfig = {}
+        mockValidateTestMocks = {
+            updateShippingAddress: jest.fn().mockResolvedValue(updatedBasket),
+            updateShippingMethod: jest.fn().mockResolvedValue(updatedBasket),
+            refetchShippingMethods: jest
+                .fn()
+                .mockResolvedValue({data: {applicableShippingMethods}}),
+            updatePaymentInstrumentInBasket: jest.fn().mockResolvedValue(updatedBasket),
+            addPaymentInstrumentToBasket: jest.fn().mockResolvedValue(updatedBasket)
+        }
+        mockPayPalCreateIntentMocks = {
+            removePaymentInstrumentFromBasket: jest.fn().mockResolvedValue(updatedBasket),
+            addPaymentInstrumentToBasket: jest.fn().mockResolvedValue(updatedBasket)
+        }
+    })
+
+    afterEach(() => {
+        mockValidateTestCaptureConfig = null
+        mockValidateTestMocks = null
+        mockPayPalCreateIntentMocks = null
+    })
+
+    // For PayPal, expressBasket.current is populated in createIntent (not onClick),
+    // so we drive onClick → createIntent before invoking onShippingMethodChange.
+    const primePayPal = async (config, type = 'paypal') => {
+        await config.actions.onClick(type)
+        await config.actions.createIntent({})
+        await flush()
+    }
+
+    test.each([['paypal'], ['venmo']])(
+        'PATCHes payment instrument with amount-only body (no shippingOptions) — %s',
+        async (type) => {
+            const {config} = await renderAndGetConfig({
+                prepareBasket: jest.fn().mockResolvedValue(updatedBasket)
+            })
+
+            await primePayPal(config, type)
+
+            const mockCallback = {updateShippingMethod: jest.fn()}
+            await config.actions.onShippingMethodChange(shippingMethod, mockCallback)
+
+            expect(mockValidateTestMocks.updatePaymentInstrumentInBasket).toHaveBeenCalledTimes(1)
+            const call = mockValidateTestMocks.updatePaymentInstrumentInBasket.mock.calls[0][0]
+            expect(call.parameters).toEqual({basketId, paymentInstrumentId})
+            expect(call.body).toMatchObject({
+                amount: 32,
+                paymentMethodId: 'Salesforce Payments',
+                paymentReferenceRequest: {
+                    paymentMethodType: type,
+                    gatewayProperties: {
+                        paypal: {
+                            amount: '32',
+                            currencyCode: 'USD'
+                        }
+                    }
+                }
+            })
+            expect(call.body.paymentReferenceRequest.gatewayProperties.paypal).not.toHaveProperty(
+                'shippingOptions'
+            )
+            expect(mockCallback.updateShippingMethod).toHaveBeenCalledWith(
+                expect.objectContaining({total: expect.any(String)})
+            )
+        }
+    )
+
+    test('does not PATCH for non-PayPal payment methods (e.g. card)', async () => {
+        const {config} = await renderAndGetConfig({
+            prepareBasket: jest.fn().mockResolvedValue(updatedBasket)
+        })
+
+        // Card flow: onClick prepares the basket synchronously, no createIntent needed
+        await config.actions.onClick('card')
+        await flush()
+
+        const mockCallback = {updateShippingMethod: jest.fn()}
+        await config.actions.onShippingMethodChange(shippingMethod, mockCallback)
+
+        expect(mockValidateTestMocks.updatePaymentInstrumentInBasket).not.toHaveBeenCalled()
+    })
+
+    test('does not PATCH when basket has no Salesforce Payments instrument', async () => {
+        const basketNoInstrument = {...updatedBasket, paymentInstruments: []}
+        mockValidateTestMocks.updateShippingMethod.mockResolvedValue(basketNoInstrument)
+        mockPayPalCreateIntentMocks.addPaymentInstrumentToBasket.mockResolvedValue(
+            basketNoInstrument
+        )
+
+        const {config} = await renderAndGetConfig({
+            prepareBasket: jest.fn().mockResolvedValue(basketNoInstrument)
+        })
+
+        await primePayPal(config, 'paypal')
+
+        const mockCallback = {updateShippingMethod: jest.fn()}
+        await config.actions.onShippingMethodChange(shippingMethod, mockCallback)
+
+        expect(mockValidateTestMocks.updatePaymentInstrumentInBasket).not.toHaveBeenCalled()
+        expect(mockCallback.updateShippingMethod).toHaveBeenCalledWith(
+            expect.objectContaining({total: expect.any(String)})
+        )
+    })
+
+    test('swallows PATCH failure and still completes the shipping method change', async () => {
+        mockValidateTestMocks.updatePaymentInstrumentInBasket.mockRejectedValue(new Error('boom'))
+
+        const {config} = await renderAndGetConfig({
+            prepareBasket: jest.fn().mockResolvedValue(updatedBasket)
+        })
+
+        await primePayPal(config, 'paypal')
+
+        const mockCallback = {updateShippingMethod: jest.fn()}
+        await config.actions.onShippingMethodChange(shippingMethod, mockCallback)
+
+        expect(mockValidateTestMocks.updatePaymentInstrumentInBasket).toHaveBeenCalledTimes(1)
+        expect(mockCallback.updateShippingMethod).toHaveBeenCalledWith(
+            expect.objectContaining({total: expect.any(String)})
+        )
+        expect(mockCallback.updateShippingMethod).not.toHaveBeenCalledWith(
+            expect.objectContaining({errors: expect.anything()})
+        )
+    })
+})
