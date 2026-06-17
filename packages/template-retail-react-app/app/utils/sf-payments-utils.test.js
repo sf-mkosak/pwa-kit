@@ -902,12 +902,44 @@ describe('sf-payments-utils', () => {
             })
         })
 
-        test('returns null when shipping.addressLine1 is missing', () => {
+        test('returns null only when the shipping payload is absent', () => {
             expect(
                 transformPayPalAddressFromPaymentReference({payer: paypalProps.payer})
             ).toBeNull()
-            expect(transformPayPalAddressFromPaymentReference({shipping: {}})).toBeNull()
             expect(transformPayPalAddressFromPaymentReference(undefined)).toBeNull()
+        })
+
+        test('passes through partial shipping data so SCAPI can surface field-level errors', () => {
+            const result = transformPayPalAddressFromPaymentReference({
+                payer: paypalProps.payer,
+                shipping: {addressLine1: '4 Main St.'}
+            })
+            expect(result).toEqual({
+                firstName: 'Pat',
+                lastName: 'Buyer',
+                address1: '4 Main St.',
+                address2: null,
+                city: null,
+                stateCode: null,
+                postalCode: null,
+                countryCode: null,
+                phone: null
+            })
+        })
+
+        test('returns a fully-null body when shipping is an empty object', () => {
+            const result = transformPayPalAddressFromPaymentReference({shipping: {}})
+            expect(result).toEqual({
+                firstName: null,
+                lastName: null,
+                address1: null,
+                address2: null,
+                city: null,
+                stateCode: null,
+                postalCode: null,
+                countryCode: null,
+                phone: null
+            })
         })
 
         test('omits payer name fields when payer is missing', () => {
