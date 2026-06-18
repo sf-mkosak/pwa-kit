@@ -967,7 +967,7 @@ describe('sf-payments-utils', () => {
             const stripeRef = {gateway: 'stripe', paymentReferenceId: 'pr-stripe'}
             const basket = {
                 paymentInstruments: [
-                    {paymentMethodId: 'Salesforce Payments', paymentReference: stripeRef},
+                    {paymentMethodId: 'Salesforce Payments', paymentReference: stripeRef}
                 ]
             }
 
