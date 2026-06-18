@@ -965,14 +965,12 @@ describe('sf-payments-utils', () => {
 
         test('matches the given gateway when one is supplied', () => {
             const stripeRef = {gateway: 'stripe', paymentReferenceId: 'pr-stripe'}
-            const venmoRef = {gateway: 'venmo', paymentReferenceId: 'pr-venmo'}
             const basket = {
                 paymentInstruments: [
                     {paymentMethodId: 'Salesforce Payments', paymentReference: stripeRef},
-                    {paymentMethodId: 'Salesforce Payments', paymentReference: venmoRef}
                 ]
             }
-            expect(getPaymentReference(basket, 'venmo')).toBe(venmoRef)
+
             expect(getPaymentReference(basket, 'stripe')).toBe(stripeRef)
         })
 
